@@ -23,8 +23,8 @@ p { margin: 0; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    min-height: 95%;
+    justify-content: space-evenly;
+    min-height: 7.5in;
 }
 
 .cover-header, .cover-footer {
@@ -199,6 +199,10 @@ p { margin: 0; }
 }
 
 /* ── Eucharistic Prayer ── */
+.ep-break {
+    height: 6pt;
+}
+
 .ep-text {
     font-size: 10pt;
     line-height: 1.3;

@@ -312,13 +312,14 @@
     <span class="role-label">Pastor (sung/spoken): </span>
     {{ great_thanksgiving_preface }}
 </p>
+<div class="flow-group">
 <p class="instruction">The Congregation SINGS:</p>
-
 
 {# ── Sanctus (notation image) ── #}
 {% if sanctus_image_uri %}
 <div class="notation-image"><img src="{{ sanctus_image_uri }}" alt="Holy, Holy, Holy"></div>
 {% endif %}
+</div>
 
 
 {# ── Eucharistic Prayer ── #}
@@ -330,6 +331,7 @@
 <p class="ep-text">{{ line }}</p>
 {% endfor %}
 </div>
+<div class="ep-break"></div>
 {% for para in words_of_institution_paragraphs %}
 <p class="ep-text">{{ para }}</p>
 {% endfor %}
@@ -340,6 +342,7 @@
 <div class="notation-image"><img src="{{ memorial_acclamation_image_uri }}" alt="Memorial Acclamation"></div>
 {% endif %}
 {% endif %}
+<div class="ep-break"></div>
 <div class="two-col">
 {% for stanza in eucharistic_prayer_closing_stanzas %}
 <p class="ep-text">{{ stanza }}</p>

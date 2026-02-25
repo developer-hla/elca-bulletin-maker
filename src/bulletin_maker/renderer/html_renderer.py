@@ -200,6 +200,79 @@ def _build_psalm_data(day: DayContent) -> dict | None:
     }
 
 
+# ── Auto-adjust CSS levels ───────────────────────────────────────────
+
+# Tighten: progressively reduce spacing to fit fewer pages
+BULLETIN_TIGHTEN_CSS = [
+    (
+        ".spacer { height: 4pt; } "
+        ".section-heading { margin-top: 5pt; } "
+        ".ep-break { height: 3pt; }"
+    ),
+    (
+        ".spacer { height: 2pt; } "
+        ".section-heading { margin-top: 3pt; margin-bottom: 1pt; } "
+        ".flow-group { break-inside: auto; } "
+        ".ep-break { height: 2pt; }"
+    ),
+    (
+        ".spacer { height: 0pt; } "
+        ".section-heading { margin-top: 2pt; margin-bottom: 0pt; } "
+        ".flow-group { break-inside: auto; } "
+        ".ep-break { height: 0pt; }"
+    ),
+]
+
+# Loosen: progressively increase spacing to fill pages toward next multiple of 4
+BULLETIN_LOOSEN_CSS = [
+    (
+        ".spacer { height: 12pt; } "
+        ".section-heading { margin-top: 12pt; } "
+        ".ep-break { height: 10pt; }"
+    ),
+    (
+        ".spacer { height: 18pt; } "
+        ".section-heading { margin-top: 16pt; } "
+        ".ep-break { height: 14pt; }"
+    ),
+    (
+        ".spacer { height: 24pt; } "
+        ".section-heading { margin-top: 20pt; } "
+        ".ep-break { height: 18pt; }"
+    ),
+]
+
+LP_TIGHTEN_CSS = [
+    (
+        ".spacer { height: 12pt; } "
+        ".liturgy-heading { margin-top: 8pt; } "
+        ".scripture-heading { margin-top: 8pt; }"
+    ),
+    (
+        ".spacer { height: 6pt; } "
+        ".liturgy-heading { margin-top: 4pt; } "
+        ".scripture-heading { margin-top: 4pt; } "
+        ".flow-group { break-inside: auto; }"
+    ),
+    (
+        ".spacer { height: 0pt; } "
+        ".liturgy-heading { margin-top: 2pt; } "
+        ".scripture-heading { margin-top: 2pt; } "
+        ".flow-group { break-inside: auto; }"
+    ),
+]
+
+
+def _inject_css(html: str, extra_css: str) -> str:
+    """Inject CSS overrides into an HTML document's style block."""
+    return html.replace("</style>", f"\n/* auto-adjust */\n{extra_css}\n</style>")
+
+
+def _booklet_blanks(n: int) -> int:
+    """Number of blank pages needed to pad n to a multiple of 4."""
+    return (4 - n % 4) % 4
+
+
 # ══════════════════════════════════════════════════════════════════════
 # Context builders
 # ══════════════════════════════════════════════════════════════════════
@@ -637,20 +710,35 @@ def generate_large_print(
         debug_dir.mkdir(exist_ok=True)
         (debug_dir / "large_print.html").write_text(html_string)
 
-    result = render_to_pdf(
-        html_string,
-        output_path,
-        margins={
-            "top": "0.25in",
-            "bottom": "0.5in",
-            "left": "0.438in",
-            "right": "0.438in",
-        },
-        display_footer=True,
-    )
+    lp_margins = {
+        "top": "0.25in",
+        "bottom": "0.5in",
+        "left": "0.438in",
+        "right": "0.438in",
+    }
 
-    logger.info("Large Print PDF saved: %s", result)
-    return result
+    render_to_pdf(html_string, output_path, margins=lp_margins, display_footer=True)
+
+    # Auto-tighten: try progressively tighter CSS to reduce page count
+    pages = count_pages(output_path)
+    if pages:
+        best_html = html_string
+        best_pages = pages
+        for level_css in LP_TIGHTEN_CSS:
+            candidate = _inject_css(html_string, level_css)
+            render_to_pdf(candidate, output_path, margins=lp_margins,
+                          display_footer=True)
+            n = count_pages(output_path)
+            if n and n < best_pages:
+                best_html = candidate
+                best_pages = n
+        if best_pages < pages:
+            logger.info("LP auto-tighten: %d -> %d pages", pages, best_pages)
+        render_to_pdf(best_html, output_path, margins=lp_margins,
+                      display_footer=True)
+
+    logger.info("Large Print PDF saved: %s", output_path)
+    return output_path
 
 
 def generate_pulpit_scripture(
@@ -798,18 +886,68 @@ def generate_bulletin(
 
     # Render sequential half-pages (7" x 8.5")
     seq_path = output_path.parent / f".{output_path.stem}_sequential.pdf"
+    bulletin_margins = {
+        "top": "0.3in",
+        "bottom": "0.35in",
+        "left": "0.35in",
+        "right": "0.35in",
+    }
+    bulletin_page_size = {"width": "7in", "height": "8.5in"}
+
     render_to_pdf(
-        html_string,
-        seq_path,
-        margins={
-            "top": "0.3in",
-            "bottom": "0.35in",
-            "left": "0.35in",
-            "right": "0.35in",
-        },
-        display_footer=True,
-        page_size={"width": "7in", "height": "8.5in"},
+        html_string, seq_path,
+        margins=bulletin_margins, display_footer=True,
+        page_size=bulletin_page_size,
     )
+
+    # Auto-adjust: try CSS tweaks to minimize blank booklet pages.
+    # Strategy: try tightening (fewer pages) and loosening (more pages),
+    # pick whichever gives the fewest blanks (closest to a multiple of 4).
+    pages = count_pages(seq_path)
+    if pages and pages % 4 != 0:
+        best_html = html_string
+        best_blanks = _booklet_blanks(pages)
+
+        # Try tightening (reduce pages toward lower multiple of 4)
+        for level_css in BULLETIN_TIGHTEN_CSS:
+            candidate = _inject_css(html_string, level_css)
+            render_to_pdf(
+                candidate, seq_path,
+                margins=bulletin_margins, display_footer=True,
+                page_size=bulletin_page_size,
+            )
+            n = count_pages(seq_path)
+            if n and _booklet_blanks(n) < best_blanks:
+                best_html = candidate
+                best_blanks = _booklet_blanks(n)
+                if best_blanks == 0:
+                    break
+
+        # Try loosening (add pages toward upper multiple of 4)
+        if best_blanks > 0:
+            for level_css in BULLETIN_LOOSEN_CSS:
+                candidate = _inject_css(html_string, level_css)
+                render_to_pdf(
+                    candidate, seq_path,
+                    margins=bulletin_margins, display_footer=True,
+                    page_size=bulletin_page_size,
+                )
+                n = count_pages(seq_path)
+                if n and _booklet_blanks(n) < best_blanks:
+                    best_html = candidate
+                    best_blanks = _booklet_blanks(n)
+                    if best_blanks == 0:
+                        break
+
+        final_blanks = _booklet_blanks(pages)
+        if best_blanks < final_blanks:
+            logger.info("Bulletin auto-adjust: %d blanks -> %d blanks",
+                        final_blanks, best_blanks)
+        render_to_pdf(
+            best_html, seq_path,
+            margins=bulletin_margins, display_footer=True,
+            page_size=bulletin_page_size,
+        )
 
     # Find creed page in sequential PDF
     creed_page = _find_creed_page(seq_path)
