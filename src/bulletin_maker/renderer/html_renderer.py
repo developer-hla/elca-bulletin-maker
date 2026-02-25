@@ -18,7 +18,7 @@ import re
 from pathlib import Path
 
 from bulletin_maker.exceptions import BulletinError, ContentNotFoundError
-from bulletin_maker.sns.models import DayContent, HymnLyrics, ServiceConfig
+from bulletin_maker.sns.models import DayContent, HymnLyrics, Reading, ServiceConfig
 from bulletin_maker.renderer.season import (
     LiturgicalSeason,
     detect_season,
@@ -63,6 +63,7 @@ from bulletin_maker.renderer.static_text import (
     NICENE_CREED,
     NUNC_DIMITTIS,
     OFFERTORY_HYMN_VERSES,
+    DEFAULT_PRAYERS_RESPONSE,
     PRAYERS_INTRO,
     SANCTUS,
     STANDING_INSTRUCTIONS,
@@ -162,7 +163,7 @@ def _get_reading(day: DayContent, keyword: str):
     return None
 
 
-def _reading_data(reading) -> dict | None:
+def _reading_data(reading: Reading | None) -> dict | None:
     """Build template-ready dict from a Reading object."""
     if reading is None:
         return None
@@ -171,6 +172,31 @@ def _reading_data(reading) -> dict | None:
         "intro": strip_tags(reading.intro) if reading.intro else "",
         "text_html": _clean_html(reading.text_html),
         "book": extract_book_name(reading.citation),
+    }
+
+
+def _build_gospel_entry(day: DayContent) -> dict | None:
+    """Build template-ready dict for the Gospel reading."""
+    gospel_raw = _get_reading(day, "gospel")
+    if gospel_raw and gospel_raw.label.lower() == "gospel":
+        return _reading_data(gospel_raw)
+    if gospel_raw is None:
+        for r in day.readings:
+            if r.label.lower() == "gospel":
+                return _reading_data(r)
+    return None
+
+
+def _build_psalm_data(day: DayContent) -> dict | None:
+    """Build template-ready dict for the Psalm."""
+    psalm_raw = _get_reading(day, "psalm")
+    if not psalm_raw:
+        return None
+    psalm_num = psalm_raw.citation.replace("Psalm", "").replace("psalm", "").strip()
+    return {
+        "number": psalm_num,
+        "intro": strip_tags(psalm_raw.intro) if psalm_raw.intro else "",
+        "verses": group_psalm_verses(psalm_raw.text_html),
     }
 
 
@@ -186,30 +212,11 @@ def _build_large_print_context(day: DayContent, config: ServiceConfig) -> dict:
     # Readings
     first_reading = _reading_data(_get_reading(day, "first"))
     second_reading = _reading_data(_get_reading(day, "second"))
-
-    gospel_raw = _get_reading(day, "gospel")
-    gospel_entry = None
-    if gospel_raw and gospel_raw.label.lower() == "gospel":
-        gospel_entry = _reading_data(gospel_raw)
-    elif gospel_raw is None:
-        for r in day.readings:
-            if r.label.lower() == "gospel":
-                gospel_entry = _reading_data(r)
-                break
-
-    # Psalm
-    psalm_raw = _get_reading(day, "psalm")
-    psalm_data = None
-    if psalm_raw:
-        psalm_num = psalm_raw.citation.replace("Psalm", "").replace("psalm", "").strip()
-        psalm_data = {
-            "number": psalm_num,
-            "intro": strip_tags(psalm_raw.intro) if psalm_raw.intro else "",
-            "verses": group_psalm_verses(psalm_raw.text_html),
-        }
+    gospel_entry = _build_gospel_entry(day)
+    psalm_data = _build_psalm_data(day)
 
     # Gospel Acclamation image
-    ga_image_uri = None
+    ga_image_uri = ""
     try:
         path = get_gospel_acclamation_image(season)
         ga_image_uri = _image_to_data_uri(path)
@@ -227,7 +234,7 @@ def _build_large_print_context(day: DayContent, config: ServiceConfig) -> dict:
     creed_text = NICENE_CREED if config.creed_type == "nicene" else APOSTLES_CREED
 
     # Prayers response
-    prayers_response = "Your mercy is great."
+    prayers_response = DEFAULT_PRAYERS_RESPONSE
     if day.prayers_html:
         prayers_response = parse_prayers_response(day.prayers_html)
 
@@ -237,8 +244,7 @@ def _build_large_print_context(day: DayContent, config: ServiceConfig) -> dict:
         invitation_text = strip_tags(preprocess_html(day.invitation_to_communion))
 
     # CSS
-    css_path = TEMPLATE_DIR / "large_print.css"
-    css = css_path.read_text()
+    css = (TEMPLATE_DIR / "large_print.css").read_text()
 
     return {
         # CSS
@@ -330,16 +336,7 @@ def _build_pulpit_scripture_context(day: DayContent, date_display: str) -> dict:
     """Build template context for the Pulpit Scripture document."""
     first_reading = _reading_data(_get_reading(day, "first"))
     second_reading = _reading_data(_get_reading(day, "second"))
-
-    psalm_raw = _get_reading(day, "psalm")
-    psalm_data = None
-    if psalm_raw:
-        psalm_num = psalm_raw.citation.replace("Psalm", "").replace("psalm", "").strip()
-        psalm_data = {
-            "number": psalm_num,
-            "intro": strip_tags(psalm_raw.intro) if psalm_raw.intro else "",
-            "verses": group_psalm_verses(psalm_raw.text_html),
-        }
+    psalm_data = _build_psalm_data(day)
 
     css = (TEMPLATE_DIR / "pulpit_scripture.css").read_text()
 
@@ -414,27 +411,8 @@ def _build_bulletin_context(
     # Readings
     first_reading = _reading_data(_get_reading(day, "first"))
     second_reading = _reading_data(_get_reading(day, "second"))
-
-    gospel_raw = _get_reading(day, "gospel")
-    gospel_entry = None
-    if gospel_raw and gospel_raw.label.lower() == "gospel":
-        gospel_entry = _reading_data(gospel_raw)
-    elif gospel_raw is None:
-        for r in day.readings:
-            if r.label.lower() == "gospel":
-                gospel_entry = _reading_data(r)
-                break
-
-    # Psalm
-    psalm_raw = _get_reading(day, "psalm")
-    psalm_data = None
-    if psalm_raw:
-        psalm_num = psalm_raw.citation.replace("Psalm", "").replace("psalm", "").strip()
-        psalm_data = {
-            "number": psalm_num,
-            "intro": strip_tags(psalm_raw.intro) if psalm_raw.intro else "",
-            "verses": group_psalm_verses(psalm_raw.text_html),
-        }
+    gospel_entry = _build_gospel_entry(day)
+    psalm_data = _build_psalm_data(day)
 
     # Gospel Acclamation image
     ga_image_uri = ""
@@ -469,7 +447,7 @@ def _build_bulletin_context(
     creed_text = NICENE_CREED if config.creed_type == "nicene" else APOSTLES_CREED
 
     # Prayers response
-    prayers_response = "Your mercy is great."
+    prayers_response = DEFAULT_PRAYERS_RESPONSE
     if day.prayers_html:
         prayers_response = parse_prayers_response(day.prayers_html)
 

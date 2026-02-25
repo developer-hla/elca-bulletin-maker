@@ -119,6 +119,8 @@ LORDS_PRAYER = (
 
 PRAYERS_INTRO = "We continue with the prayers of the people:"
 
+DEFAULT_PRAYERS_RESPONSE = "Your mercy is great."
+
 # ── Large Print liturgical texts (from LP reference DOCX) ──────────
 
 # Great Thanksgiving — spoken P:/C: dialog (not notation in Large Print)

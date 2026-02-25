@@ -249,6 +249,55 @@ class BulletinAPI:
             logger.exception("Error choosing cover image")
             return {"success": False, "error": str(e)}
 
+    # ── Generation helpers ─────────────────────────────────────────────
+
+    def _build_hymn(self, form_data: dict, slot: str) -> Optional[HymnLyrics]:
+        """Build a HymnLyrics from cached data for a form slot."""
+        hymn_data = form_data.get(slot)
+        if not hymn_data:
+            return None
+        number = hymn_data.get("number", "")
+        collection = hymn_data.get("collection", "ELW")
+        cache_key = f"{collection}_{number}"
+        cached = self._hymn_cache.get(cache_key)
+        if cached:
+            return HymnLyrics(
+                number=cached["number"],
+                title=cached["title"],
+                verses=cached["verses"],
+                refrain=cached["refrain"],
+                copyright=cached["copyright"],
+            )
+        # Minimal fallback — title only (no lyrics fetched)
+        title = hymn_data.get("title", "")
+        return HymnLyrics(
+            number=f"{collection} {number}",
+            title=title,
+            verses=[],
+        )
+
+    def _build_service_config(self, form_data: dict) -> ServiceConfig:
+        """Build a ServiceConfig from wizard form data."""
+        return ServiceConfig(
+            date=form_data.get("date", ""),
+            date_display=form_data.get("date_display", ""),
+            creed_type=form_data.get("creed_type"),
+            include_kyrie=form_data.get("include_kyrie"),
+            canticle=form_data.get("canticle"),
+            eucharistic_form=form_data.get("eucharistic_form"),
+            include_memorial_acclamation=form_data.get("include_memorial_acclamation"),
+            gathering_hymn=self._build_hymn(form_data, "gathering_hymn"),
+            sermon_hymn=self._build_hymn(form_data, "sermon_hymn"),
+            communion_hymn=self._build_hymn(form_data, "communion_hymn"),
+            sending_hymn=self._build_hymn(form_data, "sending_hymn"),
+            prelude_title=form_data.get("prelude_title", ""),
+            prelude_performer=form_data.get("prelude_performer", ""),
+            postlude_title=form_data.get("postlude_title", ""),
+            postlude_performer=form_data.get("postlude_performer", ""),
+            choral_title=form_data.get("choral_title", ""),
+            cover_image=form_data.get("cover_image", ""),
+        )
+
     # ── Generation ────────────────────────────────────────────────────
 
     def generate_all(self, form_data: dict) -> dict:
@@ -273,50 +322,7 @@ class BulletinAPI:
             output_dir = Path(form_data.get("output_dir", "output"))
             output_dir.mkdir(parents=True, exist_ok=True)
 
-            # Build HymnLyrics objects from cached data
-            def _build_hymn(slot: str) -> Optional[HymnLyrics]:
-                hymn_data = form_data.get(slot)
-                if not hymn_data:
-                    return None
-                number = hymn_data.get("number", "")
-                collection = hymn_data.get("collection", "ELW")
-                cache_key = f"{collection}_{number}"
-                cached = self._hymn_cache.get(cache_key)
-                if cached:
-                    return HymnLyrics(
-                        number=cached["number"],
-                        title=cached["title"],
-                        verses=cached["verses"],
-                        refrain=cached["refrain"],
-                        copyright=cached["copyright"],
-                    )
-                # Minimal fallback — title only (no lyrics fetched)
-                title = hymn_data.get("title", "")
-                return HymnLyrics(
-                    number=f"{collection} {number}",
-                    title=title,
-                    verses=[],
-                )
-
-            config = ServiceConfig(
-                date=form_data.get("date", ""),
-                date_display=form_data.get("date_display", ""),
-                creed_type=form_data.get("creed_type"),
-                include_kyrie=form_data.get("include_kyrie"),
-                canticle=form_data.get("canticle"),
-                eucharistic_form=form_data.get("eucharistic_form"),
-                include_memorial_acclamation=form_data.get("include_memorial_acclamation"),
-                gathering_hymn=_build_hymn("gathering_hymn"),
-                sermon_hymn=_build_hymn("sermon_hymn"),
-                communion_hymn=_build_hymn("communion_hymn"),
-                sending_hymn=_build_hymn("sending_hymn"),
-                prelude_title=form_data.get("prelude_title", ""),
-                prelude_performer=form_data.get("prelude_performer", ""),
-                postlude_title=form_data.get("postlude_title", ""),
-                postlude_performer=form_data.get("postlude_performer", ""),
-                choral_title=form_data.get("choral_title", ""),
-                cover_image=form_data.get("cover_image", ""),
-            )
+            config = self._build_service_config(form_data)
 
             results = {}
             errors = {}

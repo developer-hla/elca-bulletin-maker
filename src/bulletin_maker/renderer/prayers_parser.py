@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 
+from bulletin_maker.renderer.static_text import DEFAULT_PRAYERS_RESPONSE
 from bulletin_maker.renderer.text_utils import preprocess_html, strip_tags
 
 
@@ -105,4 +106,4 @@ def parse_prayers_response(prayers_html: str) -> str:
         text = strip_tags(s).strip()
         if text and text.lower() != "amen.":
             return text
-    return "Your mercy is great."
+    return DEFAULT_PRAYERS_RESPONSE

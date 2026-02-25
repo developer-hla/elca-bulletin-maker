@@ -7,6 +7,12 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# Page dimensions in points (72pt = 1in)
+HALF_PAGE_WIDTH_PT = 504.0  # 7 inches
+PAGE_HEIGHT_PT = 612.0      # 8.5 inches
+
+AUTO_SHRINK_SCALES = (0.95, 0.90, 0.85, 0.80)
+
 
 def render_to_pdf(
     html_string: str,
@@ -149,10 +155,9 @@ def impose_booklet(input_pdf: Path, output_pdf: Path) -> Path:
     # Pad to multiple of 4
     padded = n + (4 - n % 4) % 4
 
-    # Half-page width in points (7in = 504pt), full height (8.5in = 612pt)
-    half_w = 504.0
-    page_h = 612.0
-    full_w = half_w * 2  # 1008pt = 14in
+    half_w = HALF_PAGE_WIDTH_PT
+    page_h = PAGE_HEIGHT_PT
+    full_w = half_w * 2
 
     writer = PdfWriter()
 
@@ -231,7 +236,7 @@ def render_with_shrink(
     if pages is None or pages <= max_pages:
         return result
 
-    for scale in (0.95, 0.90, 0.85, 0.80):
+    for scale in AUTO_SHRINK_SCALES:
         result = render_to_pdf(
             html_string, output_path,
             margins=margins, display_footer=True,

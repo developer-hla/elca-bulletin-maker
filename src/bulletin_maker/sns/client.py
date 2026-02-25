@@ -51,7 +51,9 @@ class SundaysClient:
         last_exc: Exception | None = None
         for attempt in range(2):
             try:
+                logger.debug("%s %s (attempt %d)", method, url, attempt + 1)
                 resp = self.client.request(method, url, **kwargs)
+                logger.debug("Response: %d (%d bytes)", resp.status_code, len(resp.content))
                 resp.raise_for_status()
                 return resp
             except httpx.HTTPStatusError as exc:
@@ -157,7 +159,9 @@ class SundaysClient:
         url = f"{BASE}/Home/DayTexts/{date}/{event_date_id}"
         resp = self._request("GET", url)
 
-        return self._parse_day_texts(date, resp.text)
+        day = self._parse_day_texts(date, resp.text)
+        logger.debug("Parsed DayTexts: %s (%d readings)", day.title, len(day.readings))
+        return day
 
     def _parse_day_texts(self, date: str, html: str) -> DayContent:
         """Parse the DayTexts HTML into structured content."""
@@ -306,7 +310,9 @@ class SundaysClient:
 
         resp = self._request("POST", f"{BASE}/Music/Search", data=fields)
 
-        return self._parse_search_results(resp.text)
+        results = self._parse_search_results(resp.text)
+        logger.debug("Hymn search %s %s: %d results", collection, number, len(results))
+        return results
 
     def _parse_search_results(self, html: str) -> list[HymnResult]:
         """Parse music search result rows into HymnResult objects."""
@@ -411,6 +417,7 @@ class SundaysClient:
             url = f"{BASE}{url}"
 
         resp = self._request("GET", url)
+        logger.debug("Downloaded image: %d bytes", len(resp.content))
         return resp.content
 
     # -- Words Download -----------------------------------------------------
