@@ -307,6 +307,11 @@ p { margin: 0; }
     font-variant: small-caps;
 }
 
+/* ── Flow Groups (keep small related items together on one page) ── */
+.flow-group {
+    break-inside: avoid;
+}
+
 /* ── Spacers ── */
 .spacer { height: 18pt; }
 .spacer-sm { height: 6pt; }

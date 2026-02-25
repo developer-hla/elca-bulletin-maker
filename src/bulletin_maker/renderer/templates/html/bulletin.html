@@ -26,6 +26,7 @@
 <p class="welcome-text">{{ welcome_message }}</p>
 <p class="standing-instructions">{{ standing_instructions | nl2br }}</p>
 
+<div class="flow-group">
 <div class="section-heading"><span>GATHERING CHIMES: Worship Begins</span></div>
 <div class="spacer"></div>
 
@@ -46,6 +47,7 @@
 
 <div class="section-heading"><span>WELCOME</span></div>
 <div class="spacer"></div>
+</div>
 
 
 {# ── Confession and Forgiveness ── #}
@@ -191,16 +193,17 @@
 {% endif %}
 
 
-{# ── Sermon ── #}
+{# ── Sermon + Sermon Hymn ── #}
+<div class="flow-group">
 <p class="instruction-center mt-4">The congregation is seated.</p>
 <div class="section-heading"><span>SERMON</span></div>
 <div class="spacer"></div>
 
-{# ── Sermon Hymn (title only) ── #}
 {% if sermon_hymn_title %}
 <div class="section-heading"><span>*SERMON HYMN: {{ sermon_hymn_title }}</span></div>
 <div class="spacer"></div>
 {% endif %}
+</div>
 
 
 {# ════════════════════════════════════════════════════════════════════
@@ -221,6 +224,7 @@
 
 
 {# ── Prayers of Intercession ── #}
+<div class="flow-group">
 <div class="section-heading">
     <span>*PRAYERS OF INTERCESSION</span>
     <span class="heading-role">Prayer Leader</span>
@@ -230,9 +234,11 @@
     <span class="role-label" style="font-style: italic;">Leader: Hear us, O God.</span>
     <br><strong>CONGREGATION: {{ prayers_response }}</strong>
 </p>
+</div>
 
 
 {# ── Sharing of the Peace ── #}
+<div class="flow-group">
 <div class="section-heading">
     <span>*SHARING OF THE PEACE</span>
     <span class="heading-role">Pastor</span>
@@ -240,11 +246,13 @@
 <p><span class="role-label">P: </span><strong>The peace of Christ be with you always.</strong></p>
 <p><strong>C: And also with you.</strong></p>
 <p class="instruction">We greet one another with a sign of Christ&rsquo;s peace.</p>
+</div>
 
 
 {# ════════════════════════════════════════════════════════════════════
    OFFERING
    ════════════════════════════════════════════════════════════════════ #}
+<div class="flow-group">
 <div class="section-heading"><span>OFFERING</span></div>
 <p style="color: #C00000; font-weight: bold; font-size: 10pt;">
     P: We know that all that we are and all that we have come from God.
@@ -253,6 +261,7 @@
 
 <div class="section-heading"><span>OFFERTORY</span></div>
 <div class="spacer"></div>
+</div>
 
 {# ── Offertory Hymn (notation or text fallback) ── #}
 {% if offertory_image_uri %}
@@ -268,11 +277,13 @@
 {% endif %}
 
 {# ── Offering Prayer ── #}
+<div class="flow-group">
 <div class="section-heading red-heading">
     <span>*OFFERING PRAYER</span>
     <span class="heading-role">Communion Assistant</span>
 </div>
 <p>Leader: Let us pray&hellip;<br><strong>CONGREGATION: Amen</strong></p>
+</div>
 
 
 {# ════════════════════════════════════════════════════════════════════
@@ -351,9 +362,11 @@
 
 
 {# ── Invitation to Communion ── #}
+<div class="flow-group">
 <div class="section-heading"><span>*INVITATION TO COMMUNION</span></div>
 <p><span class="role-label">P: </span><strong>{{ invitation_to_communion_text }}</strong></p>
 <p class="instruction-center">The Congregation is SEATED</p>
+</div>
 
 
 {# ── Agnus Dei (notation image) ── #}
@@ -378,6 +391,7 @@
    ════════════════════════════════════════════════════════════════════ #}
 
 {# ── Post-Communion ── #}
+<div class="flow-group">
 <p class="instruction-center mt-6">*After all have communed, the Congregation STANDS.</p>
 <p class="mt-4">
     <span class="role-label">Pastor: </span>
@@ -385,6 +399,7 @@
     strengthen you and keep you in his grace.</strong>
 </p>
 <p><strong>Congregation: Amen.</strong></p>
+</div>
 
 
 {# ── Nunc Dimittis (notation image) ── #}
@@ -393,15 +408,14 @@
 {% endif %}
 
 
-{# ── Prayer After Communion ── #}
+{# ── Prayer After Communion + Blessing ── #}
+<div class="flow-group">
 <div class="section-heading red-heading">
     <span>*PRAYER AFTER COMMUNION</span>
     <span class="heading-role">Communion Assistant</span>
 </div>
 <div class="spacer"></div>
 
-
-{# ── Blessing ── #}
 <div class="section-heading red-heading">
     <span>*BLESSING</span>
     <span class="heading-role">Pastor</span>
@@ -409,32 +423,30 @@
 {% for line in aaronic_blessing_lines %}
 <p class="blessing-line">{{ line }}</p>
 {% endfor %}
+</div>
 
 
-{# ── Announcements ── #}
+{# ── Announcements + Sending Hymn ── #}
+<div class="flow-group">
 <div class="section-heading"><span>ANNOUNCEMENTS</span></div>
 <div class="spacer"></div>
 
-
-{# ── Sending Hymn (title only) ── #}
 {% if sending_hymn_title %}
 <div class="section-heading"><span>*SENDING HYMN: {{ sending_hymn_title }}</span></div>
 <div class="spacer"></div>
 {% endif %}
+</div>
 
 
-{# ── Sending ── #}
-<div style="break-inside: avoid;">
+{# ── Sending + Postlude + Copyright ── #}
+<div class="flow-group">
 <div class="section-heading">
     <span>SENDING</span>
     <span class="heading-role">Pastor</span>
 </div>
 <p>Go in peace to love and serve the Lord.</p>
 <p><strong>Thanks be to God.</strong></p>
-</div>
 
-
-{# ── Postlude ── #}
 {% if postlude_title %}
 <div class="section-heading">
     <span>*POSTLUDE: {{ postlude_title }}</span>
@@ -444,14 +456,13 @@
 <div class="section-heading"><span>*POSTLUDE</span></div>
 {% endif %}
 
-
-{# ── Copyright ── #}
 <div class="copyright-block">
     <p>Liturgy from <em>Evangelical Lutheran Worship</em> &copy; 2006 Augsburg Fortress.
     Reprinted by permission under Augsburg Fortress Liturgies Annual License.</p>
     <p>Scripture readings from the <em>New Revised Standard Version Bible</em>
     &copy; 1989, Division of Christian Education of the National Council of the
     Churches of Christ in the United States of America. Used by permission.</p>
+</div>
 </div>
 
 </body>

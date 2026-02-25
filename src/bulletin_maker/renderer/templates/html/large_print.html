@@ -50,6 +50,7 @@
 {# ════════════════════════════════════════════════════════════════════
    GATHERING RITE
    ════════════════════════════════════════════════════════════════════ #}
+<div class="flow-group">
 <div class="liturgy-heading"><span>GATHERING CHIMES: Worship Begins</span></div>
 <div class="spacer"></div>
 
@@ -63,6 +64,7 @@
 
 <div class="liturgy-heading"><span>WELCOME</span></div>
 <div class="spacer"></div>
+</div>
 
 
 {# ── Confession and Forgiveness ── #}
@@ -193,9 +195,11 @@
 
 
 {# ── Sermon ── #}
+<div class="flow-group">
 <p class="instruction mt-12">The congregation is seated.</p>
 <div class="scripture-heading"><span>SERMON</span></div>
 <div class="spacer"></div>
+</div>
 
 {# ── Sermon Hymn ── #}
 {% if sermon_hymn %}
@@ -222,6 +226,7 @@
 
 
 {# ── Prayers of Intercession ── #}
+<div class="flow-group">
 <div class="spacer"></div>
 <div class="spacer"></div>
 <div class="scripture-heading">
@@ -233,9 +238,11 @@
     <span class="role-label" style="font-style: italic;">Leader: Hear us, O God.</span>
     <br><strong>CONGREGATION: {{ prayers_response }}</strong>
 </p>
+</div>
 
 
 {# ── Sharing of the Peace ── #}
+<div class="flow-group">
 <div class="scripture-heading">
     <span>*SHARING OF THE PEACE</span>
     <span class="heading-role">Pastor</span>
@@ -243,9 +250,11 @@
 <p><span class="role-label">P: </span><strong>The peace of Christ be with you always.</strong></p>
 <p><strong>C: And also with you.</strong></p>
 <p class="instruction">We greet one another with a sign of Christ&rsquo;s peace, saying &ldquo;Peace be with you,&rdquo; as we shake hands or share a hug.</p>
+</div>
 
 
 {# ── Offering ── #}
+<div class="flow-group">
 <div class="liturgy-heading"><span>OFFERING</span></div>
 <p class="offering-text">
     P: We know that all that we are and all that we have come from God.
@@ -254,6 +263,7 @@
 
 <div class="liturgy-heading"><span>OFFERTORY</span></div>
 <div class="spacer"></div>
+</div>
 
 
 {# ── Offertory Hymn ── #}
@@ -266,11 +276,13 @@
 
 
 {# ── Offering Prayer ── #}
+<div class="flow-group">
 <div class="scripture-heading">
     <span>*OFFERING PRAYER</span>
     <span class="heading-role">Communion Assistant</span>
 </div>
 <p>Leader: Let us pray&hellip;<br>CONGREGATION: Amen</p>
+</div>
 
 
 {# ── Great Thanksgiving ── #}
@@ -338,9 +350,11 @@
 
 
 {# ── Invitation to Communion ── #}
+<div class="flow-group">
 <div class="liturgy-heading"><span>*INVITATION TO COMMUNION</span></div>
 <p><span class="role-label">P: </span><strong>{{ invitation_to_communion_text }}</strong></p>
 <p class="instruction-left mt-12 mb-24">The Congregation is SEATED</p>
+</div>
 
 
 {# ── Agnus Dei ── #}
@@ -366,6 +380,7 @@
    ════════════════════════════════════════════════════════════════════ #}
 
 {# ── Post-Communion ── #}
+<div class="flow-group">
 <p class="instruction-left" style="margin-bottom: 30pt;">*After all have communed, the Congregation STANDS.</p>
 <p class="mt-12 mb-6" style="padding-left: 0.5in;">
     <span class="role-label" style="font-weight: bold;">Pastor: </span>
@@ -373,24 +388,26 @@
     <br>strengthen you and keep you in his grace.</strong>
 </p>
 <p><strong>Congregation: Amen.</strong></p>
+</div>
 
 
 {# ── Nunc Dimittis ── #}
+<div class="flow-group">
 <p class="instruction-left">The Congregation SINGS:</p>
 {% for line in nunc_dimittis_lines %}
 <p class="nunc-dimittis-line">{{ line }}</p>
 {% endfor %}
+</div>
 
 
-{# ── Prayer After Communion ── #}
+{# ── Prayer After Communion + Blessing ── #}
+<div class="flow-group">
 <div class="liturgy-heading red-heading">
     <span>*PRAYER AFTER COMMUNION</span>
     <span class="heading-role">Communion Assistant</span>
 </div>
 <div class="spacer"></div>
 
-
-{# ── Blessing ── #}
 <div class="liturgy-heading red-heading">
     <span>*BLESSING</span>
     <span class="heading-role" style="padding-left: 2em;">Pastor</span>
@@ -398,6 +415,7 @@
 {% for line in aaronic_blessing_lines %}
 <p class="blessing-line">{{ line }}</p>
 {% endfor %}
+</div>
 
 
 {# ── Announcements ── #}
@@ -411,19 +429,17 @@
 {% endif %}
 
 
-{# ── Sending ── #}
-<div style="break-inside: avoid;">
+{# ── Sending + Postlude ── #}
+<div class="flow-group">
 <div class="liturgy-heading">
     <span>SENDING</span>
     <span class="heading-role">Pastor</span>
 </div>
 <p>Go in peace to love and serve the Lord.</p>
 <p><strong>Thanks be to God.</strong></p>
-</div>
 
-
-{# ── Postlude ── #}
 <div class="liturgy-heading"><span>*POSTLUDE</span></div>
+</div>
 
 </body>
 </html>
