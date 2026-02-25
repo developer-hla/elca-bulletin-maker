@@ -6,17 +6,19 @@ All interaction with sundaysandseasons.com goes through this module.
 
 from __future__ import annotations
 
+import io
 import os
 import re
-from pathlib import Path
-from typing import Optional
+import zipfile
+
+import logging
 
 import httpx
-from dotenv import load_dotenv
 
-from bulletin_maker.sns.models import DayContent, HymnResult, Reading
+from bulletin_maker.exceptions import AuthError, ContentNotFoundError, ParseError
+from bulletin_maker.sns.models import DayContent, HymnLyrics, HymnResult, Reading
 
-load_dotenv(Path(__file__).parents[3] / ".env")
+logger = logging.getLogger(__name__)
 
 BASE = "https://members.sundaysandseasons.com"
 
@@ -40,10 +42,13 @@ class SundaysClient:
 
     def login(self, username: str | None = None, password: str | None = None):
         """Log in and establish a session cookie."""
+        from dotenv import load_dotenv
+
+        load_dotenv()
         username = username or os.getenv("SNDS_USERNAME")
         password = password or os.getenv("SNDS_PASSWORD")
         if not username or not password:
-            raise ValueError("Credentials not provided and not found in .env")
+            raise AuthError("Credentials not provided and not found in .env")
 
         # Step 1: GET the login page to grab the CSRF token
         resp = self.client.get(f"{BASE}/Account/Login")
@@ -53,7 +58,7 @@ class SundaysClient:
             r'name="__RequestVerificationToken"[^>]*value="([^"]+)"', resp.text
         )
         if not token_match:
-            raise RuntimeError("Could not find CSRF token on login page")
+            raise AuthError("Could not find CSRF token on login page")
 
         token = token_match.group(1)
 
@@ -71,16 +76,16 @@ class SundaysClient:
         # Check for successful login — the page should welcome the user
         if "Welcome back" in resp.text or "/Account/LogOff" in resp.text:
             self._logged_in = True
-            print("Logged in successfully.")
+            logger.info("Logged in successfully.")
         elif "Account/Login" in str(resp.url):
-            raise RuntimeError("Login failed — still on the login page. Check credentials.")
+            raise AuthError("Login failed — still on the login page. Check credentials.")
         else:
             # Might have redirected to home — check for nav
             if "/Planner" in resp.text:
                 self._logged_in = True
-                print("Logged in successfully.")
+                logger.info("Logged in successfully.")
             else:
-                raise RuntimeError(f"Unexpected response after login. URL: {resp.url}")
+                raise AuthError(f"Unexpected response after login. URL: {resp.url}")
 
     def _ensure_logged_in(self):
         if not self._logged_in:
@@ -114,7 +119,7 @@ class SundaysClient:
             re.DOTALL,
         )
         if not right_match:
-            raise RuntimeError("Could not find rightcolumn in DayTexts response")
+            raise ParseError("Could not find rightcolumn in DayTexts response")
 
         content = right_match.group(1)
 
@@ -125,13 +130,7 @@ class SundaysClient:
             title = re.sub(r'<[^>]+>', ' ', h2_match.group(1)).strip()
             title = re.sub(r'\s+', ' ', title)
 
-        # Helper: extract section content after an <h3> heading
-        def section_after(heading: str) -> str:
-            pattern = rf'<h3>{re.escape(heading)}</h3>\s*<div>(.*?)</div>\s*(?=<h3>|<div class="content-download|$)'
-            m = re.search(pattern, content, re.DOTALL)
-            return m.group(1).strip() if m else ""
-
-        # More flexible extraction — grab everything between consecutive h3 tags
+        # Extract section content between consecutive h3 tags
         def section_between_h3(heading: str) -> str:
             pattern = rf'<h3>\s*{re.escape(heading)}\s*</h3>\s*(.*?)(?=<h3>|<div class="content-download|$)'
             m = re.search(pattern, content, re.DOTALL)
@@ -141,11 +140,17 @@ class SundaysClient:
         confession = section_between_h3("Confession and Forgiveness")
         prayer = section_between_h3("Prayer of the Day")
         acclamation = section_between_h3("Gospel Acclamation")
+        prayers = section_between_h3("Prayers of Intercession")
+        offering_prayer = section_between_h3("Offering Prayer")
+        invitation = section_between_h3("Invitation to Communion")
+        prayer_after = section_between_h3("Prayer after Communion")
+        blessing = section_between_h3("Blessing")
+        dismissal = section_between_h3("Dismissal")
 
-        # Parse readings
+        # Parse readings (exclude "Gospel Acclamation" — it's a separate section)
         readings = []
         reading_pattern = re.compile(
-            r'<h3>((?:First Reading|Second Reading|Psalm|Gospel)(?::?\s*[^<]*))</h3>'
+            r'<h3>((?:First Reading|Second Reading|Psalm|Gospel(?!\s+Acclamation))(?::?\s*[^<]*))</h3>'
             r'\s*(?:<div class="reading_intro">(.*?)</div>)?'
             r'\s*<div>(.*?)</div>\s*(?=<h3>|<div class="content-download|$)',
             re.DOTALL,
@@ -177,6 +182,12 @@ class SundaysClient:
             prayer_of_the_day_html=prayer,
             gospel_acclamation=acclamation,
             readings=readings,
+            prayers_html=prayers,
+            offering_prayer_html=offering_prayer,
+            invitation_to_communion=invitation,
+            prayer_after_communion_html=prayer_after,
+            blessing_html=blessing,
+            dismissal_html=dismissal,
             raw_html=content,
         )
 
@@ -193,7 +204,7 @@ class SundaysClient:
             re.DOTALL,
         )
         if not form_match:
-            raise RuntimeError("Could not find music search form on /Music")
+            raise ParseError("Could not find music search form on /Music")
 
         form_html = form_match.group(1)
         fields = {}
@@ -343,6 +354,76 @@ class SundaysClient:
         resp = self.client.get(url)
         resp.raise_for_status()
         return resp.content
+
+    # -- Words Download -----------------------------------------------------
+
+    def download_words(self, atom_id: str, use_date: str) -> str:
+        """Download hymn words RTF via POST /File/Download.
+
+        Args:
+            atom_id: The words_atom_id from a HymnResult.
+            use_date: Date in M/D/YYYY format (e.g. "2/22/2026").
+
+        Returns:
+            Raw RTF string extracted from the ZIP response.
+        """
+        self._ensure_logged_in()
+
+        resp = self.client.post(
+            f"{BASE}/File/Download",
+            data={
+                "atomId": atom_id,
+                "useType": "Worship",
+                "useDate": use_date,
+                "numCopies": "1",
+            },
+        )
+        resp.raise_for_status()
+
+        try:
+            zf = zipfile.ZipFile(io.BytesIO(resp.content))
+        except zipfile.BadZipFile:
+            preview = resp.content[:200].decode("utf-8", errors="replace")
+            raise ParseError(
+                f"S&S returned non-ZIP response for atomId={atom_id}. "
+                f"Session may have expired. Response preview: {preview}"
+            )
+        for name in zf.namelist():
+            if name.endswith(".rtf") and "PermissionsForm" not in name:
+                return zf.read(name).decode("utf-8", errors="replace")
+
+        raise ContentNotFoundError(
+            f"No RTF file found in ZIP for atomId={atom_id}. "
+            f"ZIP contents: {zf.namelist()}"
+        )
+
+    def fetch_hymn_lyrics(
+        self, number: str, use_date: str, collection: str = "ELW"
+    ) -> HymnLyrics:
+        """Search for a hymn and download its lyrics as HymnLyrics.
+
+        Args:
+            number: Hymn number (e.g. "335").
+            use_date: Date in M/D/YYYY format for the download license.
+            collection: Hymnal collection (default "ELW").
+
+        Returns:
+            HymnLyrics populated from the S&S RTF download.
+        """
+        from bulletin_maker.sns.rtf_parser import parse_rtf_lyrics
+
+        results = self.search_hymn(number, collection)
+        if not results:
+            raise ContentNotFoundError(f"No results for {collection} {number}")
+
+        hymn = results[0]
+        if not hymn.words_atom_id:
+            raise ContentNotFoundError(
+                f"No words download available for {hymn.title} ({collection} {number})"
+            )
+
+        rtf = self.download_words(hymn.words_atom_id, use_date)
+        return parse_rtf_lyrics(rtf, hymn_number=number, collection=collection)
 
     # -- Cleanup ------------------------------------------------------------
 
