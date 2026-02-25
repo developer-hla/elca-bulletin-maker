@@ -2,23 +2,56 @@
 
 "use strict";
 
+// ── Constants ────────────────────────────────────────────────────────
+
+/** Season key to display label. */
+const SEASON_LABELS = {
+    advent: "Advent",
+    christmas: "Christmas",
+    epiphany: "Epiphany",
+    lent: "Lent",
+    easter: "Easter",
+    pentecost: "Ordinary Time",
+    christmas_eve: "Christmas Eve",
+};
+
+/** Canticle key to display label. */
+const CANTICLE_LABELS = {
+    glory_to_god: "Glory to God",
+    this_is_the_feast: "This Is the Feast",
+    none: "None",
+};
+
+/** Document key to display label. */
+const DOC_LABELS = {
+    bulletin: "Bulletin for Congregation",
+    prayers: "Pulpit Prayers",
+    scripture: "Pulpit Scripture",
+    large_print: "Full with Hymns LARGE PRINT",
+};
+
 // ── State ────────────────────────────────────────────────────────────
 
-const state = {
-    dateStr: "",          // "2026-02-22" (HTML input value)
-    dateDisplay: "",      // "February 22, 2026"
-    apiDate: "",          // "2026-2-22" (for S&S API)
-    season: "",
-    defaults: null,       // seasonal liturgical defaults
-    hymns: {              // {slot: {number, collection, title}}
-        gathering: null,
-        sermon: null,
-        communion: null,
-        sending: null,
-    },
-    coverImage: "",
-    outputDir: "",
-};
+/** Returns a fresh initial state object. */
+function initialState() {
+    return {
+        dateStr: "",          // "2026-02-22" (HTML input value)
+        dateDisplay: "",      // "February 22, 2026"
+        apiDate: "",          // "2026-2-22" (for S&S API)
+        season: "",
+        defaults: null,       // seasonal liturgical defaults
+        hymns: {              // {slot: {number, collection, title}}
+            gathering: null,
+            sermon: null,
+            communion: null,
+            sending: null,
+        },
+        coverImage: "",
+        outputDir: "",
+    };
+}
+
+const state = initialState();
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -42,28 +75,20 @@ function enableSection(id) {
     document.getElementById(id).classList.remove("disabled-section");
 }
 
+/** Formats "2026-02-22" as "February 22, 2026". */
 function formatDate(dateStr) {
-    // "2026-02-22" -> "February 22, 2026"
     const d = new Date(dateStr + "T12:00:00");
     return d.toLocaleDateString("en-US", {
         year: "numeric", month: "long", day: "numeric",
     });
 }
 
+/** Returns the display label for a liturgical season key. */
 function seasonLabel(season) {
-    const labels = {
-        advent: "Advent",
-        christmas: "Christmas",
-        epiphany: "Epiphany",
-        lent: "Lent",
-        easter: "Easter",
-        pentecost: "Ordinary Time",
-        christmas_eve: "Christmas Eve",
-    };
-    return labels[season] || season;
+    return SEASON_LABELS[season] || season;
 }
 
-// Wait for pywebview to be ready
+/** Waits for pywebview JS bridge to be ready. */
 function waitForApi() {
     return new Promise(function(resolve) {
         if (window.pywebview && window.pywebview.api) {
@@ -79,8 +104,10 @@ function waitForApi() {
 window.updateProgress = function(data) {
     const fill = document.getElementById("progress-fill");
     const status = document.getElementById("progress-status");
+    const bar = document.querySelector(".progress-bar");
     if (fill) fill.style.width = data.pct + "%";
     if (status) status.textContent = data.detail;
+    if (bar) bar.setAttribute("aria-valuenow", data.pct);
 };
 
 // ── Login ────────────────────────────────────────────────────────────
@@ -140,14 +167,9 @@ function setupLogout() {
     });
 }
 
+/** Resets all wizard state and UI to initial values. */
 function resetAll() {
-    state.dateStr = "";
-    state.dateDisplay = "";
-    state.season = "";
-    state.defaults = null;
-    state.hymns = { gathering: null, sermon: null, communion: null, sending: null };
-    state.coverImage = "";
-    state.outputDir = "";
+    Object.assign(state, initialState());
 
     // Reset UI
     hide($("#day-info"));
@@ -186,6 +208,13 @@ function setupDateFetch() {
         const dateStr = dateInput.value;
         if (!dateStr) {
             showError($("#date-error"), "Please select a date.");
+            return;
+        }
+
+        // Validate date is parseable
+        const dateVal = new Date(dateStr + "T12:00:00");
+        if (isNaN(dateVal.getTime())) {
+            showError($("#date-error"), "Invalid date format.");
             return;
         }
 
@@ -247,6 +276,7 @@ function setupDateFetch() {
     });
 }
 
+/** Pre-fills liturgical setting controls from seasonal defaults. */
 function applyDefaults(defaults) {
     if (!defaults) return;
 
@@ -262,12 +292,7 @@ function applyDefaults(defaults) {
     // Canticle
     const canticleRadio = document.querySelector('input[name="canticle"][value="' + defaults.canticle + '"]');
     if (canticleRadio) canticleRadio.checked = true;
-    const canticleLabels = {
-        glory_to_god: "Glory to God",
-        this_is_the_feast: "This Is the Feast",
-        none: "None",
-    };
-    $("#hint-canticle").textContent = "Default: " + (canticleLabels[defaults.canticle] || defaults.canticle);
+    $("#hint-canticle").textContent = "Default: " + (CANTICLE_LABELS[defaults.canticle] || defaults.canticle);
 
     // Eucharistic form
     const epRadio = document.querySelector('input[name="eucharistic_form"][value="' + defaults.eucharistic_form + '"]');
@@ -306,49 +331,58 @@ function setupHymnFetch() {
                 return;
             }
 
+            // Clear previous results
             hideError(errorEl);
+            infoEl.textContent = "";
             hide(infoEl);
+            state.hymns[slotName] = null;
             this.disabled = true;
             this.textContent = "...";
 
-            // Search first
-            const searchResult = await window.pywebview.api.search_hymn(number, collection);
+            try {
+                // Search first
+                const searchResult = await window.pywebview.api.search_hymn(number, collection);
 
-            if (!searchResult.success) {
+                if (!searchResult.success) {
+                    this.disabled = false;
+                    this.textContent = "Fetch";
+                    showError(errorEl, searchResult.error || "Hymn not found.");
+                    return;
+                }
+
+                // Then fetch lyrics
+                const lyricsResult = await window.pywebview.api.fetch_hymn_lyrics(
+                    number, state.dateStr, collection
+                );
+
                 this.disabled = false;
                 this.textContent = "Fetch";
-                showError(errorEl, searchResult.error || "Hymn not found.");
-                return;
-            }
 
-            // Then fetch lyrics
-            const lyricsResult = await window.pywebview.api.fetch_hymn_lyrics(
-                number, state.dateStr, collection
-            );
-
-            this.disabled = false;
-            this.textContent = "Fetch";
-
-            if (lyricsResult.success) {
-                infoEl.textContent = searchResult.title +
-                    " \u2014 " + lyricsResult.verse_count + " verse(s)" +
-                    (lyricsResult.has_refrain ? " + refrain" : "");
-                show(infoEl);
-                state.hymns[slotName] = {
-                    number: number,
-                    collection: collection,
-                    title: searchResult.title,
-                };
-            } else {
-                // Lyrics failed but search succeeded — still usable (title only)
-                infoEl.textContent = searchResult.title + " (title only \u2014 lyrics unavailable)";
-                show(infoEl);
-                state.hymns[slotName] = {
-                    number: number,
-                    collection: collection,
-                    title: searchResult.title,
-                };
-                showError(errorEl, "Lyrics: " + (lyricsResult.error || "unavailable"));
+                if (lyricsResult.success) {
+                    infoEl.textContent = searchResult.title +
+                        " \u2014 " + lyricsResult.verse_count + " verse(s)" +
+                        (lyricsResult.has_refrain ? " + refrain" : "");
+                    show(infoEl);
+                    state.hymns[slotName] = {
+                        number: number,
+                        collection: collection,
+                        title: searchResult.title,
+                    };
+                } else {
+                    // Lyrics failed but search succeeded — still usable (title only)
+                    infoEl.textContent = searchResult.title + " (title only \u2014 lyrics unavailable)";
+                    show(infoEl);
+                    state.hymns[slotName] = {
+                        number: number,
+                        collection: collection,
+                        title: searchResult.title,
+                    };
+                    showError(errorEl, "Lyrics: " + (lyricsResult.error || "unavailable"));
+                }
+            } catch (err) {
+                this.disabled = false;
+                this.textContent = "Fetch";
+                showError(errorEl, "Failed to fetch hymn: " + (err.message || "unknown error"));
             }
         });
     });
@@ -358,25 +392,36 @@ function setupHymnFetch() {
 
 function setupFilePickers() {
     $("#cover-image-btn").addEventListener("click", async function() {
-        const result = await window.pywebview.api.choose_cover_image();
-        if (result.success) {
-            state.coverImage = result.path;
-            const name = result.path.split("/").pop().split("\\").pop();
-            $("#cover-image-path").textContent = name;
+        this.disabled = true;
+        try {
+            const result = await window.pywebview.api.choose_cover_image();
+            if (result.success) {
+                state.coverImage = result.path;
+                const name = result.path.split("/").pop().split("\\").pop();
+                $("#cover-image-path").textContent = name;
+            }
+        } finally {
+            this.disabled = false;
         }
     });
 
     $("#output-dir-btn").addEventListener("click", async function() {
-        const result = await window.pywebview.api.choose_output_directory();
-        if (result.success) {
-            state.outputDir = result.path;
-            $("#output-dir-path").textContent = result.path;
+        this.disabled = true;
+        try {
+            const result = await window.pywebview.api.choose_output_directory();
+            if (result.success) {
+                state.outputDir = result.path;
+                $("#output-dir-path").textContent = result.path;
+            }
+        } finally {
+            this.disabled = false;
         }
     });
 }
 
 // ── Generation ───────────────────────────────────────────────────────
 
+/** Collects all form data into a dict for the Python API. */
 function collectFormData() {
     // Liturgical settings
     const creedEl = document.querySelector('input[name="creed_type"]:checked');
@@ -423,10 +468,18 @@ function setupGenerate() {
         hideError(errorEl);
         hide($("#results-area"));
 
+        // Validate required state
+        if (!state.dateStr || !state.dateDisplay) {
+            showError(errorEl, "Please fetch content for a date first.");
+            return;
+        }
+
         this.disabled = true;
         show($("#progress-area"));
         $("#progress-fill").style.width = "0%";
         $("#progress-status").textContent = "Starting generation...";
+        const bar = document.querySelector(".progress-bar");
+        if (bar) bar.setAttribute("aria-valuenow", 0);
 
         const formData = collectFormData();
         const result = await window.pywebview.api.generate_all(formData);
@@ -443,19 +496,12 @@ function setupGenerate() {
         const resultsList = $("#results-list");
         resultsList.innerHTML = "";
 
-        const docLabels = {
-            bulletin: "Bulletin for Congregation",
-            prayers: "Pulpit Prayers",
-            scripture: "Pulpit Scripture",
-            large_print: "Full with Hymns LARGE PRINT",
-        };
-
         if (result.results) {
             Object.keys(result.results).forEach(function(key) {
                 const li = document.createElement("li");
                 const path = result.results[key];
                 const name = path.split("/").pop().split("\\").pop();
-                li.textContent = (docLabels[key] || key) + " \u2014 " + name;
+                li.textContent = (DOC_LABELS[key] || key) + " \u2014 " + name;
                 resultsList.appendChild(li);
             });
         }
@@ -468,7 +514,7 @@ function setupGenerate() {
         if (result.errors && Object.keys(result.errors).length > 0) {
             Object.keys(result.errors).forEach(function(key) {
                 const li = document.createElement("li");
-                li.textContent = (docLabels[key] || key) + ": " + result.errors[key];
+                li.textContent = (DOC_LABELS[key] || key) + ": " + result.errors[key];
                 errorsList.appendChild(li);
             });
             show(errorsArea);
