@@ -10,20 +10,23 @@ requires-python = ">=3.9"
 dependencies = [
     "httpx",
     "python-dotenv",
+    "Jinja2>=3.1",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "playwright",
+    "playwright>=1.40",
     "pytest",
 ]
 renderer = [
-    "python-docx",
-]
-web = [
-    "fastapi",
-    "uvicorn[standard]",
+    "pypdf",
+    "Pillow",
+    "playwright>=1.40",
 ]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bulletin_maker"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

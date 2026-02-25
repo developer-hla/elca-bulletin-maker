@@ -23,5 +23,7 @@ venv/
 
 # Project
 examples/
+output/
 captured_requests.json
 test_notation.jpg
+format_metadata.json
