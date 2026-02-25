@@ -10,12 +10,16 @@ import io
 import os
 import re
 import zipfile
-
 import logging
 
 import httpx
 
-from bulletin_maker.exceptions import AuthError, ContentNotFoundError, ParseError
+from bulletin_maker.exceptions import (
+    AuthError,
+    BulletinError,
+    ContentNotFoundError,
+    ParseError,
+)
 from bulletin_maker.sns.models import DayContent, HymnLyrics, HymnResult, Reading
 
 logger = logging.getLogger(__name__)
@@ -38,6 +42,33 @@ class SundaysClient:
         )
         self._logged_in = False
 
+    # -- HTTP helpers -------------------------------------------------------
+
+    def _request(self, method: str, url: str, **kwargs) -> httpx.Response:
+        """Execute an HTTP request, converting httpx errors to BulletinError."""
+        try:
+            resp = self.client.request(method, url, **kwargs)
+            resp.raise_for_status()
+            return resp
+        except httpx.HTTPStatusError as exc:
+            status = exc.response.status_code
+            if status in (401, 403):
+                raise AuthError(
+                    f"Authentication failed (HTTP {status}). "
+                    "Session may have expired."
+                ) from exc
+            raise BulletinError(
+                f"S&S returned HTTP {status} for {method} request"
+            ) from exc
+        except httpx.TimeoutException as exc:
+            raise BulletinError(
+                f"Request timed out connecting to S&S"
+            ) from exc
+        except httpx.RequestError as exc:
+            raise BulletinError(
+                f"Network error connecting to S&S: {exc}"
+            ) from exc
+
     # -- Auth ---------------------------------------------------------------
 
     def login(self, username: str | None = None, password: str | None = None):
@@ -51,8 +82,7 @@ class SundaysClient:
             raise AuthError("Credentials not provided and not found in .env")
 
         # Step 1: GET the login page to grab the CSRF token
-        resp = self.client.get(f"{BASE}/Account/Login")
-        resp.raise_for_status()
+        resp = self._request("GET", f"{BASE}/Account/Login")
 
         token_match = re.search(
             r'name="__RequestVerificationToken"[^>]*value="([^"]+)"', resp.text
@@ -63,7 +93,8 @@ class SundaysClient:
         token = token_match.group(1)
 
         # Step 2: POST credentials
-        resp = self.client.post(
+        resp = self._request(
+            "POST",
             f"{BASE}/Account/Login",
             data={
                 "__RequestVerificationToken": token,
@@ -71,7 +102,6 @@ class SundaysClient:
                 "Password": password,
             },
         )
-        resp.raise_for_status()
 
         # Check for successful login — the page should welcome the user
         if "Welcome back" in resp.text or "/Account/LogOff" in resp.text:
@@ -85,7 +115,7 @@ class SundaysClient:
                 self._logged_in = True
                 logger.info("Logged in successfully.")
             else:
-                raise AuthError(f"Unexpected response after login. URL: {resp.url}")
+                raise AuthError("Unexpected response after login")
 
     def _ensure_logged_in(self):
         if not self._logged_in:
@@ -101,11 +131,13 @@ class SundaysClient:
             date: Date string like "2026-2-22" (no zero-padding).
             event_date_id: Internal S&S day ID. Use 0 for auto-resolve.
         """
+        if not re.match(r'^\d{4}-\d{1,2}-\d{1,2}$', date):
+            raise ValueError(f"Invalid date format: {date!r}. Expected 'YYYY-M-D'.")
+
         self._ensure_logged_in()
 
         url = f"{BASE}/Home/DayTexts/{date}/{event_date_id}"
-        resp = self.client.get(url)
-        resp.raise_for_status()
+        resp = self._request("GET", url)
 
         return self._parse_day_texts(date, resp.text)
 
@@ -195,8 +227,7 @@ class SundaysClient:
 
     def _get_music_form_fields(self) -> dict:
         """GET /Music and extract all search form fields."""
-        resp = self.client.get(f"{BASE}/Music")
-        resp.raise_for_status()
+        resp = self._request("GET", f"{BASE}/Music")
 
         form_match = re.search(
             r'<form action="/Music/Search" method="post">(.*?)</form>',
@@ -235,6 +266,11 @@ class SundaysClient:
 
         Returns list of matching HymnResult (usually 1 for exact number match).
         """
+        if not number or not number.strip():
+            raise ValueError("Hymn number must not be empty.")
+        if collection not in ("ELW", "ACS"):
+            raise ValueError(f"Unknown collection: {collection!r}. Expected 'ELW' or 'ACS'.")
+
         self._ensure_logged_in()
 
         fields = self._get_music_form_fields()
@@ -250,8 +286,7 @@ class SundaysClient:
 
         fields["Search.HymnSongNumber"] = number
 
-        resp = self.client.post(f"{BASE}/Music/Search", data=fields)
-        resp.raise_for_status()
+        resp = self._request("POST", f"{BASE}/Music/Search", data=fields)
 
         return self._parse_search_results(resp.text)
 
@@ -307,13 +342,16 @@ class SundaysClient:
 
     def get_hymn_details(self, atom_id: str) -> HymnResult:
         """Fetch detail for a hymn by its atomId — gets image URLs and copyright."""
+        if not atom_id:
+            raise ValueError("atom_id must not be empty.")
+
         self._ensure_logged_in()
 
-        resp = self.client.post(
+        resp = self._request(
+            "POST",
             f"{BASE}/Music/_Details",
             data={"atomId": atom_id},
         )
-        resp.raise_for_status()
 
         html = resp.text
         result = HymnResult(atom_id=atom_id, title="")
@@ -346,13 +384,15 @@ class SundaysClient:
 
     def download_image(self, url: str) -> bytes:
         """Download an image (notation, thumbnail, etc.) and return raw bytes."""
+        if not url:
+            raise ValueError("Image URL must not be empty.")
+
         self._ensure_logged_in()
 
         if url.startswith("/"):
             url = f"{BASE}{url}"
 
-        resp = self.client.get(url)
-        resp.raise_for_status()
+        resp = self._request("GET", url)
         return resp.content
 
     # -- Words Download -----------------------------------------------------
@@ -367,9 +407,15 @@ class SundaysClient:
         Returns:
             Raw RTF string extracted from the ZIP response.
         """
+        if not atom_id:
+            raise ValueError("atom_id must not be empty.")
+        if not re.match(r'^\d{1,2}/\d{1,2}/\d{4}$', use_date):
+            raise ValueError(f"Invalid use_date format: {use_date!r}. Expected 'M/D/YYYY'.")
+
         self._ensure_logged_in()
 
-        resp = self.client.post(
+        resp = self._request(
+            "POST",
             f"{BASE}/File/Download",
             data={
                 "atomId": atom_id,
@@ -378,7 +424,6 @@ class SundaysClient:
                 "numCopies": "1",
             },
         )
-        resp.raise_for_status()
 
         try:
             zf = zipfile.ZipFile(io.BytesIO(resp.content))
@@ -410,6 +455,11 @@ class SundaysClient:
         Returns:
             HymnLyrics populated from the S&S RTF download.
         """
+        if not number or not number.strip():
+            raise ValueError("Hymn number must not be empty.")
+        if not re.match(r'^\d{1,2}/\d{1,2}/\d{4}$', use_date):
+            raise ValueError(f"Invalid use_date format: {use_date!r}. Expected 'M/D/YYYY'.")
+
         from bulletin_maker.sns.rtf_parser import parse_rtf_lyrics
 
         results = self.search_hymn(number, collection)

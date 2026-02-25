@@ -221,7 +221,11 @@ function setupDateFetch() {
         (result.readings || []).forEach(function(r) {
             const div = document.createElement("div");
             div.className = "reading-item";
-            div.innerHTML = '<span class="reading-label">' + r.label + ':</span> ' + r.citation;
+            const span = document.createElement("span");
+            span.className = "reading-label";
+            span.textContent = r.label + ":";
+            div.appendChild(span);
+            div.appendChild(document.createTextNode(" " + r.citation));
             readingsEl.appendChild(div);
         });
 

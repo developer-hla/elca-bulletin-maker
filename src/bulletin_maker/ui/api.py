@@ -95,7 +95,10 @@ class BulletinAPI:
             client = self._get_client()
 
             # Convert "2026-02-22" to "2026-2-22" (S&S API format)
-            dt = datetime.strptime(date_str, "%Y-%m-%d")
+            try:
+                dt = datetime.strptime(date_str, "%Y-%m-%d")
+            except ValueError:
+                return {"success": False, "error": f"Invalid date format: {date_str}"}
             api_date = f"{dt.year}-{dt.month}-{dt.day}"
 
             self._day = client.get_day_texts(api_date)
@@ -178,7 +181,10 @@ class BulletinAPI:
             client = self._get_client()
 
             # Convert date for S&S use_date format (M/D/YYYY)
-            dt = datetime.strptime(date_str, "%Y-%m-%d")
+            try:
+                dt = datetime.strptime(date_str, "%Y-%m-%d")
+            except ValueError:
+                return {"success": False, "error": f"Invalid date format: {date_str}"}
             use_date = f"{dt.month}/{dt.day}/{dt.year}"
 
             lyrics = client.fetch_hymn_lyrics(number, use_date, collection)
@@ -258,6 +264,11 @@ class BulletinAPI:
         try:
             if self._day is None:
                 return {"success": False, "error": "No content fetched. Pick a date first."}
+
+            date = form_data.get("date")
+            date_display = form_data.get("date_display")
+            if not date or not date_display:
+                return {"success": False, "error": "Missing required fields: date and date_display."}
 
             output_dir = Path(form_data.get("output_dir", "output"))
             output_dir.mkdir(parents=True, exist_ok=True)
