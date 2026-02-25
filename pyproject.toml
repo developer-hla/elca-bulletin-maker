@@ -23,6 +23,15 @@ renderer = [
     "Pillow",
     "playwright>=1.40",
 ]
+app = [
+    "pywebview>=5.0",
+    "pypdf",
+    "Pillow",
+    "playwright>=1.40",
+]
+
+[project.scripts]
+bulletin-maker = "bulletin_maker.ui.app:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bulletin_maker"]

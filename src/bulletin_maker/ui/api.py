@@ -1,0 +1,425 @@
+"""Python-JS bridge for the bulletin maker UI.
+
+All public methods are exposed to JavaScript via pywebview's js_api.
+Every method returns a dict with at least {"success": bool}.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import platform
+import subprocess
+import re
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
+
+import webview
+
+from bulletin_maker.exceptions import AuthError, BulletinError
+from bulletin_maker.sns.client import SundaysClient
+from bulletin_maker.sns.models import DayContent, HymnLyrics, ServiceConfig
+from bulletin_maker.renderer.season import (
+    detect_season,
+    get_seasonal_config,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class BulletinAPI:
+    """Bridge between the pywebview JS frontend and the Python backend."""
+
+    def __init__(self) -> None:
+        self._client: Optional[SundaysClient] = None
+        self._day: Optional[DayContent] = None
+        self._window: Optional[webview.Window] = None
+        self._hymn_cache: dict[str, dict] = {}
+
+    def set_window(self, window: webview.Window) -> None:
+        self._window = window
+
+    def _push_progress(self, step: str, detail: str, pct: int) -> None:
+        """Push progress update to the JS frontend."""
+        if self._window:
+            payload = json.dumps({"step": step, "detail": detail, "pct": pct})
+            self._window.evaluate_js(f"updateProgress({payload})")
+
+    def _get_client(self) -> SundaysClient:
+        """Get or create the S&S client."""
+        if self._client is None:
+            self._client = SundaysClient()
+        return self._client
+
+    # ── Credentials ───────────────────────────────────────────────────
+
+    def login(self, username: str, password: str) -> dict:
+        """Login to S&S with provided credentials."""
+        try:
+            client = self._get_client()
+            client.login(username, password)
+            return {"success": True, "username": username}
+        except AuthError as e:
+            return {"success": False, "error": str(e)}
+        except Exception as e:
+            logger.exception("Login error")
+            return {"success": False, "error": str(e)}
+
+    def logout(self) -> dict:
+        """Close client session and reset state."""
+        try:
+            if self._client:
+                self._client.close()
+                self._client = None
+            self._day = None
+            self._hymn_cache.clear()
+            return {"success": True}
+        except Exception as e:
+            logger.exception("Logout error")
+            return {"success": False, "error": str(e)}
+
+    # ── Content Fetching ──────────────────────────────────────────────
+
+    def fetch_day_content(self, date_str: str, date_display: str) -> dict:
+        """Fetch S&S content for a date. Detect season and return defaults.
+
+        Args:
+            date_str: Date in "YYYY-MM-DD" format (from HTML date input).
+            date_display: Human-readable date like "February 22, 2026".
+
+        Returns dict with day title, season, reading citations, and
+        seasonal default values for the liturgical settings.
+        """
+        try:
+            client = self._get_client()
+
+            # Convert "2026-02-22" to "2026-2-22" (S&S API format)
+            dt = datetime.strptime(date_str, "%Y-%m-%d")
+            api_date = f"{dt.year}-{dt.month}-{dt.day}"
+
+            self._day = client.get_day_texts(api_date)
+
+            season = detect_season(self._day.title)
+            seasonal = get_seasonal_config(season)
+
+            # Extract day name from title
+            day_name = self._day.title
+            date_match = re.search(r'\d{4}\s+(.+)', day_name)
+            if date_match:
+                day_name = date_match.group(1).strip()
+            day_name = re.sub(r',?\s*Year\s+[ABC]$', '', day_name).strip()
+
+            readings = []
+            for r in self._day.readings:
+                readings.append({
+                    "label": r.label,
+                    "citation": r.citation,
+                })
+
+            return {
+                "success": True,
+                "title": self._day.title,
+                "day_name": day_name,
+                "season": season.value,
+                "readings": readings,
+                "defaults": {
+                    "creed_type": seasonal.creed_default,
+                    "include_kyrie": seasonal.has_kyrie,
+                    "canticle": seasonal.canticle,
+                    "eucharistic_form": seasonal.eucharistic_form,
+                    "include_memorial_acclamation": seasonal.has_memorial_acclamation,
+                },
+            }
+        except BulletinError as e:
+            return {"success": False, "error": str(e)}
+        except Exception as e:
+            logger.exception("Error fetching day content")
+            return {"success": False, "error": str(e)}
+
+    # ── Hymns ─────────────────────────────────────────────────────────
+
+    def search_hymn(self, number: str, collection: str = "ELW") -> dict:
+        """Search S&S for a hymn by number.
+
+        Returns title and verse count on success.
+        """
+        try:
+            client = self._get_client()
+            results = client.search_hymn(number, collection)
+
+            if not results:
+                return {"success": False, "error": f"No results for {collection} {number}"}
+
+            hymn = results[0]
+            return {
+                "success": True,
+                "title": hymn.title,
+                "atom_id": hymn.atom_id,
+                "hymn_numbers": hymn.hymn_numbers,
+                "has_words": bool(hymn.words_atom_id),
+            }
+        except BulletinError as e:
+            return {"success": False, "error": str(e)}
+        except Exception as e:
+            logger.exception("Error searching hymn")
+            return {"success": False, "error": str(e)}
+
+    def fetch_hymn_lyrics(self, number: str, date_str: str,
+                          collection: str = "ELW") -> dict:
+        """Download and parse hymn lyrics from S&S.
+
+        Args:
+            number: Hymn number (e.g. "335").
+            date_str: Date in "YYYY-MM-DD" format.
+            collection: "ELW" or "ACS".
+        """
+        try:
+            client = self._get_client()
+
+            # Convert date for S&S use_date format (M/D/YYYY)
+            dt = datetime.strptime(date_str, "%Y-%m-%d")
+            use_date = f"{dt.month}/{dt.day}/{dt.year}"
+
+            lyrics = client.fetch_hymn_lyrics(number, use_date, collection)
+
+            cache_key = f"{collection}_{number}"
+            self._hymn_cache[cache_key] = {
+                "number": lyrics.number,
+                "title": lyrics.title,
+                "verses": lyrics.verses,
+                "refrain": lyrics.refrain,
+                "copyright": lyrics.copyright,
+            }
+
+            return {
+                "success": True,
+                "number": lyrics.number,
+                "title": lyrics.title,
+                "verse_count": len(lyrics.verses),
+                "has_refrain": bool(lyrics.refrain),
+            }
+        except BulletinError as e:
+            return {"success": False, "error": str(e)}
+        except Exception as e:
+            logger.exception("Error fetching hymn lyrics")
+            return {"success": False, "error": str(e)}
+
+    # ── File Pickers ──────────────────────────────────────────────────
+
+    def choose_output_directory(self) -> dict:
+        """Open native folder picker dialog."""
+        try:
+            if not self._window:
+                return {"success": False, "error": "Window not available"}
+
+            result = self._window.create_file_dialog(
+                webview.FOLDER_DIALOG,
+                directory="",
+            )
+            if result and len(result) > 0:
+                return {"success": True, "path": result[0]}
+            return {"success": False, "error": "No folder selected"}
+        except Exception as e:
+            logger.exception("Error choosing output directory")
+            return {"success": False, "error": str(e)}
+
+    def choose_cover_image(self) -> dict:
+        """Open native file picker for cover image."""
+        try:
+            if not self._window:
+                return {"success": False, "error": "Window not available"}
+
+            file_types = ("Image Files (*.jpg;*.jpeg;*.png;*.tif;*.tiff)",)
+            result = self._window.create_file_dialog(
+                webview.OPEN_DIALOG,
+                directory="",
+                file_types=file_types,
+            )
+            if result and len(result) > 0:
+                return {"success": True, "path": result[0]}
+            return {"success": False, "error": "No file selected"}
+        except Exception as e:
+            logger.exception("Error choosing cover image")
+            return {"success": False, "error": str(e)}
+
+    # ── Generation ────────────────────────────────────────────────────
+
+    def generate_all(self, form_data: dict) -> dict:
+        """Generate all 4 documents from the wizard form data.
+
+        form_data keys:
+            date, date_display, creed_type, include_kyrie, canticle,
+            eucharistic_form, include_memorial_acclamation,
+            gathering_hymn, sermon_hymn, communion_hymn, sending_hymn,
+            prelude_title, prelude_performer, postlude_title,
+            postlude_performer, choral_title, cover_image, output_dir
+        """
+        try:
+            if self._day is None:
+                return {"success": False, "error": "No content fetched. Pick a date first."}
+
+            output_dir = Path(form_data.get("output_dir", "output"))
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            # Build HymnLyrics objects from cached data
+            def _build_hymn(slot: str) -> Optional[HymnLyrics]:
+                hymn_data = form_data.get(slot)
+                if not hymn_data:
+                    return None
+                number = hymn_data.get("number", "")
+                collection = hymn_data.get("collection", "ELW")
+                cache_key = f"{collection}_{number}"
+                cached = self._hymn_cache.get(cache_key)
+                if cached:
+                    return HymnLyrics(
+                        number=cached["number"],
+                        title=cached["title"],
+                        verses=cached["verses"],
+                        refrain=cached["refrain"],
+                        copyright=cached["copyright"],
+                    )
+                # Minimal fallback — title only (no lyrics fetched)
+                title = hymn_data.get("title", "")
+                return HymnLyrics(
+                    number=f"{collection} {number}",
+                    title=title,
+                    verses=[],
+                )
+
+            config = ServiceConfig(
+                date=form_data.get("date", ""),
+                date_display=form_data.get("date_display", ""),
+                creed_type=form_data.get("creed_type"),
+                include_kyrie=form_data.get("include_kyrie"),
+                canticle=form_data.get("canticle"),
+                eucharistic_form=form_data.get("eucharistic_form"),
+                include_memorial_acclamation=form_data.get("include_memorial_acclamation"),
+                gathering_hymn=_build_hymn("gathering_hymn"),
+                sermon_hymn=_build_hymn("sermon_hymn"),
+                communion_hymn=_build_hymn("communion_hymn"),
+                sending_hymn=_build_hymn("sending_hymn"),
+                prelude_title=form_data.get("prelude_title", ""),
+                prelude_performer=form_data.get("prelude_performer", ""),
+                postlude_title=form_data.get("postlude_title", ""),
+                postlude_performer=form_data.get("postlude_performer", ""),
+                choral_title=form_data.get("choral_title", ""),
+                cover_image=form_data.get("cover_image", ""),
+            )
+
+            results = {}
+            errors = {}
+
+            from bulletin_maker.renderer import (
+                generate_bulletin,
+                generate_large_print,
+                generate_pulpit_prayers,
+                generate_pulpit_scripture,
+            )
+
+            # 1. Bulletin (must be first — determines creed page)
+            self._push_progress("bulletin", "Generating bulletin booklet...", 10)
+            try:
+                bulletin_path, creed_page = generate_bulletin(
+                    self._day, config,
+                    output_path=output_dir / "Bulletin for Congregation.pdf",
+                    client=self._client,
+                )
+                config.creed_page_num = creed_page
+                results["bulletin"] = str(bulletin_path)
+                self._push_progress("bulletin", f"Bulletin saved (creed p.{creed_page})", 30)
+            except Exception as e:
+                logger.exception("Bulletin generation failed")
+                errors["bulletin"] = str(e)
+                self._push_progress("bulletin", f"Bulletin failed: {e}", 30)
+
+            # 2. Pulpit Prayers (needs creed page from bulletin)
+            self._push_progress("prayers", "Generating pulpit prayers...", 40)
+            try:
+                creed_type = config.creed_type or "apostles"
+                prayers_label = "NICENE" if creed_type == "nicene" else "APOSTLES"
+                prayers_path = generate_pulpit_prayers(
+                    self._day,
+                    config.date_display,
+                    creed_type=creed_type,
+                    creed_page_num=config.creed_page_num,
+                    output_path=output_dir / f"Pulpit PRAYERS + {prayers_label} 8.5 x 11.pdf",
+                )
+                results["prayers"] = str(prayers_path)
+                self._push_progress("prayers", "Pulpit prayers saved", 55)
+            except Exception as e:
+                logger.exception("Pulpit prayers generation failed")
+                errors["prayers"] = str(e)
+                self._push_progress("prayers", f"Prayers failed: {e}", 55)
+
+            # 3. Pulpit Scripture
+            self._push_progress("scripture", "Generating pulpit scripture...", 60)
+            try:
+                scripture_path = generate_pulpit_scripture(
+                    self._day,
+                    config.date_display,
+                    output_path=output_dir / "Pulpit SCRIPTURE 8.5 x 11.pdf",
+                )
+                results["scripture"] = str(scripture_path)
+                self._push_progress("scripture", "Pulpit scripture saved", 75)
+            except Exception as e:
+                logger.exception("Pulpit scripture generation failed")
+                errors["scripture"] = str(e)
+                self._push_progress("scripture", f"Scripture failed: {e}", 75)
+
+            # 4. Large Print
+            self._push_progress("large_print", "Generating large print...", 80)
+            try:
+                lp_path = generate_large_print(
+                    self._day, config,
+                    output_path=output_dir / "Full with Hymns LARGE PRINT.pdf",
+                )
+                results["large_print"] = str(lp_path)
+                self._push_progress("large_print", "Large print saved", 95)
+            except Exception as e:
+                logger.exception("Large print generation failed")
+                errors["large_print"] = str(e)
+                self._push_progress("large_print", f"Large print failed: {e}", 95)
+
+            self._push_progress("done", "Generation complete!", 100)
+
+            return {
+                "success": len(errors) == 0,
+                "results": results,
+                "errors": errors,
+                "output_dir": str(output_dir),
+            }
+        except Exception as e:
+            logger.exception("Generation error")
+            return {"success": False, "error": str(e)}
+
+    # ── Utilities ─────────────────────────────────────────────────────
+
+    def open_output_folder(self, path: str) -> dict:
+        """Open a folder in the system file manager."""
+        try:
+            folder = Path(path)
+            if not folder.exists():
+                return {"success": False, "error": f"Folder not found: {path}"}
+
+            system = platform.system()
+            if system == "Darwin":
+                subprocess.Popen(["open", str(folder)])
+            elif system == "Windows":
+                subprocess.Popen(["explorer", str(folder)])
+            else:
+                subprocess.Popen(["xdg-open", str(folder)])
+
+            return {"success": True}
+        except Exception as e:
+            logger.exception("Error opening folder")
+            return {"success": False, "error": str(e)}
+
+    def cleanup(self) -> None:
+        """Close the S&S client session."""
+        if self._client:
+            try:
+                self._client.close()
+            except Exception:
+                pass
+            self._client = None
