@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from bulletin_maker.sns import SundaysClient, HymnLyrics, ServiceConfig
 from bulletin_maker.renderer import (
+    generate_bulletin,
     generate_pulpit_scripture,
     generate_pulpit_prayers,
     generate_large_print,
@@ -129,35 +130,6 @@ def main():
     print("Generating Documents for Lent 1A (Feb 22, 2026)")
     print("=" * 60)
 
-    print("\n1. Fetching content from Sundays & Seasons...")
-    with SundaysClient() as client:
-        day = client.get_day_texts(DATE)
-
-    print(f"   Title: {day.title}")
-    print(f"   Readings: {len(day.readings)}")
-    for r in day.readings:
-        print(f"     {r.label}: {r.citation}")
-    print(f"   Prayers HTML length: {len(day.prayers_html)} chars")
-    print(f"   Offering Prayer: {len(day.offering_prayer_html)} chars")
-    print(f"   Blessing: {len(day.blessing_html)} chars")
-    print(f"   Dismissal: {len(day.dismissal_html)} chars")
-
-    print("\n2. Generating Pulpit Scripture PDF...")
-    scripture_path = generate_pulpit_scripture(
-        day, DATE_DISPLAY, OUTPUT_DIR / "Pulpit SCRIPTURE 8.5 x 11.pdf"
-    )
-    print(f"   Saved: {scripture_path}")
-
-    print("\n3. Generating Pulpit Prayers PDF...")
-    prayers_path = generate_pulpit_prayers(
-        day, DATE_DISPLAY,
-        creed_type="nicene",
-        creed_page_num=None,
-        output_path=OUTPUT_DIR / "Pulpit PRAYERS + NICENE 8.5 x 11.pdf",
-    )
-    print(f"   Saved: {prayers_path}")
-
-    print("\n4. Generating Large Print PDF...")
     config = ServiceConfig(
         date=DATE,
         date_display=DATE_DISPLAY,
@@ -167,6 +139,43 @@ def main():
         communion_hymn=COMMUNION_HYMN,
         sending_hymn=SENDING_HYMN,
     )
+
+    print("\n1. Fetching content from Sundays & Seasons...")
+    with SundaysClient() as client:
+        day = client.get_day_texts(DATE)
+
+        print(f"   Title: {day.title}")
+        print(f"   Readings: {len(day.readings)}")
+        for r in day.readings:
+            print(f"     {r.label}: {r.citation}")
+        print(f"   Prayers HTML length: {len(day.prayers_html)} chars")
+
+        print("\n2. Generating Bulletin (booklet) PDF...")
+        bulletin_path, creed_page = generate_bulletin(
+            day, config,
+            output_path=OUTPUT_DIR / "Bulletin for Congregation.pdf",
+            client=client,
+            keep_intermediates=True,
+        )
+        print(f"   Saved: {bulletin_path}")
+        print(f"   Creed page: {creed_page}")
+
+    print("\n3. Generating Pulpit Scripture PDF...")
+    scripture_path = generate_pulpit_scripture(
+        day, DATE_DISPLAY, OUTPUT_DIR / "Pulpit SCRIPTURE 8.5 x 11.pdf"
+    )
+    print(f"   Saved: {scripture_path}")
+
+    print("\n4. Generating Pulpit Prayers PDF...")
+    prayers_path = generate_pulpit_prayers(
+        day, DATE_DISPLAY,
+        creed_type="nicene",
+        creed_page_num=creed_page,
+        output_path=OUTPUT_DIR / "Pulpit PRAYERS + NICENE 8.5 x 11.pdf",
+    )
+    print(f"   Saved: {prayers_path}")
+
+    print("\n5. Generating Large Print PDF...")
     lp_path = generate_large_print(
         day, config,
         output_path=OUTPUT_DIR / "Full with Hymns LARGE PRINT.pdf",

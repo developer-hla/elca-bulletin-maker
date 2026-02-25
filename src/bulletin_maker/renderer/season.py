@@ -56,7 +56,7 @@ _SEASON_CONFIGS = {
         has_memorial_acclamation=True,
     ),
     LiturgicalSeason.LENT: SeasonalConfig(
-        has_kyrie=True,
+        has_kyrie=False,
         canticle="none",
         creed_default="nicene",
         eucharistic_form="extended",
@@ -124,3 +124,28 @@ def detect_season(title: str) -> LiturgicalSeason:
 def get_seasonal_config(season: LiturgicalSeason) -> SeasonalConfig:
     """Get the liturgical configuration for a season."""
     return _SEASON_CONFIGS[season]
+
+
+def fill_seasonal_defaults(config: object, season: LiturgicalSeason) -> None:
+    """Fill any None liturgical-choice fields on config from the season defaults.
+
+    Mutates ``config`` in place.  Only touches fields that are None;
+    values already set by the user/wizard are left unchanged.
+
+    Args:
+        config: A ServiceConfig instance (imported as ``object`` to avoid
+                circular imports — season.py should not import models).
+        season: The detected liturgical season.
+    """
+    seasonal = _SEASON_CONFIGS[season]
+
+    if getattr(config, "creed_type", None) is None:
+        config.creed_type = seasonal.creed_default  # type: ignore[attr-defined]
+    if getattr(config, "include_kyrie", None) is None:
+        config.include_kyrie = seasonal.has_kyrie  # type: ignore[attr-defined]
+    if getattr(config, "canticle", None) is None:
+        config.canticle = seasonal.canticle  # type: ignore[attr-defined]
+    if getattr(config, "eucharistic_form", None) is None:
+        config.eucharistic_form = seasonal.eucharistic_form  # type: ignore[attr-defined]
+    if getattr(config, "include_memorial_acclamation", None) is None:
+        config.include_memorial_acclamation = seasonal.has_memorial_acclamation  # type: ignore[attr-defined]

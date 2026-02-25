@@ -18,6 +18,7 @@ def render_to_pdf(
     header_right: str = "",
     pulpit_header: bool = False,
     scale: float = 1.0,
+    page_size: str | dict = "Letter",
 ) -> Path:
     """Render an HTML string to PDF via headless Chromium (Playwright).
 
@@ -31,6 +32,9 @@ def render_to_pdf(
         pulpit_header: If True, use the pulpit-style header with
             Leader: field and underline.
         scale: Page rendering scale (0.1-2.0). Use < 1.0 to shrink.
+        page_size: Page format string (e.g. "Letter") or dict with
+            "width" and "height" CSS lengths (e.g. {"width": "7in",
+            "height": "8.5in"}).
 
     Returns:
         Path to the generated PDF.
@@ -55,11 +59,16 @@ def render_to_pdf(
 
         pdf_opts = {
             "path": str(output_path),
-            "format": "Letter",
             "print_background": True,
             "margin": margins,
             "scale": scale,
         }
+
+        if isinstance(page_size, dict):
+            pdf_opts["width"] = page_size["width"]
+            pdf_opts["height"] = page_size["height"]
+        else:
+            pdf_opts["format"] = page_size
 
         if display_footer or pulpit_header:
             pdf_opts["display_header_footer"] = True
@@ -110,6 +119,85 @@ def count_pages(pdf_path: Path) -> int | None:
         return len(PdfReader(str(pdf_path)).pages)
     except Exception:
         return None
+
+
+def impose_booklet(input_pdf: Path, output_pdf: Path) -> Path:
+    """Rearrange sequential half-pages into saddle-stitched booklet spreads.
+
+    Takes a PDF of sequential 7"x8.5" pages and produces legal-landscape
+    (14"x8.5") sheets with pages arranged for duplex printing and folding.
+
+    Booklet imposition for N pages (padded to multiple of 4):
+      Sheet i front: [N-2i, 2i+1]  (left, right)
+      Sheet i back:  [2i+2, N-2i-1]
+
+    Args:
+        input_pdf: Path to the sequential half-page PDF.
+        output_pdf: Where to write the imposed booklet PDF.
+
+    Returns:
+        Path to the imposed PDF.
+    """
+    from pypdf import PdfReader, PdfWriter, PageObject, Transformation
+
+    reader = PdfReader(str(input_pdf))
+    n = len(reader.pages)
+
+    # Pad to multiple of 4
+    padded = n + (4 - n % 4) % 4
+
+    # Half-page width in points (7in = 504pt), full height (8.5in = 612pt)
+    half_w = 504.0
+    page_h = 612.0
+    full_w = half_w * 2  # 1008pt = 14in
+
+    writer = PdfWriter()
+
+    num_sheets = padded // 2
+    for i in range(0, num_sheets, 2):
+        sheet_idx = i // 2
+        # Front side: left = page (padded - 2*sheet_idx - 1), right = page (2*sheet_idx)
+        left_idx = padded - 2 * sheet_idx - 1
+        right_idx = 2 * sheet_idx
+
+        front = PageObject.create_blank_page(width=full_w, height=page_h)
+        if left_idx < n:
+            front.merge_transformed_page(
+                reader.pages[left_idx],
+                Transformation().translate(tx=0, ty=0),
+            )
+        if right_idx < n:
+            front.merge_transformed_page(
+                reader.pages[right_idx],
+                Transformation().translate(tx=half_w, ty=0),
+            )
+        writer.add_page(front)
+
+        # Back side: left = page (2*sheet_idx + 1), right = page (padded - 2*sheet_idx - 2)
+        back_left_idx = 2 * sheet_idx + 1
+        back_right_idx = padded - 2 * sheet_idx - 2
+
+        back = PageObject.create_blank_page(width=full_w, height=page_h)
+        if back_left_idx < n:
+            back.merge_transformed_page(
+                reader.pages[back_left_idx],
+                Transformation().translate(tx=0, ty=0),
+            )
+        if back_right_idx < n:
+            back.merge_transformed_page(
+                reader.pages[back_right_idx],
+                Transformation().translate(tx=half_w, ty=0),
+            )
+        writer.add_page(back)
+
+    output_pdf = Path(output_pdf).with_suffix(".pdf")
+    output_pdf.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_pdf, "wb") as f:
+        writer.write(f)
+
+    logger.info("Booklet imposed: %d pages -> %d sheets, saved %s",
+                n, padded // 4, output_pdf)
+    return output_pdf
 
 
 def render_with_shrink(

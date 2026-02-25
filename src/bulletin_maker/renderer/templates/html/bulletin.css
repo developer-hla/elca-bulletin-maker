@@ -1,0 +1,283 @@
+/* Bulletin Styles — Ascension Lutheran Church
+   Standard bulletin: 7"×8.5" half-pages, two-column layout, ~11pt serif body.
+   Rendered as sequential pages, then imposed into booklet spreads. */
+
+/* ── Reset ── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: Cambria, Georgia, 'Times New Roman', serif;
+    font-size: 11pt;
+    line-height: 1.35;
+    color: #000;
+    orphans: 3;
+    widows: 3;
+}
+
+p { margin: 0; }
+
+/* ── Cover Page ── */
+.cover {
+    page-break-after: always;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 95%;
+}
+
+.cover-church-name {
+    font-size: 22pt;
+    font-weight: bold;
+    margin-bottom: 4pt;
+}
+
+.cover-address {
+    font-size: 9pt;
+    line-height: 1.4;
+}
+
+.cover-logo {
+    margin: 24pt 0;
+    max-width: 3in;
+    max-height: 3in;
+}
+
+.cover-date {
+    font-size: 12pt;
+    font-weight: bold;
+    margin-top: 18pt;
+    margin-bottom: 4pt;
+}
+
+.cover-day-name {
+    font-size: 18pt;
+    font-weight: bold;
+}
+
+/* ── Section Headings ── */
+.section-heading {
+    font-size: 11pt;
+    font-weight: bold;
+    line-height: 14pt;
+    padding: 0;
+    margin-top: 8pt;
+    margin-bottom: 2pt;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    break-after: avoid;
+}
+
+.section-heading + * {
+    break-before: avoid;
+}
+
+.section-heading.red-heading,
+.section-heading.red-heading span {
+    color: #C00000;
+}
+
+.heading-role {
+    color: #C00000;
+    font-weight: bold;
+    text-align: right;
+    white-space: nowrap;
+    font-size: 9pt;
+    font-style: italic;
+}
+
+/* ── Role Labels ── */
+.role-label {
+    color: #C00000;
+    font-weight: bold;
+}
+
+/* ── Instructions / Rubrics ── */
+.instruction {
+    color: #C00000;
+    font-style: italic;
+    font-size: 9pt;
+}
+
+.instruction-center {
+    color: #C00000;
+    font-style: italic;
+    font-size: 9pt;
+    text-align: center;
+}
+
+/* ── Two-Column Sections ── */
+.two-col {
+    column-count: 2;
+    column-gap: 0.25in;
+}
+
+/* ── Notation Images ── */
+.notation-image {
+    text-align: center;
+    margin: 4pt 0;
+    break-inside: avoid;
+}
+
+.notation-image img {
+    max-width: 100%;
+    max-height: 7in;
+    /* No explicit width — aspect ratio preserved automatically.
+       max-height ensures tall images (Kyrie, etc.) shrink to fit
+       on a single page rather than overflowing across pages. */
+}
+
+/* ── Readings ── */
+.reading-intro {
+    font-style: italic;
+    font-size: 10pt;
+    margin-bottom: 2pt;
+}
+
+.reading-text {
+    line-height: 1.35;
+}
+
+.reading-text sup {
+    font-size: 0.6em;
+    vertical-align: super;
+}
+
+.reading-response {
+    margin-top: 2pt;
+    margin-bottom: 4pt;
+}
+
+/* ── Scripture Block Quotes ── */
+.block-quote {
+    padding-left: 0.3in;
+    margin: 1pt 0;
+}
+
+/* ── Psalm ── */
+.psalm-verse {
+    margin-bottom: 0;
+    line-height: 1.3;
+}
+
+.psalm-verse sup {
+    font-size: 0.6em;
+    vertical-align: super;
+    margin-right: 1pt;
+}
+
+/* ── Dialog Lines ── */
+.dialog-line {
+    margin: 0;
+}
+
+/* ── Creed ── */
+.creed-stanza {
+    font-weight: bold;
+    line-height: 1.3;
+    margin-bottom: 3pt;
+}
+
+/* ── Small Caps (LORD) ── */
+.sc {
+    font-variant: small-caps;
+}
+
+/* ── Hymn Title (title-only references) ── */
+.hymn-title-ref {
+    font-weight: bold;
+    margin-top: 2pt;
+}
+
+/* ── Confession ── */
+.confession-text p {
+    margin-bottom: 2pt;
+}
+
+/* ── Eucharistic Prayer ── */
+.ep-text {
+    font-size: 10pt;
+    line-height: 1.3;
+}
+
+/* ── Lord's Prayer ── */
+.lords-prayer-stanza {
+    font-weight: bold;
+    line-height: 1.3;
+}
+
+/* ── Blessing ── */
+.blessing-line {
+    padding-left: 0.3in;
+}
+
+/* ── Copyright Block ── */
+.copyright-block {
+    font-size: 7pt;
+    line-height: 1.3;
+    color: #444;
+    margin-top: 12pt;
+    border-top: 0.5pt solid #999;
+    padding-top: 4pt;
+}
+
+/* ── Creed Page Marker (invisible) ── */
+.creed-marker {
+    font-size: 0;
+    line-height: 0;
+    height: 0;
+    overflow: hidden;
+    color: transparent;
+}
+
+/* ── Welcome ── */
+.welcome-text {
+    font-size: 9pt;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 6pt;
+    line-height: 1.3;
+}
+
+.standing-instructions {
+    font-size: 9pt;
+    color: #C00000;
+    font-style: italic;
+    text-align: center;
+    margin-top: 3pt;
+    margin-bottom: 6pt;
+    border-top: 0.5pt solid #999;
+    border-bottom: 0.5pt solid #999;
+    padding: 2pt 0;
+}
+
+/* ── Spacers ── */
+.spacer { height: 8pt; }
+.spacer-sm { height: 4pt; }
+
+/* ── Utility ── */
+.mt-6 { margin-top: 6pt; }
+.mt-8 { margin-top: 8pt; }
+.mt-4 { margin-top: 4pt; }
+.mb-4 { margin-bottom: 4pt; }
+.mb-2 { margin-bottom: 2pt; }
+.text-center { text-align: center; }
+.bold { font-weight: bold; }
+
+/* ── Screen Preview ── */
+@media screen {
+    body {
+        max-width: 7in;
+        margin: 0.5in auto;
+        padding: 0 0.35in;
+        border: 1px solid #ccc;
+        background: #fafafa;
+    }
+    .cover {
+        border-bottom: 2px dashed #999;
+        padding-bottom: 0.5in;
+        margin-bottom: 0.25in;
+    }
+}

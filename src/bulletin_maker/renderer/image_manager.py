@@ -254,9 +254,16 @@ def fetch_hymn_image(
 
     hymn = results[0]
 
-    # Get details (image URLs)
+    # Get details — prefer atom_code for full-resolution (300 DPI) images.
+    # The pre-built image URLs contain width=700&height=700 params that
+    # return 96 DPI web previews; using the atom code directly gives the
+    # full library version.
     details = client.get_hymn_details(hymn.atom_id)
-    if image_type == "melody":
+
+    suffix = "_m" if image_type == "melody" else "_h"
+    if details.atom_code:
+        url = f"/File/GetImage?atomCode={details.atom_code}{suffix}"
+    elif image_type == "melody":
         url = details.melody_image_url
     else:
         url = details.harmony_image_url

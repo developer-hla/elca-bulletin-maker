@@ -7,8 +7,10 @@ import pytest
 from bulletin_maker.renderer.season import (
     LiturgicalSeason,
     detect_season,
+    fill_seasonal_defaults,
     get_seasonal_config,
 )
+from bulletin_maker.sns.models import ServiceConfig
 
 
 class TestDetectSeason:
@@ -71,3 +73,57 @@ class TestGetSeasonalConfig:
         for season in LiturgicalSeason:
             config = get_seasonal_config(season)
             assert config is not None
+
+
+class TestFillSeasonalDefaults:
+    """fill_seasonal_defaults() populates None fields from season config."""
+
+    def test_fills_none_fields(self):
+        config = ServiceConfig(date="2026-2-22", date_display="February 22, 2026")
+        fill_seasonal_defaults(config, LiturgicalSeason.LENT)
+        assert config.creed_type == "nicene"
+        assert config.include_kyrie is False
+        assert config.canticle == "none"
+        assert config.eucharistic_form == "extended"
+        assert config.include_memorial_acclamation is True
+
+    def test_preserves_explicit_values(self):
+        config = ServiceConfig(
+            date="2026-2-22",
+            date_display="February 22, 2026",
+            creed_type="apostles",
+            include_kyrie=True,
+            canticle="glory_to_god",
+            eucharistic_form="short",
+            include_memorial_acclamation=False,
+        )
+        fill_seasonal_defaults(config, LiturgicalSeason.LENT)
+        # All values should be preserved, not overwritten by Lent defaults
+        assert config.creed_type == "apostles"
+        assert config.include_kyrie is True
+        assert config.canticle == "glory_to_god"
+        assert config.eucharistic_form == "short"
+        assert config.include_memorial_acclamation is False
+
+    def test_partial_override(self):
+        config = ServiceConfig(
+            date="2026-2-22",
+            date_display="February 22, 2026",
+            creed_type="nicene",  # Explicit
+            # All others left as None -> fill from Pentecost defaults
+        )
+        fill_seasonal_defaults(config, LiturgicalSeason.PENTECOST)
+        assert config.creed_type == "nicene"  # Preserved
+        assert config.include_kyrie is True   # From Pentecost
+        assert config.canticle == "glory_to_god"  # From Pentecost
+        assert config.eucharistic_form == "short"  # From Pentecost
+
+    def test_all_seasons_fill(self):
+        for season in LiturgicalSeason:
+            config = ServiceConfig(date="2026-1-1", date_display="January 1, 2026")
+            fill_seasonal_defaults(config, season)
+            assert config.creed_type is not None
+            assert config.include_kyrie is not None
+            assert config.canticle is not None
+            assert config.eucharistic_form is not None
+            assert config.include_memorial_acclamation is not None

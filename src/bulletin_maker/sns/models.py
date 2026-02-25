@@ -64,19 +64,32 @@ class HymnLyrics:
 class ServiceConfig:
     """User inputs for a Sunday service — drives document generation.
 
-    No defaults for liturgical choices — the UI must prompt the user
-    explicitly for each setting (creed type, etc.).
+    Liturgical choice fields (include_kyrie, canticle, creed_type, etc.)
+    default to None meaning "use seasonal default".  The wizard UI
+    pre-fills these from SeasonalConfig, and the user can override.
+    Call ``fill_seasonal_defaults()`` before rendering to resolve Nones.
     """
     date: str                           # "2026-2-22" (for S&S API)
     date_display: str                   # "February 22, 2026" (for headers)
-    creed_type: str                     # "apostles" or "nicene" — user must choose
+
+    # ── Liturgical choices (None = use seasonal default) ──
+    creed_type: Optional[str] = None            # "apostles" or "nicene"
+    include_kyrie: Optional[bool] = None        # Show Kyrie?
+    canticle: Optional[str] = None              # "glory_to_god", "this_is_the_feast", or "none"
+    eucharistic_form: Optional[str] = None      # "short", "poetic", or "extended"
+    include_memorial_acclamation: Optional[bool] = None  # Memorial Acclamation in EP?
+
+    # ── Hymns ──
     gathering_hymn: Optional[HymnLyrics] = None
     sermon_hymn: Optional[HymnLyrics] = None
     communion_hymn: Optional[HymnLyrics] = None
     sending_hymn: Optional[HymnLyrics] = None
+
+    # ── Other service details ──
     prelude_title: str = ""
     prelude_performer: str = ""
     postlude_title: str = ""
     postlude_performer: str = ""
     choral_title: str = ""
-    creed_page_num: Optional[int] = None  # From bulletin generation
+    cover_image: str = ""                   # Path to seasonal logo image
+    creed_page_num: Optional[int] = None    # From bulletin generation

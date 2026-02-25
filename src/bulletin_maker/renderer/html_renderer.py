@@ -22,9 +22,12 @@ from bulletin_maker.sns.models import DayContent, HymnLyrics, ServiceConfig
 from bulletin_maker.renderer.season import (
     LiturgicalSeason,
     detect_season,
-    get_seasonal_config,
+    fill_seasonal_defaults,
 )
-from bulletin_maker.renderer.image_manager import get_gospel_acclamation_image
+from bulletin_maker.renderer.image_manager import (
+    get_gospel_acclamation_image,
+    get_setting_image,
+)
 from bulletin_maker.renderer.text_utils import (
     extract_book_name,
     group_psalm_verses,
@@ -32,7 +35,12 @@ from bulletin_maker.renderer.text_utils import (
     strip_tags,
 )
 from bulletin_maker.renderer.filters import TEMPLATE_DIR, setup_jinja_env
-from bulletin_maker.renderer.pdf_engine import render_to_pdf, render_with_shrink
+from bulletin_maker.renderer.pdf_engine import (
+    count_pages,
+    impose_booklet,
+    render_to_pdf,
+    render_with_shrink,
+)
 from bulletin_maker.renderer.prayers_parser import (
     parse_prayers_html,
     parse_prayers_response,
@@ -173,7 +181,7 @@ def _reading_data(reading) -> dict | None:
 def _build_large_print_context(day: DayContent, config: ServiceConfig) -> dict:
     """Build the full template context for the Large Print document."""
     season = detect_season(day.title)
-    seasonal = get_seasonal_config(season)
+    fill_seasonal_defaults(config, season)
 
     # Readings
     first_reading = _reading_data(_get_reading(day, "first"))
@@ -287,14 +295,14 @@ def _build_large_print_context(day: DayContent, config: ServiceConfig) -> dict:
         "sanctus_stanzas": _split_stanzas(SANCTUS),
 
         # Eucharistic Prayer
-        "eucharistic_form": seasonal.eucharistic_form,
+        "eucharistic_form": config.eucharistic_form,
         "eucharistic_prayer_first_line": EUCHARISTIC_PRAYER_EXTENDED.split("\n")[0],
         "eucharistic_prayer_lines": [
             l.strip() for l in EUCHARISTIC_PRAYER_EXTENDED.split("\n")[1:]
             if l.strip()
         ],
         "words_of_institution_paragraphs": _split_stanzas(WORDS_OF_INSTITUTION),
-        "has_memorial_acclamation": seasonal.has_memorial_acclamation,
+        "has_memorial_acclamation": config.include_memorial_acclamation,
         "memorial_acclamation": MEMORIAL_ACCLAMATION,
         "eucharistic_prayer_closing_stanzas": _split_stanzas(EUCHARISTIC_PRAYER_CLOSING),
         "come_holy_spirit": COME_HOLY_SPIRIT,
@@ -372,6 +380,237 @@ def _build_pulpit_prayers_context(
         "prayers_intro": PRAYERS_INTRO,
         "parsed_prayers": parsed_prayers,
     }
+
+
+# ── Bulletin helpers ──────────────────────────────────────────────────
+
+def _hymn_title_str(hymn: HymnLyrics | None) -> str:
+    """Format a hymn as 'ELW 335 — Title' for title-only references."""
+    if hymn is None:
+        return ""
+    return f"{hymn.number} \u2014 {hymn.title}"
+
+
+def _safe_setting_image_uri(piece: str) -> str:
+    """Try to load a setting image as data URI; return empty on failure."""
+    try:
+        path = get_setting_image(piece)
+        return _image_to_data_uri(path)
+    except (FileNotFoundError, ValueError):
+        logger.warning("Setting image not found for '%s'", piece)
+        return ""
+
+
+def _build_bulletin_context(
+    day: DayContent,
+    config: ServiceConfig,
+    *,
+    communion_hymn_image_uri: str = "",
+) -> dict:
+    """Build template context for the standard Bulletin for Congregation."""
+    season = detect_season(day.title)
+    fill_seasonal_defaults(config, season)
+
+    # Readings
+    first_reading = _reading_data(_get_reading(day, "first"))
+    second_reading = _reading_data(_get_reading(day, "second"))
+
+    gospel_raw = _get_reading(day, "gospel")
+    gospel_entry = None
+    if gospel_raw and gospel_raw.label.lower() == "gospel":
+        gospel_entry = _reading_data(gospel_raw)
+    elif gospel_raw is None:
+        for r in day.readings:
+            if r.label.lower() == "gospel":
+                gospel_entry = _reading_data(r)
+                break
+
+    # Psalm
+    psalm_raw = _get_reading(day, "psalm")
+    psalm_data = None
+    if psalm_raw:
+        psalm_num = psalm_raw.citation.replace("Psalm", "").replace("psalm", "").strip()
+        psalm_data = {
+            "number": psalm_num,
+            "intro": strip_tags(psalm_raw.intro) if psalm_raw.intro else "",
+            "verses": group_psalm_verses(psalm_raw.text_html),
+        }
+
+    # Gospel Acclamation image
+    ga_image_uri = ""
+    try:
+        path = get_gospel_acclamation_image(season)
+        ga_image_uri = _image_to_data_uri(path)
+    except FileNotFoundError:
+        logger.warning("GA image not found for season %s", season)
+
+    # Notation images for liturgical setting pieces
+    kyrie_uri = _safe_setting_image_uri("kyrie") if config.include_kyrie else ""
+
+    canticle_uri = ""
+    if config.canticle == "glory_to_god":
+        canticle_uri = _safe_setting_image_uri("glory_to_god")
+    elif config.canticle == "this_is_the_feast":
+        canticle_uri = _safe_setting_image_uri("this_is_the_feast")
+
+    great_thanksgiving_uri = _safe_setting_image_uri("great_thanksgiving")
+    sanctus_uri = _safe_setting_image_uri("sanctus")
+    agnus_dei_uri = _safe_setting_image_uri("agnus_dei")
+    nunc_dimittis_uri = _safe_setting_image_uri("nunc_dimittis")
+
+    memorial_acc_uri = ""
+    amen_uri = ""
+    if config.include_memorial_acclamation:
+        memorial_acc_uri = _safe_setting_image_uri("memorial_acclamation")
+        amen_uri = _safe_setting_image_uri("amen")
+
+    # Creed
+    creed_name = "NICENE CREED" if config.creed_type == "nicene" else "APOSTLES CREED"
+    creed_text = NICENE_CREED if config.creed_type == "nicene" else APOSTLES_CREED
+
+    # Prayers response
+    prayers_response = "Your mercy is great."
+    if day.prayers_html:
+        prayers_response = parse_prayers_response(day.prayers_html)
+
+    # Invitation to communion
+    invitation_text = "Taste and see that the Lord is good."
+    if day.invitation_to_communion:
+        invitation_text = strip_tags(preprocess_html(day.invitation_to_communion))
+
+    # Cover image
+    cover_image_uri = ""
+    if config.cover_image:
+        try:
+            cover_image_uri = _image_to_data_uri(Path(config.cover_image))
+        except FileNotFoundError:
+            logger.warning("Cover image not found: %s", config.cover_image)
+
+    css = (TEMPLATE_DIR / "bulletin.css").read_text()
+
+    return {
+        # CSS
+        "css": css,
+
+        # Cover
+        "church_name": CHURCH_NAME,
+        "church_address": CHURCH_ADDRESS,
+        "cover_image_uri": cover_image_uri,
+        "date_display": config.date_display,
+        "day_name": _extract_day_name(day.title),
+
+        # Welcome
+        "welcome_message": WELCOME_MESSAGE,
+        "standing_instructions": STANDING_INSTRUCTIONS,
+
+        # Prelude/postlude
+        "prelude_title": config.prelude_title,
+        "prelude_performer": config.prelude_performer,
+        "postlude_title": config.postlude_title,
+        "postlude_performer": config.postlude_performer,
+        "choral_title": config.choral_title,
+
+        # Confession
+        "show_confession": season != LiturgicalSeason.CHRISTMAS_EVE,
+        "confession_entries": CONFESSION_AND_FORGIVENESS,
+
+        # Notation images — setting pieces
+        "kyrie_image_uri": kyrie_uri,
+        "canticle_image_uri": canticle_uri,
+
+        # Gathering hymn (title only)
+        "gathering_hymn_title": _hymn_title_str(config.gathering_hymn),
+
+        # Season
+        "is_lent": season == LiturgicalSeason.LENT,
+        "invitation_to_lent_paragraphs": _split_stanzas(INVITATION_TO_LENT),
+
+        # Prayer of the Day
+        "prayer_of_day_html": _clean_html(day.prayer_of_the_day_html),
+
+        # Readings
+        "first_reading": first_reading,
+        "psalm_data": psalm_data,
+        "second_reading": second_reading,
+        "ga_image_uri": ga_image_uri,
+        "gospel": gospel_entry,
+
+        # Sermon hymn (title only)
+        "sermon_hymn_title": _hymn_title_str(config.sermon_hymn),
+
+        # Creed
+        "creed_name": creed_name,
+        "creed_stanzas": _split_stanzas(creed_text),
+
+        # Prayers
+        "prayers_response": prayers_response,
+
+        # Offering
+        "offertory_image_uri": "",  # text fallback for now
+        "offertory_hymn_verses": OFFERTORY_HYMN_VERSES,
+
+        # Great Thanksgiving
+        "great_thanksgiving_image_uri": great_thanksgiving_uri,
+        "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE,
+
+        # Sanctus
+        "sanctus_image_uri": sanctus_uri,
+
+        # Eucharistic Prayer
+        "eucharistic_form": config.eucharistic_form,
+        "eucharistic_prayer_first_line": EUCHARISTIC_PRAYER_EXTENDED.split("\n")[0],
+        "eucharistic_prayer_lines": [
+            l.strip() for l in EUCHARISTIC_PRAYER_EXTENDED.split("\n")[1:]
+            if l.strip()
+        ],
+        "words_of_institution_paragraphs": _split_stanzas(WORDS_OF_INSTITUTION),
+        "has_memorial_acclamation": config.include_memorial_acclamation,
+        "memorial_acclamation": MEMORIAL_ACCLAMATION,
+        "memorial_acclamation_image_uri": memorial_acc_uri,
+        "amen_image_uri": amen_uri,
+        "eucharistic_prayer_closing_stanzas": _split_stanzas(EUCHARISTIC_PRAYER_CLOSING),
+        "come_holy_spirit": COME_HOLY_SPIRIT,
+
+        # Lord's Prayer
+        "lords_prayer_stanzas": _split_stanzas(LORDS_PRAYER),
+
+        # Invitation to Communion
+        "invitation_to_communion_text": invitation_text,
+
+        # Agnus Dei
+        "agnus_dei_image_uri": agnus_dei_uri,
+
+        # Communion Hymn
+        "communion_hymn_title": _hymn_title_str(config.communion_hymn),
+        "communion_hymn_image_uri": communion_hymn_image_uri,
+
+        # Nunc Dimittis
+        "nunc_dimittis_image_uri": nunc_dimittis_uri,
+
+        # Blessing
+        "aaronic_blessing_lines": AARONIC_BLESSING.split("\n"),
+
+        # Sending hymn (title only)
+        "sending_hymn_title": _hymn_title_str(config.sending_hymn),
+    }
+
+
+def _find_creed_page(pdf_path: Path) -> int | None:
+    """Scan PDF text for the creed heading and return its page number.
+
+    Looks for "NICENE CREED" or "APOSTLES CREED" in the extracted text.
+    Returns 1-based page number, or None if not found.
+    """
+    try:
+        from pypdf import PdfReader
+        reader = PdfReader(str(pdf_path))
+        for i, page in enumerate(reader.pages):
+            text = (page.extract_text() or "").upper()
+            if "NICENE CREED" in text or "APOSTLES CREED" in text:
+                return i + 1  # 1-based
+    except Exception:
+        logger.warning("Could not scan PDF for creed page: %s", pdf_path)
+    return None
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -509,3 +748,95 @@ def generate_pulpit_prayers(
 
     logger.info("Pulpit Prayers PDF saved: %s", result)
     return result
+
+
+def generate_bulletin(
+    day: DayContent,
+    config: ServiceConfig,
+    output_path: Path,
+    *,
+    client: object | None = None,
+    keep_intermediates: bool = False,
+) -> tuple[Path, int | None]:
+    """Generate the standard Bulletin for Congregation as a booklet PDF.
+
+    Renders sequential half-pages (7"x8.5"), finds the creed page number,
+    then imposes into saddle-stitched booklet spreads on legal landscape.
+
+    Args:
+        day: S&S content for the Sunday.
+        config: User-provided service configuration.
+        output_path: Where to save the final booklet PDF.
+        client: Optional authenticated SundaysClient for fetching the
+            communion hymn notation image dynamically.
+        keep_intermediates: If True, save debug HTML and sequential PDF.
+
+    Returns:
+        Tuple of (path to booklet PDF, creed page number or None).
+    """
+    from bulletin_maker.renderer.image_manager import fetch_hymn_image
+
+    # Fetch communion hymn notation image if client provided
+    communion_hymn_image_uri = ""
+    if client is not None and config.communion_hymn is not None:
+        hymn_num = config.communion_hymn.number
+        # Parse "ELW 512" -> collection="ELW", number="512"
+        parts = hymn_num.split()
+        if len(parts) == 2:
+            try:
+                img_path = fetch_hymn_image(
+                    client, parts[1], collection=parts[0],
+                )
+                communion_hymn_image_uri = _image_to_data_uri(img_path)
+            except Exception:
+                logger.warning("Could not fetch communion hymn image for %s",
+                               hymn_num)
+
+    env = setup_jinja_env()
+    template = env.get_template("bulletin.html")
+    ctx = _build_bulletin_context(
+        day, config, communion_hymn_image_uri=communion_hymn_image_uri,
+    )
+    html_string = template.render(**ctx)
+
+    output_path = Path(output_path).with_suffix(".pdf")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if keep_intermediates:
+        debug_dir = output_path.parent / ".bulletin_debug"
+        debug_dir.mkdir(exist_ok=True)
+        (debug_dir / "bulletin.html").write_text(html_string)
+
+    # Render sequential half-pages (7" x 8.5")
+    seq_path = output_path.parent / f".{output_path.stem}_sequential.pdf"
+    render_to_pdf(
+        html_string,
+        seq_path,
+        margins={
+            "top": "0.3in",
+            "bottom": "0.35in",
+            "left": "0.35in",
+            "right": "0.35in",
+        },
+        display_footer=True,
+        page_size={"width": "7in", "height": "8.5in"},
+    )
+
+    # Find creed page in sequential PDF
+    creed_page = _find_creed_page(seq_path)
+    if creed_page:
+        logger.info("Creed found on page %d of sequential bulletin", creed_page)
+    else:
+        logger.warning("Could not find creed page marker in bulletin")
+
+    # Impose into booklet
+    result = impose_booklet(seq_path, output_path)
+
+    # Clean up sequential PDF unless keeping intermediates
+    if not keep_intermediates and seq_path.exists():
+        seq_path.unlink()
+
+    page_count = count_pages(result)
+    logger.info("Bulletin booklet PDF saved: %s (%s sheets)",
+                result, page_count // 2 if page_count else "?")
+    return result, creed_page
