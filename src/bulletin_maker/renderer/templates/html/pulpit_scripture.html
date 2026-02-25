@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>{{ css }}</style>
+</head>
+<body>
+
+{# ── First Reading ── #}
+{% if first_reading %}
+<h1>FIRST READING {{ first_reading.citation }}</h1>
+<p class="reading-intro">A reading from {{ first_reading.book | upper }}:</p>
+<div class="reading-text">{{ first_reading.text_html | safe }}</div>
+<p class="reading-closing">The Word of the Lord.<br>Thanks be to God.</p>
+{% endif %}
+
+{# ── Psalm ── #}
+{% if psalm_data %}
+<h1>PSALM {{ psalm_data.number }}</h1>
+<p class="psalm-instruction">Please read with me responsively
+PSALM {{ psalm_data.number }}</p>
+{% for verse in psalm_data.verses %}
+{% if not verse.continuation %}
+<p class="psalm-verse">
+    <sup>{{ verse.verse_num }}</sup>{% if verse.bold %}<strong>{{ verse.text }}</strong>{% else %}{{ verse.text }}{% endif %}
+    {%- for cont in verse.continuations %}
+    <br>{% if cont.bold %}<strong>{{ cont.text }}</strong>{% else %}{{ cont.text }}{% endif %}
+    {%- endfor %}
+</p>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{# ── Second Reading ── #}
+{% if second_reading %}
+<h1>SECOND READING: {{ second_reading.citation }}</h1>
+<p class="reading-intro">A reading from {{ second_reading.book | upper }}</p>
+<div class="reading-text-compact">{{ second_reading.text_html | safe }}</div>
+<p class="reading-closing-16">The word of the Lord.<br><strong>Thanks be to God.</strong></p>
+{% endif %}
+
+{# ── Rise Instruction ── #}
+<p class="rise-instruction">
+    Please rise in <em>BODY</em> or <em>SPIRIT</em> for the reading of the Gospel.
+</p>
+
+{# ── Recycle Note ── #}
+<p class="recycle-note">
+    Reader: &nbsp;Please take this script from the Pulpit to recycle when you leave
+</p>
+
+</body>
+</html>

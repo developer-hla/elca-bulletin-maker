@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>{{ css }}</style>
+</head>
+<body>
+
+{# ── Creed Section ── #}
+<h1>{{ creed_name }}</h1>
+<p class="scripture">
+    Please turn to page {{ creed_page_ref }} of your Bulletin and let us
+    profess our faith using the words of the {{ creed_name }}:
+</p>
+
+{% for stanza in creed_stanzas %}
+<p class="creed-stanza">{{ stanza | creed_line }}</p>
+{% endfor %}
+
+{# ── Prayers of Intercession ── #}
+<h1>&nbsp;PRAYERS of INTERCESSION</h1>
+<p class="scripture">{{ prayers_intro }}</p>
+
+{% if parsed_prayers.intro %}
+<p class="scripture">{{ parsed_prayers.intro }}</p>
+{% endif %}
+
+{% if parsed_prayers.brief_silence %}
+<p class="brief-silence">A brief silence.</p>
+{% endif %}
+
+{% for pet in parsed_prayers.petitions %}
+<p class="petition">{{ pet.text }}</p>
+{% if pet.response %}
+<p class="petition-response">{{ pet.response }}</p>
+{% endif %}
+{% endfor %}
+
+{% if parsed_prayers.closing_text %}
+<p class="petition">{{ parsed_prayers.closing_text }}</p>
+{% endif %}
+<p class="petition-response">{{ parsed_prayers.closing_response or "Amen." }}</p>
+
+{# ── Descend Instruction ── #}
+<p class="descend-instruction">
+    Leader: &nbsp;Please descend<br>
+    from the Pulpit,<br>
+    stepping aside for<br>
+    Pastor to rise at the Pulpit<br>
+    to share His Peace
+</p>
+
+</body>
+</html>

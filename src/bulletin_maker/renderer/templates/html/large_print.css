@@ -1,0 +1,338 @@
+/* Large Print Styles — Ascension Lutheran Church
+   Matches reference DOCX: letter portrait, Arial 18pt body, Cambria cover */
+
+/* ── Reset ── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    line-height: 1.5;
+    color: #000;
+    orphans: 4;
+    widows: 4;
+}
+
+p { margin: 0; }
+
+/* ── Cover Page ── */
+.cover {
+    page-break-after: always;
+    text-align: center;
+}
+
+.cover-spacer { height: 0.75in; }
+.cover-spacer-large { height: 2in; }
+
+.cover-church-name {
+    font-family: Cambria, 'Times New Roman', serif;
+    font-size: 36pt;
+    font-weight: bold;
+    margin: 0;
+}
+
+.cover-address {
+    font-size: 14pt;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.cover-date {
+    font-family: Cambria, 'Times New Roman', serif;
+    font-size: 24pt;
+    font-weight: bold;
+    margin-bottom: 12pt;
+}
+
+.cover-day-name {
+    font-family: Cambria, 'Times New Roman', serif;
+    font-size: 36pt;
+    font-weight: bold;
+}
+
+/* ── Heading Bars ── */
+.liturgy-heading {
+    background: #D9D9D9;
+    border-top: 1pt solid black;
+    border-bottom: 1pt solid black;
+    font-size: 18pt;
+    font-weight: bold;
+    line-height: 18pt;
+    padding: 3pt 4pt;
+    margin-top: 12pt;
+    margin-bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    break-after: avoid;
+}
+
+/* Keep heading together with the element immediately after it */
+.liturgy-heading + *,
+.scripture-heading + * {
+    break-before: avoid;
+}
+
+.liturgy-heading.no-margin-top {
+    margin-top: 0;
+}
+
+.heading-role {
+    color: #C00000;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.red-heading,
+.red-heading span {
+    color: #C00000;
+}
+
+.scripture-heading {
+    background: #D9D9D9;
+    border-top: 1pt solid black;
+    border-bottom: 1pt solid black;
+    font-size: 18pt;
+    font-weight: bold;
+    line-height: 18pt;
+    padding: 3pt 4pt;
+    margin-top: 12pt;
+    margin-bottom: 0;
+    color: #C00000;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    break-after: avoid;
+}
+
+/* ── Role Labels ── */
+.role-label {
+    color: #C00000;
+    font-weight: bold;
+}
+
+/* ── Congregation Instructions ── */
+.instruction {
+    color: #C00000;
+    font-style: italic;
+    text-align: center;
+}
+
+.instruction-left {
+    color: #C00000;
+    font-style: italic;
+}
+
+/* ── Welcome ── */
+.welcome-text {
+    font-size: 14pt;
+    font-weight: bold;
+    line-height: 15pt;
+    text-align: center;
+    margin-top: 12pt;
+}
+
+.standing-instructions {
+    font-size: 14pt;
+    color: #C00000;
+    font-style: italic;
+    text-align: center;
+    margin-top: 6pt;
+}
+
+/* ── 2-Column Sections ── */
+.two-col {
+    column-count: 2;
+    column-gap: 0.5in;
+    margin-top: 3pt;
+}
+
+/* ── Hymn Text ── */
+.hymn-verse {
+    font-size: 18pt;
+    line-height: 1.15;
+    break-inside: avoid;
+}
+
+.hymn-spacer {
+    height: 18pt;
+}
+
+.hymn-citation {
+    font-size: 11pt;
+    text-align: center;
+    margin-top: 6pt;
+    margin-bottom: 6pt;
+    break-before: avoid;
+}
+
+/* ── Reading Text ── */
+.reading-text {
+    font-size: 18pt;
+    line-height: 1.4;
+}
+
+.reading-text p {
+    font-size: 18pt;
+}
+
+.reading-text sup {
+    font-size: 0.65em;
+    vertical-align: super;
+}
+
+.reading-intro {
+    font-size: 14pt;
+    font-style: italic;
+    margin-bottom: 6pt;
+}
+
+.reading-response {
+    font-size: 16.5pt;
+    line-height: 18pt;
+    margin-top: 3pt;
+}
+
+/* ── Scripture Block Quotes (OT quotes within readings) ── */
+.block-quote {
+    padding-left: 0.35in;
+    margin: 2pt 0;
+}
+
+/* ── Psalm ── */
+.psalm-verse {
+    margin-bottom: 0;
+}
+
+.psalm-verse sup {
+    font-size: 0.7em;
+    vertical-align: super;
+    margin-right: 2pt;
+}
+
+/* ── Gospel ── */
+.gospel-intro-line {
+    font-size: 16.5pt;
+    margin-top: 6pt;
+}
+
+.gospel-text {
+    line-height: 20pt;
+}
+
+/* ── Gospel Acclamation Image ── */
+.ga-image {
+    text-align: center;
+    margin: 6pt 0 0 0;
+}
+
+.ga-image img {
+    width: 100%;
+    max-width: 7.5in;
+}
+
+/* ── Dialog Lines ── */
+.dialog-line {
+    margin: 0;
+}
+
+.dialog-label {
+    font-weight: bold;
+}
+
+.dialog-label.red {
+    color: #C00000;
+}
+
+/* ── Bold Text Blocks (Sanctus, Agnus Dei, Nunc Dimittis) ── */
+.bold-block {
+    font-weight: bold;
+}
+
+.sanctus-block p {
+    font-weight: bold;
+    line-height: 24pt;
+    margin-bottom: 6pt;
+}
+
+.agnus-dei-block p {
+    font-weight: bold;
+    line-height: 26pt;
+}
+
+.creed-section {
+    break-inside: avoid;
+}
+
+.creed-stanza {
+    font-weight: bold;
+    line-height: 23pt;
+    margin-bottom: 6pt;
+}
+
+.lords-prayer-stanza {
+    font-weight: bold;
+}
+
+/* ── Offering ── */
+.offering-text {
+    line-height: 21pt;
+    font-weight: bold;
+    color: #C00000;
+}
+
+/* ── Eucharistic Prayer ── */
+.ep-text {
+    font-size: 16.5pt;
+}
+
+.ep-first-line {
+    font-size: 16.5pt;
+    color: #C00000;
+}
+
+/* ── Nunc Dimittis ── */
+.nunc-dimittis-line {
+    font-weight: bold;
+    padding-left: 0.5in;
+}
+
+/* ── Blessing ── */
+.blessing-line {
+    padding-left: 0.5in;
+}
+
+/* ── Small Caps (LORD) ── */
+.sc {
+    font-variant: small-caps;
+}
+
+/* ── Spacers ── */
+.spacer { height: 18pt; }
+.spacer-sm { height: 6pt; }
+.spacer-lg { height: 30pt; }
+
+/* extra space before specific sections */
+.mt-24 { margin-top: 24pt; }
+.mt-18 { margin-top: 18pt; }
+.mt-12 { margin-top: 12pt; }
+.mt-36 { margin-top: 36pt; }
+.mb-6 { margin-bottom: 6pt; }
+.mb-12 { margin-bottom: 12pt; }
+.mb-24 { margin-bottom: 24pt; }
+
+/* ── Screen Preview ── */
+@media screen {
+    body {
+        max-width: 7.5in;
+        margin: 0.5in auto;
+        padding: 0 0.438in;
+        border: 1px solid #ccc;
+        background: #fafafa;
+    }
+    .cover {
+        border-bottom: 2px dashed #999;
+        padding-bottom: 1in;
+        margin-bottom: 0.5in;
+    }
+}

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>{{ css }}</style>
+</head>
+<body>
+
+{# ── Hymn rendering macro (used for gathering, sermon, communion, sending) ── #}
+{% macro render_hymn(hymn, label, separator=" - ", extra_class="") %}
+<div class="liturgy-heading red-heading {{ extra_class }}">
+    <span>{{ label }}: {{ hymn.number }}{{ separator }}{{ hymn.title | upper }}</span>
+</div>
+<div class="two-col">
+    {% for verse in hymn.verses %}
+    <div class="hymn-verse">{{ verse | hymn_text }}</div>
+    {% if loop.first and hymn.refrain %}
+    <div class="hymn-spacer"></div>
+    <div class="hymn-verse"><em>Refrain</em><br>{{ hymn.refrain | hymn_text }}</div>
+    {% endif %}
+    {% if not loop.last %}<div class="hymn-spacer"></div>{% endif %}
+    {% endfor %}
+</div>
+{% if hymn.copyright %}
+<p class="hymn-citation">{{ hymn.copyright | nl2br }}</p>
+{% endif %}
+{% endmacro %}
+
+
+{# ════════════════════════════════════════════════════════════════════
+   COVER PAGE
+   ════════════════════════════════════════════════════════════════════ #}
+<div class="cover">
+    <div class="cover-spacer"></div>
+    <h1 class="cover-church-name">{{ church_name }}</h1>
+    <p class="cover-address">{{ church_address | nl2br }}</p>
+    <div class="cover-spacer-large"></div>
+    <p class="cover-date">10:00 AM &mdash; {{ date_display }}</p>
+    <p class="cover-day-name">The {{ day_name }}</p>
+</div>
+
+
+{# ════════════════════════════════════════════════════════════════════
+   WELCOME & INSTRUCTIONS
+   ════════════════════════════════════════════════════════════════════ #}
+<p class="welcome-text">{{ welcome_message }}</p>
+<p class="standing-instructions">{{ standing_instructions | nl2br }}</p>
+
+
+{# ════════════════════════════════════════════════════════════════════
+   GATHERING RITE
+   ════════════════════════════════════════════════════════════════════ #}
+<div class="liturgy-heading"><span>GATHERING CHIMES: Worship Begins</span></div>
+<div class="spacer"></div>
+
+{% if choral_title %}
+<div class="liturgy-heading"><span>CHORAL CALL TO WORSHIP</span></div>
+<div class="spacer"></div>
+{% endif %}
+
+<div class="liturgy-heading"><span>PRELUDE</span></div>
+<div class="spacer"></div>
+
+<div class="liturgy-heading"><span>WELCOME</span></div>
+<div class="spacer"></div>
+
+
+{# ── Confession and Forgiveness ── #}
+<div class="liturgy-heading"><span>*CONFESSION AND FORGIVENESS</span></div>
+{% for role, text, bold in confession_entries %}
+{% if role == "instruction" %}
+<p class="instruction mb-6">{{ text }}</p>
+{% elif role == "Pastor" or role == "P" %}
+<p><span class="role-label">{{ role }}: </span>{% if bold %}<strong>{{ text }}</strong>{% else %}{{ text }}{% endif %}</p>
+{% elif role == "C" %}
+<p>{% if bold %}<strong>{{ text }}</strong>{% else %}{{ text }}{% endif %}</p>
+{% else %}
+<p>{% if bold %}<strong>{{ text }}</strong>{% else %}{{ text }}{% endif %}</p>
+{% endif %}
+{% endfor %}
+
+
+{# ── Gathering Hymn ── #}
+{% if gathering_hymn %}
+{{ render_hymn(gathering_hymn, "*GATHERING HYMN") }}
+{% endif %}
+
+
+{# ── Invitation to Lent (Lent only) ── #}
+{% if is_lent %}
+<div class="liturgy-heading"><span>Invitation to Lent</span></div>
+{% for para in invitation_to_lent_paragraphs %}
+<p>{{ para }}</p>
+{% endfor %}
+{% endif %}
+
+
+{# ── Prayer of the Day ── #}
+<div class="liturgy-heading">
+    <span>Prayer of the Day</span>
+    <span class="heading-role">Pastor</span>
+</div>
+{% if prayer_of_day_html %}
+<div>{{ prayer_of_day_html | safe }}</div>
+{% endif %}
+
+
+{# ════════════════════════════════════════════════════════════════════
+   LITURGY OF THE WORD
+   ════════════════════════════════════════════════════════════════════ #}
+
+{# ── First Reading ── #}
+{% if first_reading %}
+<div class="liturgy-heading">
+    <span>First Reading: {{ first_reading.citation }}</span>
+    <span class="heading-role">Scripture Reader</span>
+</div>
+{% if first_reading.intro %}
+<p class="reading-intro"><em>{{ first_reading.intro }}</em></p>
+{% endif %}
+<div class="reading-text">{{ first_reading.text_html | safe }}</div>
+<p class="reading-response">The word of the Lord.<br>Thanks be to God.</p>
+{% endif %}
+
+
+{# ── Psalm ── #}
+{% if psalm_data %}
+<div class="liturgy-heading">
+    <span>Psalm {{ psalm_data.number }}</span>
+    <span class="heading-role">The Congregation reads responsively</span>
+</div>
+{% if psalm_data.intro %}
+<p class="reading-intro">{{ psalm_data.intro }}</p>
+{% endif %}
+{% for verse in psalm_data.verses %}
+{% if verse.continuation %}
+{# continuation lines are appended to previous verse via <br> in context builder #}
+{% else %}
+<p class="psalm-verse">
+    <sup>{{ verse.verse_num }}&thinsp;</sup>{% if verse.bold %}<strong>{{ verse.text }}</strong>{% else %}{{ verse.text }}{% endif %}
+    {%- for cont in verse.continuations %}
+    <br>{% if cont.bold %}<strong>{{ cont.text }}</strong>{% else %}{{ cont.text }}{% endif %}
+    {%- endfor %}
+</p>
+{% endif %}
+{% endfor %}
+<p>The word of the Lord.<br>Thanks be to God.</p>
+{% endif %}
+
+
+{# ── Second Reading ── #}
+{% if second_reading %}
+<div class="liturgy-heading">
+    <span>Second Reading: {{ second_reading.citation }}</span>
+    <span class="heading-role">Scripture Reader</span>
+</div>
+{% if second_reading.intro %}
+<p class="reading-intro"><em>{{ second_reading.intro }}</em></p>
+{% endif %}
+<div class="reading-text">{{ second_reading.text_html | safe }}</div>
+<p class="reading-response">The word of the Lord.<br>Thanks be to God.</p>
+{% endif %}
+
+
+{# ── Gospel Acclamation ── #}
+<div class="scripture-heading">
+    <span>*GOSPEL ACCLAMATION (SUNG)</span>
+    <span class="heading-role">Congregation</span>
+</div>
+{% if ga_image_uri %}
+<div class="ga-image"><img src="{{ ga_image_uri }}" alt="Gospel Acclamation"></div>
+{% elif ga_text_fallback %}
+<p style="font-style: italic; font-size: 14pt;">{{ ga_text_fallback }}</p>
+{% endif %}
+
+
+{# ── Gospel ── #}
+{% if gospel %}
+<div class="liturgy-heading mt-36">
+    <span>* Gospel: {{ gospel.citation }}</span>
+</div>
+{% if gospel.intro %}
+<p>{{ gospel.intro }}</p>
+{% endif %}
+<p class="gospel-intro-line">
+    <span class="role-label">Pastor: </span>
+    <span style="font-size: 16.5pt; color: #C00000;">The holy gospel according to St. {{ gospel.book }}.</span>
+    <br><span style="font-size: 16.5pt;">Glory to You, O Lord.</span>
+</p>
+<div class="gospel-text">{{ gospel.text_html | safe }}</div>
+<p style="line-height: 20pt;">This is the gospel of our Lord. Praise to you, O Christ.</p>
+{% endif %}
+
+
+{# ── Sermon ── #}
+<p class="instruction mt-12">The congregation is seated.</p>
+<div class="scripture-heading"><span>SERMON</span></div>
+<div class="spacer"></div>
+
+{# ── Sermon Hymn ── #}
+{% if sermon_hymn %}
+{{ render_hymn(sermon_hymn, "*SERMON HYMN") }}
+{% endif %}
+
+
+{# ════════════════════════════════════════════════════════════════════
+   MEAL
+   ════════════════════════════════════════════════════════════════════ #}
+
+{# ── Creed ── #}
+<div class="creed-section">
+<div class="scripture-heading mt-24">
+    <span>*{{ creed_name }}</span>
+    <span class="heading-role">Prayer Leader</span>
+</div>
+<div class="two-col">
+{% for stanza in creed_stanzas %}
+<p class="creed-stanza">{{ stanza | nl2br }}</p>
+{% endfor %}
+</div>
+</div>
+
+
+{# ── Prayers of Intercession ── #}
+<div class="spacer"></div>
+<div class="spacer"></div>
+<div class="scripture-heading">
+    <span>*PRAYERS OF INTERCESSION</span>
+    <span class="heading-role">Prayer Leader</span>
+</div>
+<p class="instruction">As each petition of the prayers ends:</p>
+<p>
+    <span class="role-label" style="font-style: italic;">Leader: Hear us, O God.</span>
+    <br><strong>CONGREGATION: {{ prayers_response }}</strong>
+</p>
+
+
+{# ── Sharing of the Peace ── #}
+<div class="scripture-heading">
+    <span>*SHARING OF THE PEACE</span>
+    <span class="heading-role">Pastor</span>
+</div>
+<p><span class="role-label">P: </span><strong>The peace of Christ be with you always.</strong></p>
+<p><strong>C: And also with you.</strong></p>
+<p class="instruction">We greet one another with a sign of Christ&rsquo;s peace, saying &ldquo;Peace be with you,&rdquo; as we shake hands or share a hug.</p>
+
+
+{# ── Offering ── #}
+<div class="liturgy-heading"><span>OFFERING</span></div>
+<p class="offering-text">
+    P: We know that all that we are and all that we have come from God.
+    <br>So, in response to God&rsquo;s goodness, we give with cheerful hearts.
+</p>
+
+<div class="liturgy-heading"><span>OFFERTORY</span></div>
+<div class="spacer"></div>
+
+
+{# ── Offertory Hymn ── #}
+<div class="scripture-heading"><span>*HYMN</span></div>
+<div class="two-col">
+{% for verse_text in offertory_hymn_verses %}
+<p class="bold-block">{{ verse_text | hymn_text }}</p>
+{% endfor %}
+</div>
+
+
+{# ── Offering Prayer ── #}
+<div class="scripture-heading">
+    <span>*OFFERING PRAYER</span>
+    <span class="heading-role">Communion Assistant</span>
+</div>
+<p>Leader: Let us pray&hellip;<br>CONGREGATION: Amen</p>
+
+
+{# ── Great Thanksgiving ── #}
+<div class="liturgy-heading red-heading">
+    <span>*GREAT THANKSGIVING</span>
+    <span class="heading-role">Pastor &amp; Congregation</span>
+</div>
+{% for label, text in great_thanksgiving_dialog %}
+<p>
+    <span class="dialog-label{% if label == 'P' %} red{% endif %}">{{ label }}: </span>
+    <strong>{{ text }}</strong>
+</p>
+{% endfor %}
+<p class="mt-12">
+    <span class="role-label" style="font-weight: bold;">Pastor (sung/spoken): </span>
+    {{ great_thanksgiving_preface }}
+</p>
+<p class="instruction-left mb-12">The Congregation SINGS:</p>
+
+
+{# ── Sanctus ── #}
+<div class="two-col sanctus-block">
+{% for stanza in sanctus_stanzas %}
+<p>{{ stanza | nl2br }}</p>
+{% endfor %}
+</div>
+
+
+{# ── Eucharistic Prayer ── #}
+<div class="liturgy-heading"><span>*EUCHARISTIC PRAYER</span></div>
+{% if eucharistic_form == "extended" %}
+<p class="ep-first-line"><span class="role-label">P: </span>{{ eucharistic_prayer_first_line }}</p>
+{% for line in eucharistic_prayer_lines %}
+<p class="ep-text">{{ line }}</p>
+{% endfor %}
+{% for para in words_of_institution_paragraphs %}
+<p class="ep-text">{{ para }}</p>
+{% endfor %}
+{% if has_memorial_acclamation %}
+<p>With this bread and cup we remember our Lord&rsquo;s passover from death to life as we proclaim the mystery of faith:</p>
+<p><strong>{{ memorial_acclamation | nl2br }}</strong></p>
+{% endif %}
+{% for stanza in eucharistic_prayer_closing_stanzas %}
+<p>{{ stanza }}</p>
+{% if not loop.last %}
+<p><strong>{{ come_holy_spirit }}</strong></p>
+{% endif %}
+{% endfor %}
+{% else %}
+{# Short form: just words of institution #}
+{% for para in words_of_institution_paragraphs %}
+<p class="ep-text">{{ para }}</p>
+{% endfor %}
+{% endif %}
+
+
+{# ── Lord's Prayer ── #}
+<div class="liturgy-heading mt-18"><span>*LORD&rsquo;S PRAYER</span></div>
+<p><span class="role-label" style="font-weight: bold;">P: </span><strong>Gathered into one by the Holy Spirit, let us pray as Jesus taught us.</strong></p>
+<div class="two-col">
+{% for stanza in lords_prayer_stanzas %}
+<p class="lords-prayer-stanza">{{ stanza | nl2br }}</p>
+{% endfor %}
+</div>
+
+
+{# ── Invitation to Communion ── #}
+<div class="liturgy-heading"><span>*INVITATION TO COMMUNION</span></div>
+<p><span class="role-label">P: </span><strong>{{ invitation_to_communion_text }}</strong></p>
+<p class="instruction-left mt-12 mb-24">The Congregation is SEATED</p>
+
+
+{# ── Agnus Dei ── #}
+<div class="liturgy-heading">
+    <span>AGNUS DEI (SUNG)</span>
+    <span class="heading-role">Congregation</span>
+</div>
+<div class="two-col agnus-dei-block">
+{% for stanza in agnus_dei_stanzas %}
+<p>{{ stanza | nl2br }}</p>
+{% endfor %}
+</div>
+
+
+{# ── Communion Hymn ── #}
+{% if communion_hymn %}
+{{ render_hymn(communion_hymn, "COMMUNION HYMN", separator=" &ndash; ", extra_class="mt-24") }}
+{% endif %}
+
+
+{# ════════════════════════════════════════════════════════════════════
+   CLOSING RITE
+   ════════════════════════════════════════════════════════════════════ #}
+
+{# ── Post-Communion ── #}
+<p class="instruction-left" style="margin-bottom: 30pt;">*After all have communed, the Congregation STANDS.</p>
+<p class="mt-12 mb-6" style="padding-left: 0.5in;">
+    <span class="role-label" style="font-weight: bold;">Pastor: </span>
+    <strong style="color: #C00000;">The body and blood of our Lord Jesus
+    <br>strengthen you and keep you in his grace.</strong>
+</p>
+<p><strong>Congregation: Amen.</strong></p>
+
+
+{# ── Nunc Dimittis ── #}
+<p class="instruction-left">The Congregation SINGS:</p>
+{% for line in nunc_dimittis_lines %}
+<p class="nunc-dimittis-line">{{ line }}</p>
+{% endfor %}
+
+
+{# ── Prayer After Communion ── #}
+<div class="liturgy-heading red-heading">
+    <span>*PRAYER AFTER COMMUNION</span>
+    <span class="heading-role">Communion Assistant</span>
+</div>
+<div class="spacer"></div>
+
+
+{# ── Blessing ── #}
+<div class="liturgy-heading red-heading">
+    <span>*BLESSING</span>
+    <span class="heading-role" style="padding-left: 2em;">Pastor</span>
+</div>
+{% for line in aaronic_blessing_lines %}
+<p class="blessing-line">{{ line }}</p>
+{% endfor %}
+
+
+{# ── Announcements ── #}
+<div class="liturgy-heading"><span>ANNOUNCEMENTS</span></div>
+<div class="spacer"></div>
+
+
+{# ── Sending Hymn ── #}
+{% if sending_hymn %}
+{{ render_hymn(sending_hymn, "*SENDING HYMN") }}
+{% endif %}
+
+
+{# ── Sending ── #}
+<div style="break-inside: avoid;">
+<div class="liturgy-heading">
+    <span>SENDING</span>
+    <span class="heading-role">Pastor</span>
+</div>
+<p>Go in peace to love and serve the Lord.</p>
+<p><strong>Thanks be to God.</strong></p>
+</div>
+
+
+{# ── Postlude ── #}
+<div class="liturgy-heading"><span>*POSTLUDE</span></div>
+
+</body>
+</html>
