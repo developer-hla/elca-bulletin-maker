@@ -183,12 +183,14 @@ class TestGenerateAll:
              patch("bulletin_maker.renderer.generate_bulletin") as mock_bull, \
              patch("bulletin_maker.renderer.generate_pulpit_prayers") as mock_pray, \
              patch("bulletin_maker.renderer.generate_pulpit_scripture") as mock_scrip, \
-             patch("bulletin_maker.renderer.generate_large_print") as mock_lp:
+             patch("bulletin_maker.renderer.generate_large_print") as mock_lp, \
+             patch("bulletin_maker.renderer.generate_leader_guide") as mock_lg:
 
             mock_bull.return_value = (Path("/tmp/test_output/bulletin.pdf"), 5)
             mock_pray.return_value = Path("/tmp/test_output/prayers.pdf")
             mock_scrip.return_value = Path("/tmp/test_output/scripture.pdf")
             mock_lp.return_value = Path("/tmp/test_output/lp.pdf")
+            mock_lg.return_value = Path("/tmp/test_output/leader_guide.pdf")
 
             result = api.generate_all(form_data)
 
@@ -197,6 +199,7 @@ class TestGenerateAll:
         assert "prayers" in result["results"]
         assert "scripture" in result["results"]
         assert "large_print" in result["results"]
+        assert "leader_guide" in result["results"]
 
         # Verify the ServiceConfig was built correctly
         call_args = mock_bull.call_args
@@ -284,12 +287,14 @@ class TestGenerateAllErrors:
         with patch("bulletin_maker.renderer.generate_bulletin") as mock_bull, \
              patch("bulletin_maker.renderer.generate_pulpit_prayers") as mock_pray, \
              patch("bulletin_maker.renderer.generate_pulpit_scripture") as mock_scrip, \
-             patch("bulletin_maker.renderer.generate_large_print") as mock_lp:
+             patch("bulletin_maker.renderer.generate_large_print") as mock_lp, \
+             patch("bulletin_maker.renderer.generate_leader_guide") as mock_lg:
 
             mock_bull.side_effect = RuntimeError("Playwright crashed")
             mock_pray.return_value = Path(tmp_path / "prayers.pdf")
             mock_scrip.return_value = Path(tmp_path / "scripture.pdf")
             mock_lp.return_value = Path(tmp_path / "lp.pdf")
+            mock_lg.return_value = Path(tmp_path / "leader_guide.pdf")
 
             result = api.generate_all(form_data)
 
@@ -299,6 +304,7 @@ class TestGenerateAllErrors:
         assert "prayers" in result["results"]
         assert "scripture" in result["results"]
         assert "large_print" in result["results"]
+        assert "leader_guide" in result["results"]
 
     def test_all_generation_steps_fail(self, tmp_path):
         api = self._make_api_with_day()
@@ -312,17 +318,19 @@ class TestGenerateAllErrors:
         with patch("bulletin_maker.renderer.generate_bulletin") as mock_bull, \
              patch("bulletin_maker.renderer.generate_pulpit_prayers") as mock_pray, \
              patch("bulletin_maker.renderer.generate_pulpit_scripture") as mock_scrip, \
-             patch("bulletin_maker.renderer.generate_large_print") as mock_lp:
+             patch("bulletin_maker.renderer.generate_large_print") as mock_lp, \
+             patch("bulletin_maker.renderer.generate_leader_guide") as mock_lg:
 
             mock_bull.side_effect = RuntimeError("fail 1")
             mock_pray.side_effect = RuntimeError("fail 2")
             mock_scrip.side_effect = RuntimeError("fail 3")
             mock_lp.side_effect = RuntimeError("fail 4")
+            mock_lg.side_effect = RuntimeError("fail 5")
 
             result = api.generate_all(form_data)
 
         assert result["success"] is False
-        assert len(result["errors"]) == 4
+        assert len(result["errors"]) == 5
         assert result["results"] == {}
 
 

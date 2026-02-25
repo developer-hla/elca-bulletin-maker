@@ -2,6 +2,7 @@
 
 Produces print-ready PDFs for:
   - Full with Hymns LARGE PRINT
+  - Leader Guide (large print + sung notation for pastor)
   - Pulpit SCRIPTURE
   - Pulpit PRAYERS
 
@@ -26,6 +27,7 @@ from bulletin_maker.renderer.season import (
 )
 from bulletin_maker.renderer.image_manager import (
     get_gospel_acclamation_image,
+    get_preface_image,
     get_setting_image,
 )
 from bulletin_maker.renderer.text_utils import (
@@ -738,6 +740,90 @@ def generate_large_print(
                       display_footer=True)
 
     logger.info("Large Print PDF saved: %s", output_path)
+    return output_path
+
+
+def _build_leader_guide_context(day: DayContent, config: ServiceConfig) -> dict:
+    """Build template context for the Leader Guide (large print + notation)."""
+    ctx = _build_large_print_context(day, config)
+    ctx["is_leader_guide"] = True
+
+    season = detect_season(day.title)
+    preface_image_uri = ""
+    try:
+        path = get_preface_image(season)
+        preface_image_uri = _image_to_data_uri(path)
+    except FileNotFoundError:
+        logger.warning("Preface image not found for season %s", season)
+    except ImportError:
+        logger.warning("Pillow not installed — cannot convert preface image")
+
+    ctx["preface_image_uri"] = preface_image_uri
+    return ctx
+
+
+def generate_leader_guide(
+    day: DayContent,
+    config: ServiceConfig,
+    output_path: Path,
+    *,
+    keep_intermediates: bool = False,
+) -> Path:
+    """Generate the Leader Guide PDF — large print with sung notation.
+
+    Identical to large print but includes preface notation images
+    for the pastor's sung portions of the liturgy.
+
+    Args:
+        day: S&S content for the Sunday.
+        config: User-provided service configuration.
+        output_path: Where to save the final PDF (suffix forced to .pdf).
+        keep_intermediates: If True, save debug HTML alongside the PDF.
+
+    Returns:
+        Path to the saved PDF file.
+    """
+    env = setup_jinja_env()
+    template = env.get_template("large_print.html")
+    ctx = _build_leader_guide_context(day, config)
+    html_string = template.render(**ctx)
+
+    output_path = Path(output_path).with_suffix(".pdf")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if keep_intermediates:
+        debug_dir = output_path.parent / ".lp_debug"
+        debug_dir.mkdir(exist_ok=True)
+        (debug_dir / "leader_guide.html").write_text(html_string)
+
+    lp_margins = {
+        "top": "0.25in",
+        "bottom": "0.5in",
+        "left": "0.438in",
+        "right": "0.438in",
+    }
+
+    render_to_pdf(html_string, output_path, margins=lp_margins, display_footer=True)
+
+    # Auto-tighten: same strategy as large print
+    pages = count_pages(output_path)
+    if pages:
+        best_html = html_string
+        best_pages = pages
+        for level_css in LP_TIGHTEN_CSS:
+            candidate = _inject_css(html_string, level_css)
+            render_to_pdf(candidate, output_path, margins=lp_margins,
+                          display_footer=True)
+            n = count_pages(output_path)
+            if n and n < best_pages:
+                best_html = candidate
+                best_pages = n
+        if best_pages < pages:
+            logger.info("Leader Guide auto-tighten: %d -> %d pages", pages, best_pages)
+        render_to_pdf(best_html, output_path, margins=lp_margins,
+                      display_footer=True)
+
+    logger.info("Leader Guide PDF saved: %s", output_path)
     return output_path
 
 

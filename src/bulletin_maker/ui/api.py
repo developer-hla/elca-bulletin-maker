@@ -330,6 +330,7 @@ class BulletinAPI:
             from bulletin_maker.renderer import (
                 generate_bulletin,
                 generate_large_print,
+                generate_leader_guide,
                 generate_pulpit_prayers,
                 generate_pulpit_scripture,
             )
@@ -385,18 +386,32 @@ class BulletinAPI:
                 self._push_progress("scripture", f"Scripture failed: {e}", 75)
 
             # 4. Large Print
-            self._push_progress("large_print", "Generating large print...", 80)
+            self._push_progress("large_print", "Generating large print...", 75)
             try:
                 lp_path = generate_large_print(
                     self._day, config,
                     output_path=output_dir / "Full with Hymns LARGE PRINT.pdf",
                 )
                 results["large_print"] = str(lp_path)
-                self._push_progress("large_print", "Large print saved", 95)
+                self._push_progress("large_print", "Large print saved", 85)
             except Exception as e:
                 logger.exception("Large print generation failed")
                 errors["large_print"] = str(e)
-                self._push_progress("large_print", f"Large print failed: {e}", 95)
+                self._push_progress("large_print", f"Large print failed: {e}", 85)
+
+            # 5. Leader Guide
+            self._push_progress("leader_guide", "Generating leader guide...", 87)
+            try:
+                lg_path = generate_leader_guide(
+                    self._day, config,
+                    output_path=output_dir / "Leader Guide.pdf",
+                )
+                results["leader_guide"] = str(lg_path)
+                self._push_progress("leader_guide", "Leader guide saved", 95)
+            except Exception as e:
+                logger.exception("Leader guide generation failed")
+                errors["leader_guide"] = str(e)
+                self._push_progress("leader_guide", f"Leader guide failed: {e}", 95)
 
             self._push_progress("done", "Generation complete!", 100)
 

@@ -72,6 +72,17 @@ _GA_SEASON_MAP = {
     LiturgicalSeason.CHRISTMAS_EVE: "alleluia",
 }
 
+# Season → Preface image file stem
+_SEASON_PREFACE_MAP = {
+    LiturgicalSeason.ADVENT: "preface_advent",
+    LiturgicalSeason.CHRISTMAS: "preface_christmas",
+    LiturgicalSeason.CHRISTMAS_EVE: "preface_christmas",
+    LiturgicalSeason.EPIPHANY: "preface_epiphany",
+    LiturgicalSeason.LENT: "preface_lent",
+    LiturgicalSeason.EASTER: "preface_easter",
+    LiturgicalSeason.PENTECOST: "preface_sundays",
+}
+
 _IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".tif", ".tiff")
 
 
@@ -158,6 +169,28 @@ def get_gospel_acclamation_image(season: LiturgicalSeason) -> Path:
         raise FileNotFoundError(
             f"Gospel Acclamation image not found for '{variant}' in "
             f"{GOSPEL_ACCLAMATION_DIR}\n"
+            f"Run download_setting_assets() or see assets/README.md"
+        )
+    return found
+
+
+def get_preface_image(season: LiturgicalSeason) -> Path:
+    """Return the path to the sung preface notation image for the given season.
+
+    Args:
+        season: The liturgical season.
+
+    Returns:
+        Path to the image file.
+
+    Raises:
+        FileNotFoundError: If the asset file hasn't been downloaded yet.
+    """
+    stem = _SEASON_PREFACE_MAP.get(season, "preface_sundays")
+    found = _find_image(SETTING_TWO_DIR, stem)
+    if found is None:
+        raise FileNotFoundError(
+            f"Preface image not found for '{stem}' in {SETTING_TWO_DIR}\n"
             f"Run download_setting_assets() or see assets/README.md"
         )
     return found

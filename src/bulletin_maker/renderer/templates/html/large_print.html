@@ -6,6 +6,8 @@
 </head>
 <body>
 
+{% set is_leader_guide = is_leader_guide | default(false) %}
+
 {# ── Hymn rendering macro (used for gathering, sermon, communion, sending) ── #}
 {% macro render_hymn(hymn, label, separator=" - ", extra_class="") %}
 <div class="liturgy-heading red-heading {{ extra_class }}">
@@ -309,6 +311,9 @@
     <span class="role-label" style="font-weight: bold;">Pastor (sung/spoken): </span>
     {{ great_thanksgiving_preface }}
 </p>
+{% if is_leader_guide and preface_image_uri %}
+<div class="notation-image"><img src="{{ preface_image_uri }}" alt="Preface"></div>
+{% endif %}
 <p class="instruction-left mb-12">The Congregation SINGS:</p>
 
 

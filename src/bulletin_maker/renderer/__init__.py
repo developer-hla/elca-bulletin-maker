@@ -8,6 +8,7 @@ from __future__ import annotations
 from bulletin_maker.renderer.html_renderer import (
     generate_bulletin,
     generate_large_print,
+    generate_leader_guide,
     generate_pulpit_prayers,
     generate_pulpit_scripture,
 )
@@ -17,4 +18,5 @@ __all__ = [
     "generate_pulpit_scripture",
     "generate_pulpit_prayers",
     "generate_large_print",
+    "generate_leader_guide",
 ]
