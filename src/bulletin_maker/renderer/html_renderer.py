@@ -17,7 +17,7 @@ import logging
 import re
 from pathlib import Path
 
-from bulletin_maker.exceptions import ContentNotFoundError
+from bulletin_maker.exceptions import BulletinError, ContentNotFoundError
 from bulletin_maker.sns.models import DayContent, HymnLyrics, ServiceConfig
 from bulletin_maker.renderer.season import (
     LiturgicalSeason,
@@ -608,7 +608,9 @@ def _find_creed_page(pdf_path: Path) -> int | None:
             text = (page.extract_text() or "").upper()
             if "NICENE CREED" in text or "APOSTLES CREED" in text:
                 return i + 1  # 1-based
-    except Exception:
+    except ImportError:
+        logger.warning("pypdf not installed — cannot scan for creed page")
+    except (OSError, ValueError):
         logger.warning("Could not scan PDF for creed page: %s", pdf_path)
     return None
 
@@ -788,7 +790,7 @@ def generate_bulletin(
                     client, parts[1], collection=parts[0],
                 )
                 communion_hymn_image_uri = _image_to_data_uri(img_path)
-            except Exception:
+            except (BulletinError, OSError):
                 logger.warning("Could not fetch communion hymn image for %s",
                                hymn_num)
 

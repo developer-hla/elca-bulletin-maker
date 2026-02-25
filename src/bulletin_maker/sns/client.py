@@ -9,6 +9,7 @@ from __future__ import annotations
 import io
 import os
 import re
+import time
 import zipfile
 import logging
 
@@ -18,6 +19,7 @@ from bulletin_maker.exceptions import (
     AuthError,
     BulletinError,
     ContentNotFoundError,
+    NetworkError,
     ParseError,
 )
 from bulletin_maker.sns.models import DayContent, HymnLyrics, HymnResult, Reading
@@ -30,10 +32,10 @@ BASE = "https://members.sundaysandseasons.com"
 class SundaysClient:
     """HTTP client for Sundays & Seasons."""
 
-    def __init__(self):
+    def __init__(self, timeout: float = 30.0):
         self.client = httpx.Client(
             follow_redirects=True,
-            timeout=30.0,
+            timeout=timeout,
             headers={
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                               "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -45,29 +47,45 @@ class SundaysClient:
     # -- HTTP helpers -------------------------------------------------------
 
     def _request(self, method: str, url: str, **kwargs) -> httpx.Response:
-        """Execute an HTTP request, converting httpx errors to BulletinError."""
-        try:
-            resp = self.client.request(method, url, **kwargs)
-            resp.raise_for_status()
-            return resp
-        except httpx.HTTPStatusError as exc:
-            status = exc.response.status_code
-            if status in (401, 403):
-                raise AuthError(
-                    f"Authentication failed (HTTP {status}). "
-                    "Session may have expired."
+        """Execute an HTTP request with one retry for transient failures."""
+        last_exc: Exception | None = None
+        for attempt in range(2):
+            try:
+                resp = self.client.request(method, url, **kwargs)
+                resp.raise_for_status()
+                return resp
+            except httpx.HTTPStatusError as exc:
+                status = exc.response.status_code
+                if status in (401, 403):
+                    raise AuthError(
+                        f"Authentication failed (HTTP {status}). "
+                        "Session may have expired."
+                    ) from exc
+                if status >= 500 and attempt == 0:
+                    last_exc = exc
+                    time.sleep(2)
+                    continue
+                raise BulletinError(
+                    f"S&S returned HTTP {status} for {method} request"
                 ) from exc
-            raise BulletinError(
-                f"S&S returned HTTP {status} for {method} request"
-            ) from exc
-        except httpx.TimeoutException as exc:
-            raise BulletinError(
-                f"Request timed out connecting to S&S"
-            ) from exc
-        except httpx.RequestError as exc:
-            raise BulletinError(
-                f"Network error connecting to S&S: {exc}"
-            ) from exc
+            except httpx.TimeoutException as exc:
+                if attempt == 0:
+                    last_exc = exc
+                    time.sleep(2)
+                    continue
+                raise NetworkError(
+                    "Request timed out connecting to S&S"
+                ) from exc
+            except httpx.RequestError as exc:
+                if attempt == 0:
+                    last_exc = exc
+                    time.sleep(2)
+                    continue
+                raise NetworkError(
+                    f"Network error connecting to S&S: {exc}"
+                ) from exc
+        # Should not reach here, but satisfy type checker
+        raise NetworkError("Request failed after retry") from last_exc
 
     # -- Auth ---------------------------------------------------------------
 

@@ -17,3 +17,7 @@ class ParseError(BulletinError):
 
 class ContentNotFoundError(BulletinError):
     """Expected content (hymn, reading, image) was not found."""
+
+
+class NetworkError(BulletinError):
+    """Transient network errors (timeout, connection refused, DNS failure)."""

@@ -117,7 +117,10 @@ def count_pages(pdf_path: Path) -> int | None:
     try:
         from pypdf import PdfReader
         return len(PdfReader(str(pdf_path)).pages)
-    except Exception:
+    except ImportError:
+        return None
+    except (OSError, ValueError):
+        logger.warning("Could not count pages in %s", pdf_path)
         return None
 
 

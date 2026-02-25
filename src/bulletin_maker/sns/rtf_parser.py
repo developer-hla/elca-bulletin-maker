@@ -28,10 +28,14 @@ def parse_rtf_lyrics(
         HymnLyrics with title, verses, optional refrain, and copyright.
 
     Raises:
-        ValueError: If rtf_content is empty.
+        ParseError: If rtf_content is empty or too large.
     """
     if not rtf_content or not rtf_content.strip():
         raise ParseError("RTF content is empty")
+
+    MAX_RTF_SIZE = 500_000  # 500 KB — hymn RTFs are typically <50 KB
+    if len(rtf_content) > MAX_RTF_SIZE:
+        raise ParseError(f"RTF content too large ({len(rtf_content)} bytes)")
 
     title = _extract_title(rtf_content)
     has_refrain = bool(re.search(r"\{\\i[^}]*?Refrain", rtf_content))
@@ -82,7 +86,11 @@ def _strip_rtf(rtf: str) -> str:
             0x96: "\u2013",  # en dash
             0xA9: "\u00a9",  # copyright symbol
         }
-        return cp1252.get(code, chr(code))
+        if code in cp1252:
+            return cp1252[code]
+        if code > 0x10FFFF:
+            return ""  # invalid Unicode code point
+        return chr(code)
 
     rtf = re.sub(r"\\'([0-9a-fA-F]{2})", _hex_replace, rtf)
 
