@@ -243,6 +243,14 @@ def _build_large_print_context(day: DayContent, config: ServiceConfig) -> dict:
     if day.invitation_to_communion:
         invitation_text = strip_tags(preprocess_html(day.invitation_to_communion))
 
+    # Cover image
+    cover_image_uri = ""
+    if config.cover_image:
+        try:
+            cover_image_uri = _image_to_data_uri(Path(config.cover_image))
+        except FileNotFoundError:
+            logger.warning("Cover image not found: %s", config.cover_image)
+
     # CSS
     css = (TEMPLATE_DIR / "large_print.css").read_text()
 
@@ -253,6 +261,7 @@ def _build_large_print_context(day: DayContent, config: ServiceConfig) -> dict:
         # Cover
         "church_name": CHURCH_NAME,
         "church_address": CHURCH_ADDRESS,
+        "cover_image_uri": cover_image_uri,
         "date_display": config.date_display,
         "day_name": _extract_day_name(day.title),
 

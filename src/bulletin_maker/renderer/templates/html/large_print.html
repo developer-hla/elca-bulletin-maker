@@ -31,12 +31,21 @@
    COVER PAGE
    ════════════════════════════════════════════════════════════════════ #}
 <div class="cover">
-    <div class="cover-spacer"></div>
-    <h1 class="cover-church-name">{{ church_name }}</h1>
-    <p class="cover-address">{{ church_address | nl2br }}</p>
-    <div class="cover-spacer-large"></div>
-    <p class="cover-date">10:00 AM &mdash; {{ date_display }}</p>
-    <p class="cover-day-name">The {{ day_name }}</p>
+    <div class="cover-header">
+        <h1 class="cover-church-name">{{ church_name }}</h1>
+        <p class="cover-address">{{ church_address | nl2br }}</p>
+    </div>
+    {% if cover_image_uri %}
+    <div class="cover-image">
+        <img src="{{ cover_image_uri }}" alt="Cover Image">
+    </div>
+    {% else %}
+    <div class="cover-image"></div>
+    {% endif %}
+    <div class="cover-footer">
+        <p class="cover-date">10:00 AM &mdash; {{ date_display }}</p>
+        <p class="cover-day-name">The {{ day_name }}</p>
+    </div>
 </div>
 
 

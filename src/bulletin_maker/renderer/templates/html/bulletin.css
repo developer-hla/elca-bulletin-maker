@@ -23,8 +23,12 @@ p { margin: 0; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     min-height: 95%;
+}
+
+.cover-header, .cover-footer {
+    text-align: center;
 }
 
 .cover-church-name {
@@ -38,8 +42,7 @@ p { margin: 0; }
     line-height: 1.4;
 }
 
-.cover-logo {
-    margin: 24pt 0;
+.cover-image img {
     max-width: 3in;
     max-height: 3in;
 }
@@ -47,7 +50,6 @@ p { margin: 0; }
 .cover-date {
     font-size: 12pt;
     font-weight: bold;
-    margin-top: 18pt;
     margin-bottom: 4pt;
 }
 
