@@ -59,6 +59,7 @@ class SundaysClient:
             except httpx.HTTPStatusError as exc:
                 status = exc.response.status_code
                 if status in (401, 403):
+                    self._logged_in = False
                     raise AuthError(
                         f"Authentication failed (HTTP {status}). "
                         "Session may have expired."

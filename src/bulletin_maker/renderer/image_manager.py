@@ -191,18 +191,11 @@ def get_preface_image(preface: PrefaceType) -> Path:
 def load_asset_catalog() -> dict:
     """Load the asset catalog JSON."""
     catalog_path = ASSETS_DIR / "catalog.json"
-    with open(catalog_path) as f:
-        return json.load(f)
-
-
-def get_preface_options() -> dict:
-    """Return preface options grouped by seasonal/occasional.
-
-    Delegates to season.get_preface_options() — the PrefaceType enum
-    is the single source of truth.
-    """
-    from bulletin_maker.renderer.season import get_preface_options as _get
-    return _get()
+    try:
+        with open(catalog_path) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        raise ContentNotFoundError(f"Asset catalog error: {e}") from e
 
 
 # ── Bulk download from S&S Library ───────────────────────────────────

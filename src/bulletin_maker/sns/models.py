@@ -96,4 +96,3 @@ class ServiceConfig:
     postlude_performer: str = ""
     choral_title: str = ""
     cover_image: str = ""                   # Path to seasonal logo image
-    creed_page_num: Optional[int] = None    # From bulletin generation

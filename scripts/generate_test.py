@@ -23,6 +23,7 @@ from bulletin_maker.renderer import (
     generate_pulpit_prayers,
     generate_large_print,
 )
+from bulletin_maker.renderer.season import detect_season, fill_seasonal_defaults
 
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / "output"
 DATE = "2026-2-22"
@@ -150,10 +151,14 @@ def main():
             print(f"     {r.label}: {r.citation}")
         print(f"   Prayers HTML length: {len(day.prayers_html)} chars")
 
+        season = detect_season(day.title)
+        fill_seasonal_defaults(config, season)
+
         print("\n2. Generating Bulletin (booklet) PDF...")
         bulletin_path, creed_page = generate_bulletin(
             day, config,
             output_path=OUTPUT_DIR / "Bulletin for Congregation.pdf",
+            season=season,
             client=client,
             keep_intermediates=True,
         )
@@ -179,6 +184,7 @@ def main():
     lp_path = generate_large_print(
         day, config,
         output_path=OUTPUT_DIR / "Full with Hymns LARGE PRINT.pdf",
+        season=season,
     )
     print(f"   Saved: {lp_path}")
 

@@ -8,14 +8,17 @@ from bulletin_maker.renderer.image_manager import (
     get_setting_image,
     get_gospel_acclamation_image,
     get_preface_image,
-    get_preface_options,
     load_asset_catalog,
     SETTING_TWO_DIR,
     GOSPEL_ACCLAMATION_DIR,
     _SETTING_TWO_ATOM_CODES,
     _GA_SEASON_MAP,
 )
-from bulletin_maker.renderer.season import LiturgicalSeason, PrefaceType
+from bulletin_maker.renderer.season import (
+    LiturgicalSeason,
+    PrefaceType,
+    get_preface_options,
+)
 
 
 class TestGetSettingImage:

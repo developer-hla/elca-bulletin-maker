@@ -421,6 +421,20 @@ function setupHymnFetch() {
                     return;
                 }
 
+                // Skip lyrics fetch if hymn has no words download
+                if (!searchResult.has_words) {
+                    this.disabled = false;
+                    this.textContent = "Fetch";
+                    infoEl.textContent = searchResult.title + " (title only \u2014 no lyrics available)";
+                    show(infoEl);
+                    state.hymns[slotName] = {
+                        number: number,
+                        collection: collection,
+                        title: searchResult.title,
+                    };
+                    return;
+                }
+
                 // Then fetch lyrics
                 const lyricsResult = await window.pywebview.api.fetch_hymn_lyrics(
                     number, state.dateStr, collection

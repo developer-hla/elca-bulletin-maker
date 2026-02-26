@@ -20,11 +20,7 @@ from pathlib import Path
 
 from bulletin_maker.exceptions import BulletinError, ContentNotFoundError
 from bulletin_maker.sns.models import DayContent, HymnLyrics, Reading, ServiceConfig
-from bulletin_maker.renderer.season import (
-    LiturgicalSeason,
-    detect_season,
-    fill_seasonal_defaults,
-)
+from bulletin_maker.renderer.season import LiturgicalSeason
 from bulletin_maker.renderer.image_manager import (
     get_gospel_acclamation_image,
     get_preface_image,
@@ -279,10 +275,10 @@ def _booklet_blanks(n: int) -> int:
 # Context builders
 # ══════════════════════════════════════════════════════════════════════
 
-def _build_large_print_context(day: DayContent, config: ServiceConfig) -> dict:
+def _build_large_print_context(
+    day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
+) -> dict:
     """Build the full template context for the Large Print document."""
-    season = detect_season(day.title)
-    fill_seasonal_defaults(config, season)
 
     # Readings
     first_reading = _reading_data(_get_reading(day, "first"))
@@ -485,12 +481,11 @@ def _safe_setting_image_uri(piece: str) -> str:
 def _build_bulletin_context(
     day: DayContent,
     config: ServiceConfig,
+    season: LiturgicalSeason,
     *,
     communion_hymn_image_uri: str = "",
 ) -> dict:
     """Build template context for the standard Bulletin for Congregation."""
-    season = detect_season(day.title)
-    fill_seasonal_defaults(config, season)
 
     # Readings
     first_reading = _reading_data(_get_reading(day, "first"))
@@ -681,28 +676,20 @@ def _find_creed_page(pdf_path: Path) -> int | None:
 # Public API
 # ══════════════════════════════════════════════════════════════════════
 
-def generate_large_print(
-    day: DayContent,
-    config: ServiceConfig,
+def _render_large_format(
+    context: dict,
     output_path: Path,
     *,
     keep_intermediates: bool = False,
+    label: str,
 ) -> Path:
-    """Generate the Full with Hymns LARGE PRINT PDF via HTML + Playwright.
+    """Shared rendering logic for large print and leader guide documents.
 
-    Args:
-        day: S&S content for the Sunday.
-        config: User-provided service configuration.
-        output_path: Where to save the final PDF (suffix forced to .pdf).
-        keep_intermediates: If True, save debug HTML alongside the PDF.
-
-    Returns:
-        Path to the saved PDF file.
+    Both use the same template, margins, and auto-tighten strategy.
     """
     env = setup_jinja_env()
     template = env.get_template("large_print.html")
-    ctx = _build_large_print_context(day, config)
-    html_string = template.render(**ctx)
+    html_string = template.render(**context)
 
     output_path = Path(output_path).with_suffix(".pdf")
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -710,7 +697,8 @@ def generate_large_print(
     if keep_intermediates:
         debug_dir = output_path.parent / ".lp_debug"
         debug_dir.mkdir(exist_ok=True)
-        (debug_dir / "large_print.html").write_text(html_string)
+        debug_name = label.lower().replace(" ", "_") + ".html"
+        (debug_dir / debug_name).write_text(html_string)
 
     lp_margins = {
         "top": "0.25in",
@@ -735,17 +723,46 @@ def generate_large_print(
                 best_html = candidate
                 best_pages = n
         if best_pages < pages:
-            logger.info("LP auto-tighten: %d -> %d pages", pages, best_pages)
+            logger.info("%s auto-tighten: %d -> %d pages", label, pages, best_pages)
         render_to_pdf(best_html, output_path, margins=lp_margins,
                       display_footer=True)
 
-    logger.info("Large Print PDF saved: %s", output_path)
+    logger.info("%s PDF saved: %s", label, output_path)
     return output_path
 
 
-def _build_leader_guide_context(day: DayContent, config: ServiceConfig) -> dict:
+def generate_large_print(
+    day: DayContent,
+    config: ServiceConfig,
+    output_path: Path,
+    *,
+    season: LiturgicalSeason,
+    keep_intermediates: bool = False,
+) -> Path:
+    """Generate the Full with Hymns LARGE PRINT PDF via HTML + Playwright.
+
+    Args:
+        day: S&S content for the Sunday.
+        config: User-provided service configuration (already resolved).
+        output_path: Where to save the final PDF (suffix forced to .pdf).
+        season: The detected liturgical season.
+        keep_intermediates: If True, save debug HTML alongside the PDF.
+
+    Returns:
+        Path to the saved PDF file.
+    """
+    ctx = _build_large_print_context(day, config, season)
+    return _render_large_format(
+        ctx, output_path, keep_intermediates=keep_intermediates,
+        label="Large Print",
+    )
+
+
+def _build_leader_guide_context(
+    day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
+) -> dict:
     """Build template context for the Leader Guide (large print + notation)."""
-    ctx = _build_large_print_context(day, config)
+    ctx = _build_large_print_context(day, config, season)
     ctx["is_leader_guide"] = True
 
     preface_image_uri = ""
@@ -767,6 +784,7 @@ def generate_leader_guide(
     config: ServiceConfig,
     output_path: Path,
     *,
+    season: LiturgicalSeason,
     keep_intermediates: bool = False,
 ) -> Path:
     """Generate the Leader Guide PDF — large print with sung notation.
@@ -776,55 +794,19 @@ def generate_leader_guide(
 
     Args:
         day: S&S content for the Sunday.
-        config: User-provided service configuration.
+        config: User-provided service configuration (already resolved).
         output_path: Where to save the final PDF (suffix forced to .pdf).
+        season: The detected liturgical season.
         keep_intermediates: If True, save debug HTML alongside the PDF.
 
     Returns:
         Path to the saved PDF file.
     """
-    env = setup_jinja_env()
-    template = env.get_template("large_print.html")
-    ctx = _build_leader_guide_context(day, config)
-    html_string = template.render(**ctx)
-
-    output_path = Path(output_path).with_suffix(".pdf")
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    if keep_intermediates:
-        debug_dir = output_path.parent / ".lp_debug"
-        debug_dir.mkdir(exist_ok=True)
-        (debug_dir / "leader_guide.html").write_text(html_string)
-
-    lp_margins = {
-        "top": "0.25in",
-        "bottom": "0.5in",
-        "left": "0.438in",
-        "right": "0.438in",
-    }
-
-    render_to_pdf(html_string, output_path, margins=lp_margins, display_footer=True)
-
-    # Auto-tighten: same strategy as large print
-    pages = count_pages(output_path)
-    if pages:
-        best_html = html_string
-        best_pages = pages
-        for level_css in LP_TIGHTEN_CSS:
-            candidate = _inject_css(html_string, level_css)
-            render_to_pdf(candidate, output_path, margins=lp_margins,
-                          display_footer=True)
-            n = count_pages(output_path)
-            if n and n < best_pages:
-                best_html = candidate
-                best_pages = n
-        if best_pages < pages:
-            logger.info("Leader Guide auto-tighten: %d -> %d pages", pages, best_pages)
-        render_to_pdf(best_html, output_path, margins=lp_margins,
-                      display_footer=True)
-
-    logger.info("Leader Guide PDF saved: %s", output_path)
-    return output_path
+    ctx = _build_leader_guide_context(day, config, season)
+    return _render_large_format(
+        ctx, output_path, keep_intermediates=keep_intermediates,
+        label="Leader Guide",
+    )
 
 
 def generate_pulpit_scripture(
@@ -918,6 +900,7 @@ def generate_bulletin(
     config: ServiceConfig,
     output_path: Path,
     *,
+    season: LiturgicalSeason,
     client: object | None = None,
     keep_intermediates: bool = False,
 ) -> tuple[Path, int | None]:
@@ -928,8 +911,9 @@ def generate_bulletin(
 
     Args:
         day: S&S content for the Sunday.
-        config: User-provided service configuration.
+        config: User-provided service configuration (already resolved).
         output_path: Where to save the final booklet PDF.
+        season: The detected liturgical season.
         client: Optional authenticated SundaysClient for fetching the
             communion hymn notation image dynamically.
         keep_intermediates: If True, save debug HTML and sequential PDF.
@@ -958,7 +942,7 @@ def generate_bulletin(
     env = setup_jinja_env()
     template = env.get_template("bulletin.html")
     ctx = _build_bulletin_context(
-        day, config, communion_hymn_image_uri=communion_hymn_image_uri,
+        day, config, season, communion_hymn_image_uri=communion_hymn_image_uri,
     )
     html_string = template.render(**ctx)
 

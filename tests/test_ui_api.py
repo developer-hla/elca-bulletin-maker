@@ -61,14 +61,15 @@ class TestLogout:
 
 
 class TestFetchDayContent:
-    def test_returns_error_without_client_login(self):
+    def test_returns_error_on_bulletin_error(self):
         api = BulletinAPI()
         mock_client = MagicMock()
-        mock_client.get_day_texts.side_effect = Exception("not logged in")
+        mock_client.get_day_texts.side_effect = BulletinError("not logged in")
         api._client = mock_client
 
         result = api.fetch_day_content("2026-02-22", "February 22, 2026")
         assert result["success"] is False
+        assert "not logged in" in result["error"]
 
     def test_successful_fetch_returns_season_info(self):
         from bulletin_maker.sns.models import DayContent, Reading

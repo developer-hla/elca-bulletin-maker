@@ -23,6 +23,7 @@ from bulletin_maker.sns.models import DayContent, HymnLyrics, ServiceConfig
 from bulletin_maker.renderer.season import (
     PrefaceType,
     detect_season,
+    fill_seasonal_defaults,
     get_seasonal_config,
 )
 
@@ -63,9 +64,6 @@ class BulletinAPI:
             return {"success": True, "username": username}
         except AuthError as e:
             return {"success": False, "error": str(e)}
-        except Exception as e:
-            logger.exception("Login error")
-            return {"success": False, "error": str(e)}
 
     def logout(self) -> dict:
         """Close client session and reset state."""
@@ -84,7 +82,7 @@ class BulletinAPI:
 
     def get_preface_options(self) -> dict:
         """Return available preface options for the UI dropdown."""
-        from bulletin_maker.renderer.image_manager import get_preface_options
+        from bulletin_maker.renderer.season import get_preface_options
         try:
             options = get_preface_options()
             return {"success": True, "prefaces": options}
@@ -149,9 +147,6 @@ class BulletinAPI:
             }
         except BulletinError as e:
             return {"success": False, "error": str(e)}
-        except Exception as e:
-            logger.exception("Error fetching day content")
-            return {"success": False, "error": str(e)}
 
     # ── Hymns ─────────────────────────────────────────────────────────
 
@@ -176,9 +171,6 @@ class BulletinAPI:
                 "has_words": bool(hymn.words_atom_id),
             }
         except BulletinError as e:
-            return {"success": False, "error": str(e)}
-        except Exception as e:
-            logger.exception("Error searching hymn")
             return {"success": False, "error": str(e)}
 
     def fetch_hymn_lyrics(self, number: str, date_str: str,
@@ -219,9 +211,6 @@ class BulletinAPI:
                 "has_refrain": bool(lyrics.refrain),
             }
         except BulletinError as e:
-            return {"success": False, "error": str(e)}
-        except Exception as e:
-            logger.exception("Error fetching hymn lyrics")
             return {"success": False, "error": str(e)}
 
     # ── File Pickers ──────────────────────────────────────────────────
@@ -282,12 +271,25 @@ class BulletinAPI:
                 copyright=cached["copyright"],
             )
         # Minimal fallback — title only (no lyrics fetched)
+        logger.warning("Hymn %s %s not in cache — large print will show title only",
+                        collection, number)
         title = hymn_data.get("title", "")
         return HymnLyrics(
             number=f"{collection} {number}",
             title=title,
             verses=[],
         )
+
+    @staticmethod
+    def _parse_preface(value: str | None) -> PrefaceType | None:
+        """Convert a preface string to PrefaceType, returning None on bad input."""
+        if not value:
+            return None
+        try:
+            return PrefaceType(value)
+        except ValueError:
+            logger.warning("Invalid preface value from UI: %r", value)
+            return None
 
     def _build_service_config(self, form_data: dict) -> ServiceConfig:
         """Build a ServiceConfig from wizard form data."""
@@ -299,7 +301,7 @@ class BulletinAPI:
             canticle=form_data.get("canticle"),
             eucharistic_form=form_data.get("eucharistic_form"),
             include_memorial_acclamation=form_data.get("include_memorial_acclamation"),
-            preface=PrefaceType(form_data["preface"]) if form_data.get("preface") else None,
+            preface=self._parse_preface(form_data.get("preface")),
             gathering_hymn=self._build_hymn(form_data, "gathering_hymn"),
             sermon_hymn=self._build_hymn(form_data, "sermon_hymn"),
             communion_hymn=self._build_hymn(form_data, "communion_hymn"),
@@ -315,7 +317,7 @@ class BulletinAPI:
     # ── Generation ────────────────────────────────────────────────────
 
     def generate_all(self, form_data: dict) -> dict:
-        """Generate all 4 documents from the wizard form data.
+        """Generate all 5 documents from the wizard form data.
 
         form_data keys:
             date, date_display, creed_type, include_kyrie, canticle,
@@ -337,9 +339,12 @@ class BulletinAPI:
             output_dir.mkdir(parents=True, exist_ok=True)
 
             config = self._build_service_config(form_data)
+            season = detect_season(self._day.title)
+            fill_seasonal_defaults(config, season)
 
             results = {}
             errors = {}
+            creed_page = None  # Set by bulletin generation
 
             from bulletin_maker.renderer import (
                 generate_bulletin,
@@ -355,9 +360,9 @@ class BulletinAPI:
                 bulletin_path, creed_page = generate_bulletin(
                     self._day, config,
                     output_path=output_dir / "Bulletin for Congregation.pdf",
+                    season=season,
                     client=self._client,
                 )
-                config.creed_page_num = creed_page
                 results["bulletin"] = str(bulletin_path)
                 self._push_progress("bulletin", f"Bulletin saved (creed p.{creed_page})", 30)
             except Exception as e:
@@ -374,7 +379,7 @@ class BulletinAPI:
                     self._day,
                     config.date_display,
                     creed_type=creed_type,
-                    creed_page_num=config.creed_page_num,
+                    creed_page_num=creed_page,
                     output_path=output_dir / f"Pulpit PRAYERS + {prayers_label} 8.5 x 11.pdf",
                 )
                 results["prayers"] = str(prayers_path)
@@ -405,6 +410,7 @@ class BulletinAPI:
                 lp_path = generate_large_print(
                     self._day, config,
                     output_path=output_dir / "Full with Hymns LARGE PRINT.pdf",
+                    season=season,
                 )
                 results["large_print"] = str(lp_path)
                 self._push_progress("large_print", "Large print saved", 85)
@@ -419,6 +425,7 @@ class BulletinAPI:
                 lg_path = generate_leader_guide(
                     self._day, config,
                     output_path=output_dir / "Leader Guide.pdf",
+                    season=season,
                 )
                 results["leader_guide"] = str(lg_path)
                 self._push_progress("leader_guide", "Leader guide saved", 95)
