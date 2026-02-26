@@ -1,0 +1,2695 @@
+{
+  "pulpit_scripture": {
+    "filename": "ASCENSION -- 2026.02.22 LENT 1A - Pulpit SCRIPTURE 8.5 x 11.docx",
+    "page_setup": [
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.5,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.312,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.688
+      }
+    ],
+    "styles": {
+      "Heading 1": {
+        "name": "Heading 1",
+        "font_size_pt": 16.0,
+        "bold": true,
+        "line_spacing_rule": "single",
+        "space_after_pt": 0.0,
+        "background_fill": "000000",
+        "borders": {
+          "top": {
+            "style": "single",
+            "size_eighths_pt": "4",
+            "color": "auto"
+          },
+          "bottom": {
+            "style": "single",
+            "size_eighths_pt": "4",
+            "color": "auto"
+          }
+        },
+        "text_color": "FFFFFF",
+        "char_spacing_twips": -8
+      },
+      "Normal": {
+        "name": "Normal"
+      },
+      "Scripture": {
+        "name": "Scripture",
+        "font_name": "Cambria",
+        "font_size_pt": 15.0,
+        "line_spacing_pt": 21.0,
+        "line_spacing_rule": "exact",
+        "space_after_pt": 6.0,
+        "first_line_indent_in": 0.13
+      }
+    },
+    "header": [
+      {
+        "runs": [
+          {
+            "text": ""
+          },
+          {
+            "text": " ",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": "SCRIPTURE Readings",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": " \u2013",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": " ",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": "February ",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": "22",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": ", 2026",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": "                    "
+          },
+          {
+            "text": "\t",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": "Leader:",
+            "bold": true
+          },
+          {
+            "text": " ",
+            "size_pt": 72.0,
+            "bold": true
+          },
+          {
+            "text": " ",
+            "size_pt": 36.0,
+            "bold": true
+          }
+        ]
+      }
+    ],
+    "paragraphs": [
+      {
+        "index": 0,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 1,
+        "style": "Heading 1",
+        "text_preview": " FIRST READING Genesis 2:15-17; 3:1-7"
+      },
+      {
+        "index": 2,
+        "style": "Scripture",
+        "text_preview": "A reading from THE BOOK OF GENESIS:"
+      },
+      {
+        "index": 3,
+        "style": "Scripture",
+        "text_preview": "15\u2006The Lord God took the man and put him in the garden of Ed"
+      },
+      {
+        "index": 4,
+        "style": "Scripture",
+        "text_preview": "The Word of the Lord.\nThanks be to God."
+      },
+      {
+        "index": 5,
+        "style": "Heading 1",
+        "text_preview": "PSALM 32"
+      },
+      {
+        "index": 6,
+        "style": "Scripture",
+        "text_preview": "Please read with me responsively PSALM 32"
+      },
+      {
+        "index": 7,
+        "style": "Scripture",
+        "text_preview": "1\u2006Happy are they whose transgressions are forgiven,\nand whos"
+      },
+      {
+        "index": 8,
+        "style": "Scripture",
+        "text_preview": "2\u2006Happy are they to whom the Lord imputes no guilt, and in w"
+      },
+      {
+        "index": 9,
+        "style": "Scripture",
+        "text_preview": "3\u2006While I held my tongue, my bones withered away, because of"
+      },
+      {
+        "index": 10,
+        "style": "Scripture",
+        "text_preview": "4\u2006For your hand was heavy upon me day and night; my moisture"
+      },
+      {
+        "index": 11,
+        "style": "Scripture",
+        "text_preview": "5\u2006Then I acknowledged my sin to you, and did not conceal my "
+      },
+      {
+        "index": 12,
+        "style": "Scripture",
+        "text_preview": "6\u2006Therefore all the faithful will make their prayers to you "
+      },
+      {
+        "index": 13,
+        "style": "Scripture",
+        "text_preview": "7\u2006You are my hiding-place; you preserve me from trouble;\nyou"
+      },
+      {
+        "index": 14,
+        "style": "Scripture",
+        "text_preview": "8\u2006\u201cI will instruct you and teach you in the way that you sho"
+      },
+      {
+        "index": 15,
+        "style": "Scripture",
+        "text_preview": "9\u2006Do not be like horse or mule, which have no understanding;"
+      },
+      {
+        "index": 16,
+        "style": "Scripture",
+        "text_preview": "10\u2006Great are the tribulations of the wicked; but mercy embra"
+      },
+      {
+        "index": 17,
+        "style": "Scripture",
+        "text_preview": "11\u2006Be glad, you righteous, and rejoice in the Lord; shout fo"
+      },
+      {
+        "index": 18,
+        "style": "Scripture",
+        "text_preview": ""
+      },
+      {
+        "index": 19,
+        "style": "Heading 1",
+        "text_preview": "SECOND READING: Romans 5:12-19"
+      },
+      {
+        "index": 20,
+        "style": "Scripture",
+        "text_preview": "A reading from ROMANS"
+      },
+      {
+        "index": 21,
+        "style": "Scripture",
+        "text_preview": "12\u2006Just as sin came into the world through one man, and deat",
+        "line_spacing_override_pt": 20.0
+      },
+      {
+        "index": 22,
+        "style": "Scripture",
+        "text_preview": "The word of the Lord.\nThanks be to God.",
+        "run_overrides": [
+          {
+            "size_pt": 16.0,
+            "text": "The word of the Lord."
+          },
+          {
+            "size_pt": 16.0,
+            "text": "\n"
+          },
+          {
+            "size_pt": 16.0,
+            "bold": true,
+            "text": "Thanks be to God."
+          }
+        ]
+      },
+      {
+        "index": 23,
+        "style": "Scripture",
+        "text_preview": "Please rise in BODY or SPIRIT for the reading of the Gospel.",
+        "run_overrides": [
+          {
+            "size_pt": 14.0,
+            "text": "Please rise in "
+          },
+          {
+            "size_pt": 14.0,
+            "italic": true,
+            "text": "BODY"
+          },
+          {
+            "size_pt": 14.0,
+            "text": " or "
+          },
+          {
+            "size_pt": 14.0,
+            "italic": true,
+            "text": "SPIRIT"
+          },
+          {
+            "size_pt": 14.0,
+            "text": " for the reading of the Gospel"
+          },
+          {
+            "size_pt": 16.0,
+            "bold": true,
+            "text": ""
+          },
+          {
+            "size_pt": 14.0,
+            "text": " "
+          }
+        ]
+      },
+      {
+        "index": 24,
+        "style": "Scripture",
+        "text_preview": "Reader:  Please take this script from the Pulpit to recycle ",
+        "run_overrides": [
+          {
+            "size_pt": 16.0,
+            "italic": true,
+            "text": "Reader:  Please take this scri"
+          },
+          {
+            "size_pt": 16.0,
+            "italic": true,
+            "text": "leav"
+          },
+          {
+            "size_pt": 16.0,
+            "italic": true,
+            "text": "e"
+          }
+        ]
+      }
+    ]
+  },
+  "pulpit_prayers": {
+    "filename": "ASCENSION -- 2026.02.22 LENT 1A - Pulpit PRAYERS + APOSTLES 8.5 x 11.docx",
+    "page_setup": [
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.5,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.312,
+        "margin_right_in": 0.375,
+        "columns": 2,
+        "column_gap_in": 0.812
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.5,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.312,
+        "margin_right_in": 0.375,
+        "columns": 2,
+        "column_gap_in": 0.812
+      }
+    ],
+    "styles": {
+      "Heading 1": {
+        "name": "Heading 1",
+        "font_size_pt": 14.0,
+        "bold": true,
+        "line_spacing_rule": "single",
+        "space_after_pt": 0.0,
+        "background_fill": "000000",
+        "borders": {
+          "top": {
+            "style": "single",
+            "size_eighths_pt": "4",
+            "color": "000000"
+          },
+          "bottom": {
+            "style": "single",
+            "size_eighths_pt": "4",
+            "color": "000000"
+          }
+        },
+        "text_color": "FFFFFF"
+      },
+      "Normal": {
+        "name": "Normal"
+      },
+      "Scripture": {
+        "name": "Scripture",
+        "font_name": "Cambria",
+        "font_size_pt": 15.0,
+        "line_spacing_multiple": 1.15,
+        "line_spacing_rule": "multiple",
+        "space_after_pt": 12.0,
+        "right_indent_in": 0.12,
+        "text_color": "000000"
+      }
+    },
+    "header": [
+      {
+        "runs": [
+          {
+            "text": "CREED & PRAYERS \u2013 ",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": "February ",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": "22",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": ", ",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": "2026",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": "                    "
+          },
+          {
+            "text": "\t",
+            "size_pt": 18.0,
+            "bold": true
+          },
+          {
+            "text": "Leader:",
+            "bold": true
+          },
+          {
+            "text": " "
+          },
+          {
+            "text": "",
+            "size_pt": 24.0,
+            "bold": true
+          }
+        ]
+      }
+    ],
+    "paragraphs": [
+      {
+        "index": 0,
+        "style": "Normal",
+        "text_preview": " "
+      },
+      {
+        "index": 1,
+        "style": "Heading 1",
+        "text_preview": "APOSTLES CREED",
+        "space_before_pt": 24.0
+      },
+      {
+        "index": 2,
+        "style": "Scripture",
+        "text_preview": "Please turn to page _____ of your Bulletin and let us profes"
+      },
+      {
+        "index": 3,
+        "style": "Scripture",
+        "text_preview": "We believe in one God, \nthe Father, the Almighty,\nmaker of h"
+      },
+      {
+        "index": 4,
+        "style": "Scripture",
+        "text_preview": "We believe in one Lord, Jesus Christ,\nthe only Son of God, e"
+      },
+      {
+        "index": 5,
+        "style": "Scripture",
+        "text_preview": "Through him all things were made.\nFor us and for our salvati"
+      },
+      {
+        "index": 6,
+        "style": "Scripture",
+        "text_preview": "For our sake he was crucified \n    under Pontius Pilate;\n   "
+      },
+      {
+        "index": 7,
+        "style": "Scripture",
+        "text_preview": "On the third day he rose again\nin accordance with the script"
+      },
+      {
+        "index": 8,
+        "style": "Scripture",
+        "text_preview": "He will come again in glory \nto judge the living and the dea"
+      },
+      {
+        "index": 9,
+        "style": "Scripture",
+        "text_preview": "We believe in the Holy Spirit, \nthe Lord, the giver of life,"
+      },
+      {
+        "index": 10,
+        "style": "Scripture",
+        "text_preview": "We believe in one holy catholic \nand apostolic church."
+      },
+      {
+        "index": 11,
+        "style": "Scripture",
+        "text_preview": "We acknowledge one baptism \nfor the forgiveness of sins."
+      },
+      {
+        "index": 12,
+        "style": "Scripture",
+        "text_preview": "We look for the resurrection of the dead, \nand the life of t"
+      },
+      {
+        "index": 13,
+        "style": "Scripture",
+        "text_preview": "Amen. "
+      },
+      {
+        "index": 14,
+        "style": "Heading 1",
+        "text_preview": " PRAYERS of INTERCESSION"
+      },
+      {
+        "index": 15,
+        "style": "Scripture",
+        "text_preview": "We continue with the prayers of the people:"
+      },
+      {
+        "index": 16,
+        "style": "Scripture",
+        "text_preview": "God of all grace, grant faith to your church. Give to all th"
+      },
+      {
+        "index": 17,
+        "style": "Scripture",
+        "text_preview": "Your mercy is great."
+      },
+      {
+        "index": 18,
+        "style": "Scripture",
+        "text_preview": "\n\nGod of all creation, tend this earth. When human greed and"
+      },
+      {
+        "index": 19,
+        "style": "Scripture",
+        "text_preview": "Your mercy is great."
+      },
+      {
+        "index": 20,
+        "style": "Scripture",
+        "text_preview": "God of all nations, preserve us from trouble. Surround all l"
+      },
+      {
+        "index": 21,
+        "style": "Scripture",
+        "text_preview": "Your mercy is great."
+      },
+      {
+        "index": 22,
+        "style": "Scripture",
+        "text_preview": "God of all healing, mend our wounds. Bring wholeness to all "
+      },
+      {
+        "index": 23,
+        "style": "Scripture",
+        "text_preview": "__________________________________________ \n________________"
+      },
+      {
+        "index": 24,
+        "style": "Scripture",
+        "text_preview": "and those we name quietly before you now (a brief silence). ",
+        "run_overrides": [
+          {
+            "italic": true,
+            "text": "a brief silence"
+          }
+        ]
+      },
+      {
+        "index": 25,
+        "style": "Scripture",
+        "text_preview": "Your mercy is great."
+      },
+      {
+        "index": 26,
+        "style": "Scripture",
+        "text_preview": "God of all people, provide for our community. For any among "
+      },
+      {
+        "index": 27,
+        "style": "Scripture",
+        "text_preview": "Your mercy is great."
+      },
+      {
+        "index": 28,
+        "style": "Scripture",
+        "text_preview": "God of all life, bring us to you. We thank you for your free"
+      },
+      {
+        "index": 29,
+        "style": "Scripture",
+        "text_preview": "Your mercy is great."
+      },
+      {
+        "index": 30,
+        "style": "Scripture",
+        "text_preview": "Receive our prayers, O God, through Jesus Christ, our streng"
+      },
+      {
+        "index": 31,
+        "style": "Scripture",
+        "text_preview": "Amen."
+      },
+      {
+        "index": 32,
+        "style": "Scripture",
+        "text_preview": "Leader:  Please descend \nfrom the Pulpit, \nstepping aside fo",
+        "run_overrides": [
+          {
+            "size_pt": 18.0,
+            "italic": true,
+            "text": "Leader:  Please "
+          },
+          {
+            "size_pt": 18.0,
+            "italic": true,
+            "text": "descend "
+          },
+          {
+            "size_pt": 18.0,
+            "italic": true,
+            "text": "\n"
+          },
+          {
+            "size_pt": 18.0,
+            "italic": true,
+            "text": "from the Pulpit, "
+          },
+          {
+            "size_pt": 18.0,
+            "italic": true,
+            "text": "\n"
+          },
+          {
+            "size_pt": 18.0,
+            "italic": true,
+            "text": "stepping "
+          },
+          {
+            "size_pt": 18.0,
+            "italic": true,
+            "text": "aside for "
+          },
+          {
+            "size_pt": 18.0,
+            "italic": true,
+            "text": "\n"
+          },
+          {
+            "size_pt": 18.0,
+            "italic": true,
+            "text": "Pastor to rise at the Pulpit "
+          },
+          {
+            "size_pt": 18.0,
+            "italic": true,
+            "text": "\n"
+          },
+          {
+            "size_pt": 18.0,
+            "italic": true,
+            "text": "to share His Peace"
+          }
+        ]
+      },
+      {
+        "index": 33,
+        "style": "Scripture",
+        "text_preview": ""
+      },
+      {
+        "index": 34,
+        "style": "Scripture",
+        "text_preview": ""
+      }
+    ]
+  },
+  "bulletin": {
+    "filename": "ASCENSION -- 2026.02.22 LENT 1A - BULLETIN for CONGREGATION.docx",
+    "page_setup": [
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.5,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.5,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.75,
+        "margin_right_in": 0.25,
+        "columns": 2,
+        "column_gap_in": 0.25
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.19,
+        "margin_bottom_in": 0.125,
+        "margin_left_in": 0.38,
+        "margin_right_in": 0.38,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.375,
+        "margin_right_in": 0.5,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.375,
+        "margin_right_in": 0.25,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.25,
+        "columns": 1,
+        "column_gap_in": 0.125
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.312,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.375,
+        "margin_right_in": 0.5,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.312,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.375,
+        "margin_right_in": 0.5,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.125,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.875,
+        "margin_right_in": 0.5,
+        "columns": 2,
+        "column_gap_in": 0.438
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.0,
+        "columns": 1,
+        "column_gap_in": 0.3
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.0,
+        "columns": 2,
+        "column_gap_in": 0.3
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.0,
+        "columns": 1,
+        "column_gap_in": 0.6
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.0,
+        "columns": 1,
+        "column_gap_in": 0.3
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.062,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.0,
+        "columns": 2,
+        "column_gap_in": 0.3
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.312,
+        "margin_right_in": 0.5,
+        "columns": 2,
+        "column_gap_in": 0.5
+      }
+    ],
+    "styles": {
+      "Congregation INSTRUCTIONS": {
+        "name": "Congregation INSTRUCTIONS",
+        "line_spacing_rule": "single",
+        "space_before_pt": 12.0,
+        "space_after_pt": 12.0,
+        "text_color": "C00000",
+        "char_spacing_twips": 0
+      },
+      "Cover TITLE": {
+        "name": "Cover TITLE",
+        "font_size_pt": 36.0,
+        "bold": true,
+        "line_spacing_rule": "single",
+        "space_after_pt": 4.0,
+        "char_spacing_twips": -10
+      },
+      "Heading 3": {
+        "name": "Heading 3",
+        "line_spacing_rule": "single"
+      },
+      "LITURGY HEADING": {
+        "name": "LITURGY HEADING",
+        "bold": true,
+        "space_before_pt": 24.0
+      },
+      "MUSICAL TIGHT": {
+        "name": "MUSICAL TIGHT",
+        "space_before_pt": 6.0
+      },
+      "Musical Selection": {
+        "name": "Musical Selection",
+        "bold": true,
+        "space_before_pt": 12.0,
+        "space_after_pt": 0.0
+      },
+      "Normal": {
+        "name": "Normal",
+        "font_name": "Cambria",
+        "font_size_pt": 16.0,
+        "line_spacing_pt": 20.0,
+        "line_spacing_rule": "exact"
+      },
+      "Normal TIGHT": {
+        "name": "Normal TIGHT",
+        "char_spacing_twips": -10
+      },
+      "Scripture": {
+        "name": "Scripture",
+        "font_size_pt": 16.5,
+        "line_spacing_pt": 22.0,
+        "line_spacing_rule": "exact"
+      }
+    },
+    "header": [
+      {
+        "runs": []
+      }
+    ],
+    "paragraphs": [
+      {
+        "index": 0,
+        "style": "Normal",
+        "text_preview": " ",
+        "run_overrides": [
+          {
+            "bold": true,
+            "text": " "
+          }
+        ]
+      },
+      {
+        "index": 1,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 2,
+        "style": "Cover TITLE",
+        "text_preview": ""
+      },
+      {
+        "index": 3,
+        "style": "Cover TITLE",
+        "text_preview": "Ascension Lutheran Church"
+      },
+      {
+        "index": 4,
+        "style": "Normal TIGHT",
+        "text_preview": "6481 Old Canton Road Jackson \u00b7 Mississippi \u00b7 39211 \u00b7 601.956",
+        "run_overrides": [
+          {
+            "size_pt": 18.0,
+            "text": "6481 Old Canton Road Jackson \u00b7"
+          },
+          {
+            "size_pt": 18.0,
+            "text": "\n"
+          },
+          {
+            "size_pt": 18.0,
+            "text": "www.ascensionluth.org "
+          },
+          {
+            "size_pt": 18.0,
+            "text": " "
+          },
+          {
+            "size_pt": 18.0,
+            "text": "\u00b7"
+          },
+          {
+            "size_pt": 18.0,
+            "text": " "
+          },
+          {
+            "size_pt": 18.0,
+            "text": " "
+          },
+          {
+            "size_pt": 18.0,
+            "text": "ascensionluthnews@gmail.com"
+          }
+        ]
+      },
+      {
+        "index": 5,
+        "style": "Normal TIGHT",
+        "text_preview": ""
+      },
+      {
+        "index": 6,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 7,
+        "style": "Normal",
+        "text_preview": "",
+        "run_overrides": [
+          {
+            "bold": true,
+            "text": ""
+          }
+        ]
+      },
+      {
+        "index": 8,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 9,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 10,
+        "style": "Normal",
+        "text_preview": "10:00 AM \u2014 February 22, 2026",
+        "run_overrides": [
+          {
+            "size_pt": 20.0,
+            "bold": true,
+            "text": "10:00 AM \u2014 "
+          },
+          {
+            "size_pt": 20.0,
+            "bold": true,
+            "text": "February "
+          },
+          {
+            "size_pt": 20.0,
+            "bold": true,
+            "text": "22"
+          },
+          {
+            "size_pt": 20.0,
+            "bold": true,
+            "text": ","
+          },
+          {
+            "size_pt": 20.0,
+            "bold": true,
+            "text": " 202"
+          },
+          {
+            "size_pt": 20.0,
+            "bold": true,
+            "text": "6"
+          }
+        ]
+      },
+      {
+        "index": 11,
+        "style": "Normal",
+        "text_preview": "The First Sunday in Lent",
+        "run_overrides": [
+          {
+            "size_pt": 28.0,
+            "bold": true,
+            "text": "The "
+          },
+          {
+            "size_pt": 28.0,
+            "bold": true,
+            "text": "First Sunday in Lent"
+          }
+        ]
+      },
+      {
+        "index": 12,
+        "style": "Normal",
+        "text_preview": "",
+        "run_overrides": [
+          {
+            "size_pt": 14.0,
+            "bold": true,
+            "text": ""
+          }
+        ]
+      },
+      {
+        "index": 13,
+        "style": "Normal",
+        "text_preview": "Welcome to Ascension. We are glad that you have chosen to wo",
+        "line_spacing_override_pt": 15.0,
+        "run_overrides": [
+          {
+            "size_pt": 14.0,
+            "bold": true,
+            "text": "Welcome to Ascension."
+          },
+          {
+            "size_pt": 14.0,
+            "text": " We are glad that you have cho"
+          },
+          {
+            "size_pt": 14.0,
+            "text": " "
+          },
+          {
+            "size_pt": 14.0,
+            "text": "\n"
+          },
+          {
+            "size_pt": 14.0,
+            "text": "If you are a visitor, please f"
+          },
+          {
+            "size_pt": 14.0,
+            "text": "an"
+          },
+          {
+            "size_pt": 14.0,
+            "text": " attendance card "
+          },
+          {
+            "size_pt": 14.0,
+            "text": "from"
+          },
+          {
+            "size_pt": 14.0,
+            "text": " your "
+          },
+          {
+            "size_pt": 14.0,
+            "text": "\n"
+          },
+          {
+            "size_pt": 14.0,
+            "text": "pew rack so we may have a reco"
+          },
+          {
+            "size_pt": 14.0,
+            "text": "visit"
+          },
+          {
+            "size_pt": 14.0,
+            "text": ". "
+          },
+          {
+            "size_pt": 14.0,
+            "text": " "
+          },
+          {
+            "size_pt": 14.0,
+            "text": "Our "
+          },
+          {
+            "size_pt": 14.0,
+            "text": "ushers"
+          },
+          {
+            "size_pt": 14.0,
+            "text": " and greeters "
+          },
+          {
+            "size_pt": 14.0,
+            "text": "\n"
+          },
+          {
+            "size_pt": 14.0,
+            "text": "will be glad to "
+          },
+          {
+            "size_pt": 14.0,
+            "text": "answer any questions you may h"
+          }
+        ]
+      },
+      {
+        "index": 14,
+        "style": "Congregation INSTRUCTIONS",
+        "text_preview": "\u201c * \u201d\u00a0Indicates when the congregation stands. Bold lettering"
+      },
+      {
+        "index": 15,
+        "style": "Congregation INSTRUCTIONS",
+        "text_preview": ""
+      },
+      {
+        "index": 16,
+        "style": "LITURGY HEADING",
+        "text_preview": "GATHERING Chimes: WOrship Begins",
+        "space_before_pt": 6.0
+      },
+      {
+        "index": 17,
+        "style": "Musical Selection",
+        "text_preview": "Choral Call to worship: BY ONE MAN'S DISOBEDIENCE\u00a0 \u00a0\u00a0 \tK. Er",
+        "line_spacing_override_pt": 15.0,
+        "space_before_pt": 6.0
+      },
+      {
+        "index": 18,
+        "style": "Musical Selection",
+        "text_preview": "Prelude: LENTEN MEDITATION\tRichard Blake",
+        "line_spacing_override_pt": 15.0,
+        "space_before_pt": 6.0
+      },
+      {
+        "index": 19,
+        "style": "Musical Selection",
+        "text_preview": "Welcome",
+        "space_before_pt": 6.0
+      },
+      {
+        "index": 20,
+        "style": "Musical Selection",
+        "text_preview": "*CONFESSION AND FORGIVENESS\t",
+        "space_before_pt": 6.0
+      },
+      {
+        "index": 21,
+        "style": "Congregation INSTRUCTIONS",
+        "text_preview": "All may make the sign of the cross \u2629, the sign marked at our",
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "text": "All may make the sign of the c"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "font": "Segoe UI Symbol",
+            "text": "\u2629"
+          },
+          {
+            "size_pt": 16.5,
+            "text": ", the sign marked at our bapti"
+          }
+        ]
+      },
+      {
+        "index": 22,
+        "style": "Normal",
+        "text_preview": "Pastor: In the name of the Father, and of the \u2629\u00a0Son, and of ",
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "Pastor: "
+          },
+          {
+            "size_pt": 16.5,
+            "text": "In the name of the Father, and"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "font": "Segoe UI Symbol",
+            "text": "\u2629"
+          },
+          {
+            "size_pt": 16.5,
+            "text": "\u00a0Son, and of the Holy Spirit. "
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "Amen."
+          }
+        ]
+      },
+      {
+        "index": 23,
+        "style": "Normal",
+        "text_preview": "God of all mercy and consolation, come to the help of your p",
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "text": "God of all mercy and consolati"
+          },
+          {
+            "size_pt": 16.5,
+            "text": "\nturning us away from our sin "
+          },
+          {
+            "size_pt": 16.5,
+            "text": "\nGive us the power of your Hol"
+          },
+          {
+            "size_pt": 16.5,
+            "text": "\nreceive your forgiveness, and"
+          },
+          {
+            "size_pt": 16.5,
+            "text": "\nof Jesus Christ, our Savior a"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "Amen"
+          },
+          {
+            "size_pt": 16.5,
+            "text": "."
+          }
+        ]
+      },
+      {
+        "index": 24,
+        "style": "Normal",
+        "text_preview": "P: Most merciful God,",
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "P: "
+          },
+          {
+            "size_pt": 16.5,
+            "text": "Most merciful God,"
+          }
+        ]
+      },
+      {
+        "index": 25,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 26,
+        "style": "Normal",
+        "text_preview": "we confess that we are \ncaptive to sin and cannot \nfree ours",
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "we"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": " confess that we are "
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "\n"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "captive to sin and cannot "
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "\n"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "free ourselves."
+          }
+        ]
+      },
+      {
+        "index": 27,
+        "style": "Normal",
+        "text_preview": "We have sinned against you in thought, word, and deed, \nby w",
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "We have sinned against you in "
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "\n"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "by what we have done and "
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "\n"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "by what we have left undone. "
+          }
+        ]
+      },
+      {
+        "index": 28,
+        "style": "Normal",
+        "text_preview": "We have not loved you with our whole heart; we have not love",
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "We have not loved you with our"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": ""
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "our neighbors as ourselves."
+          }
+        ]
+      },
+      {
+        "index": 29,
+        "style": "Normal",
+        "text_preview": "For the sake of your son, \nJesus Christ, have mercy on us. ",
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "For the sake of your son, "
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "\nJesus Christ, have mercy on u"
+          }
+        ]
+      },
+      {
+        "index": 30,
+        "style": "Normal",
+        "text_preview": "Forgive us, renew us, \nand lead us, so that we \nmay delight ",
+        "line_spacing_override_pt": 18.0,
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "Forgive us, renew us, "
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "\n"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "and lead us,"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": " "
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "so that we "
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "\n"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "may delight in your will"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "\nand walk in your ways, "
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "\nto the glory of your holy nam"
+          }
+        ]
+      },
+      {
+        "index": 31,
+        "style": "Normal",
+        "text_preview": "Amen.",
+        "line_spacing_override_pt": 18.0,
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "Amen."
+          }
+        ]
+      },
+      {
+        "index": 32,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 33,
+        "style": "Normal",
+        "text_preview": "P: In the mercy of almighty God, Jesus Christ was given to d",
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "P:"
+          },
+          {
+            "size_pt": 16.5,
+            "text": " "
+          },
+          {
+            "size_pt": 16.5,
+            "text": "In the mercy of almighty God, "
+          },
+          {
+            "size_pt": 16.5,
+            "text": ""
+          },
+          {
+            "size_pt": 16.5,
+            "text": "authority, I therefore declare"
+          },
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "font": "Segoe UI Symbol",
+            "text": "\u2629"
+          },
+          {
+            "size_pt": 16.5,
+            "text": " Son, and of the Holy Spirit. "
+          }
+        ]
+      },
+      {
+        "index": 34,
+        "style": "Musical Selection",
+        "text_preview": "\u00a0"
+      },
+      {
+        "index": 35,
+        "style": "Musical Selection",
+        "text_preview": "*Gathering Hymn: ELW 335 - JESUS, KEEP ME NEAR THE CROSS"
+      },
+      {
+        "index": 36,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 37,
+        "style": "LITURGY HEADING",
+        "text_preview": "*Invitation to Lent",
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "text": "*"
+          }
+        ]
+      },
+      {
+        "index": 38,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 39,
+        "style": "Normal",
+        "text_preview": "Friends in Christ, today with the whole church we enter the "
+      },
+      {
+        "index": 40,
+        "style": "Normal",
+        "text_preview": "We begin this holy season by acknowledging our need for repe"
+      },
+      {
+        "index": 41,
+        "style": "Normal",
+        "text_preview": "As disciples of Jesus, we are called to a discipline that st"
+      },
+      {
+        "index": 42,
+        "style": "Normal",
+        "text_preview": "Let us continue our journey through these forty days to the "
+      },
+      {
+        "index": 43,
+        "style": "Musical Selection",
+        "text_preview": ""
+      },
+      {
+        "index": 44,
+        "style": "Musical Selection",
+        "text_preview": "*Prayer of the Day \t\tPastor",
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "text": "*"
+          },
+          {
+            "size_pt": 16.5,
+            "text": "Prayer of the Day "
+          },
+          {
+            "size_pt": 16.5,
+            "text": "\t"
+          },
+          {
+            "size_pt": 16.5,
+            "text": "\t"
+          },
+          {
+            "size_pt": 16.5,
+            "text": "Pastor"
+          }
+        ]
+      },
+      {
+        "index": 45,
+        "style": "Normal",
+        "text_preview": "Lord God, our strength, the struggle between good and evil r",
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "bold": true,
+            "text": "Amen."
+          }
+        ]
+      },
+      {
+        "index": 46,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 47,
+        "style": "LITURGY HEADING",
+        "text_preview": "First Reading: Genesis 2:15-17; 3:1-7 \tScripture Reader",
+        "space_before_pt": 12.0,
+        "run_overrides": [
+          {
+            "size_pt": 16.5,
+            "text": "Scripture Reader"
+          }
+        ]
+      },
+      {
+        "index": 48,
+        "style": "Heading 3",
+        "text_preview": "Eating of the tree of the knowledge of good and evil"
+      },
+      {
+        "index": 49,
+        "style": "Heading 3",
+        "text_preview": ""
+      }
+    ]
+  },
+  "large_print": {
+    "filename": "ASCENSION -- 2026.02.22 LENT 1A - Full with Hymns LARGE PRINT & ONLINE.docx",
+    "page_setup": [
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.5,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.125,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.19,
+        "margin_bottom_in": 0.125,
+        "margin_left_in": 0.38,
+        "margin_right_in": 0.38,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.375,
+        "margin_right_in": 0.25,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.375,
+        "margin_right_in": 0.25,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.438,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.375,
+        "margin_right_in": 0.25,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.375,
+        "margin_right_in": 0.25,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.375,
+        "margin_right_in": 0.25,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.25,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.25,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.25,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.25,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.375,
+        "margin_right_in": 0.375,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.375,
+        "margin_right_in": 0.375,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.125,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.875,
+        "margin_right_in": 0.5,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.375,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.375,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.0,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.312,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.0,
+        "columns": 2,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.312,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.0,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.188,
+        "margin_right_in": 0.25,
+        "columns": 1,
+        "column_gap_in": 0.6
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.188,
+        "margin_right_in": 0.312,
+        "columns": 1,
+        "column_gap_in": 0.5
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.188,
+        "columns": 2,
+        "column_gap_in": 0.6
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.188,
+        "columns": 1,
+        "column_gap_in": 0.6
+      },
+      {
+        "page_width_in": 8.5,
+        "page_height_in": 11.0,
+        "margin_top_in": 0.188,
+        "margin_bottom_in": 0.5,
+        "margin_left_in": 0.438,
+        "margin_right_in": 0.0,
+        "columns": 2,
+        "column_gap_in": 0.6
+      }
+    ],
+    "styles": {
+      "Congregation INSTRUCTIONS": {
+        "name": "Congregation INSTRUCTIONS",
+        "line_spacing_rule": "single",
+        "space_after_pt": 0.0,
+        "text_color": "C00000",
+        "char_spacing_twips": 0
+      },
+      "Cover TITLE": {
+        "name": "Cover TITLE",
+        "font_name": "Cambria",
+        "font_size_pt": 36.0,
+        "bold": true,
+        "line_spacing_rule": "single",
+        "space_after_pt": 4.0,
+        "char_spacing_twips": -10
+      },
+      "HYMN TEXT": {
+        "name": "HYMN TEXT",
+        "line_spacing_multiple": 1.15,
+        "line_spacing_rule": "multiple",
+        "space_after_pt": 0.0,
+        "left_indent_in": 0.25
+      },
+      "Heading 1": {
+        "name": "Heading 1",
+        "font_name": "Cambria",
+        "font_size_pt": 20.0,
+        "line_spacing_rule": "single"
+      },
+      "Heading 3": {
+        "name": "Heading 3",
+        "line_spacing_rule": "single",
+        "space_after_pt": 12.0
+      },
+      "Heading 4": {
+        "name": "Heading 4",
+        "space_before_pt": 4.0,
+        "space_after_pt": 2.0,
+        "text_color": "0F4761"
+      },
+      "Hymn CITATION": {
+        "name": "Hymn CITATION",
+        "font_size_pt": 11.0,
+        "line_spacing_rule": "single",
+        "space_after_pt": 0.0,
+        "left_indent_in": 0.25
+      },
+      "LITURGY HEADING": {
+        "name": "LITURGY HEADING",
+        "bold": true,
+        "line_spacing_pt": 18.0,
+        "line_spacing_rule": "exact",
+        "space_before_pt": 12.0,
+        "space_after_pt": 0.0,
+        "right_indent_in": -0.062,
+        "left_indent_in": 2.25,
+        "background_fill": "D9D9D9",
+        "borders": {
+          "top": {
+            "style": "single",
+            "size_eighths_pt": "4",
+            "color": "auto"
+          },
+          "bottom": {
+            "style": "single",
+            "size_eighths_pt": "4",
+            "color": "auto"
+          },
+          "left": {
+            "style": "nil",
+            "size_eighths_pt": null,
+            "color": null
+          },
+          "right": {
+            "style": "nil",
+            "size_eighths_pt": null,
+            "color": null
+          }
+        }
+      },
+      "Musical Selection": {
+        "name": "Musical Selection",
+        "bold": true,
+        "space_before_pt": 12.0,
+        "space_after_pt": 0.0
+      },
+      "Norm INDENT": {
+        "name": "Norm INDENT",
+        "left_indent_in": 1.0
+      },
+      "Normal": {
+        "name": "Normal",
+        "font_name": "Arial",
+        "font_size_pt": 18.0,
+        "line_spacing_raw": "1.5",
+        "line_spacing_rule": "ONE_POINT_FIVE (1)"
+      },
+      "Scripture": {
+        "name": "Scripture"
+      },
+      "Scripture Heading": {
+        "name": "Scripture Heading"
+      },
+      "Welcome": {
+        "name": "Welcome",
+        "line_spacing_rule": "single",
+        "space_after_pt": 0.0
+      }
+    },
+    "header": [
+      {
+        "runs": []
+      }
+    ],
+    "paragraphs": [
+      {
+        "index": 0,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 1,
+        "style": "Cover TITLE",
+        "text_preview": "Ascension Lutheran Church"
+      },
+      {
+        "index": 2,
+        "style": "Heading 1",
+        "text_preview": "6481 Old Canton Road Jackson \u00b7 Mississippi \u00b7 39211\n601.956.4"
+      },
+      {
+        "index": 3,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 4,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 5,
+        "style": "Normal",
+        "text_preview": "",
+        "run_overrides": [
+          {
+            "bold": true,
+            "text": ""
+          }
+        ]
+      },
+      {
+        "index": 6,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 7,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 8,
+        "style": "Cover TITLE",
+        "text_preview": "10:00 AM \u2014 February 22, 2026",
+        "run_overrides": [
+          {
+            "size_pt": 24.0,
+            "text": "10:00 AM \u2014 "
+          },
+          {
+            "size_pt": 24.0,
+            "text": "February "
+          },
+          {
+            "size_pt": 24.0,
+            "text": "22"
+          },
+          {
+            "size_pt": 24.0,
+            "text": ", 2026"
+          }
+        ]
+      },
+      {
+        "index": 9,
+        "style": "Cover TITLE",
+        "text_preview": "The First Sunday in Lent"
+      },
+      {
+        "index": 10,
+        "style": "Normal",
+        "text_preview": "",
+        "run_overrides": [
+          {
+            "size_pt": 15.0,
+            "bold": true,
+            "text": ""
+          }
+        ]
+      },
+      {
+        "index": 11,
+        "style": "Welcome",
+        "text_preview": "Welcome to Ascension. We are glad that you have chosen to wo",
+        "line_spacing_override_pt": 15.0,
+        "run_overrides": [
+          {
+            "size_pt": 14.0,
+            "bold": true,
+            "text": "Welcome to Ascension."
+          },
+          {
+            "size_pt": 14.0,
+            "text": " We are glad that you have cho"
+          }
+        ]
+      },
+      {
+        "index": 12,
+        "style": "Congregation INSTRUCTIONS",
+        "text_preview": ""
+      },
+      {
+        "index": 13,
+        "style": "Congregation INSTRUCTIONS",
+        "text_preview": "\u201c * \u201d\u00a0Indicates when the congregation stands. \nBold letterin",
+        "run_overrides": [
+          {
+            "size_pt": 14.0,
+            "text": "\u201c *"
+          },
+          {
+            "size_pt": 14.0,
+            "text": " \u201d\u00a0Indicates when the congrega"
+          },
+          {
+            "size_pt": 14.0,
+            "text": "\n"
+          },
+          {
+            "size_pt": 16.0,
+            "bold": true,
+            "text": "Bold lettering"
+          },
+          {
+            "size_pt": 16.0,
+            "text": " indicates the congregation\u2019s "
+          },
+          {
+            "size_pt": 16.0,
+            "text": "\n"
+          }
+        ]
+      },
+      {
+        "index": 14,
+        "style": "LITURGY HEADING",
+        "text_preview": "GATHERING CHIMES: Worship Begins"
+      },
+      {
+        "index": 15,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 16,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 17,
+        "style": "LITURGY HEADING",
+        "text_preview": "CHORAL CALL TO WORSHIP"
+      },
+      {
+        "index": 18,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 19,
+        "style": "LITURGY HEADING",
+        "text_preview": "PRELUDE"
+      },
+      {
+        "index": 20,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 21,
+        "style": "LITURGY HEADING",
+        "text_preview": "WELCOME"
+      },
+      {
+        "index": 22,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 23,
+        "style": "LITURGY HEADING",
+        "text_preview": "*CONFESSION AND FORGIVENESS"
+      },
+      {
+        "index": 24,
+        "style": "Normal",
+        "text_preview": "",
+        "line_spacing_override_pt": 18.0
+      },
+      {
+        "index": 25,
+        "style": "Congregation INSTRUCTIONS",
+        "text_preview": "All may make the sign of the cross \u2629, \nthe sign marked at ou",
+        "run_overrides": [
+          {
+            "bold": true,
+            "font": "Segoe UI Symbol",
+            "text": "\u2629"
+          }
+        ]
+      },
+      {
+        "index": 26,
+        "style": "Normal",
+        "text_preview": "",
+        "line_spacing_override_pt": 24.0
+      },
+      {
+        "index": 27,
+        "style": "Normal",
+        "text_preview": "Pastor:\tIn the name of the Father, and of the \u2629\u00a0Son, \n\t\tand ",
+        "run_overrides": [
+          {
+            "bold": true,
+            "text": "Pastor:"
+          },
+          {
+            "bold": true,
+            "text": "\t"
+          },
+          {
+            "bold": true,
+            "font": "Segoe UI Symbol",
+            "text": "\u2629"
+          },
+          {
+            "bold": true,
+            "text": "Amen."
+          }
+        ]
+      },
+      {
+        "index": 28,
+        "style": "Normal",
+        "text_preview": "God of all mercy and consolation, come to the help of your p",
+        "run_overrides": [
+          {
+            "bold": true,
+            "text": "Amen"
+          }
+        ]
+      },
+      {
+        "index": 29,
+        "style": "Normal",
+        "text_preview": "P: Most merciful God,",
+        "run_overrides": [
+          {
+            "bold": true,
+            "text": "P: "
+          }
+        ]
+      },
+      {
+        "index": 30,
+        "style": "Normal",
+        "text_preview": ""
+      },
+      {
+        "index": 31,
+        "style": "Normal",
+        "text_preview": "we confess that we are captive to sin and cannot free oursel",
+        "line_spacing_override_pt": 24.0,
+        "run_overrides": [
+          {
+            "bold": true,
+            "text": "we"
+          },
+          {
+            "bold": true,
+            "text": " confess that we are captive t"
+          },
+          {
+            "bold": true,
+            "text": " "
+          },
+          {
+            "bold": true,
+            "text": "We have sinned against you in "
+          },
+          {
+            "bold": true,
+            "text": " "
+          },
+          {
+            "bold": true,
+            "text": "For the sake of your son, Jesu"
+          },
+          {
+            "bold": true,
+            "text": " "
+          },
+          {
+            "bold": true,
+            "text": "Forgive us, renew us, and lead"
+          },
+          {
+            "bold": true,
+            "text": " "
+          },
+          {
+            "bold": true,
+            "text": "so that we may delight in your"
+          },
+          {
+            "bold": true,
+            "text": " "
+          },
+          {
+            "bold": true,
+            "text": "and walk in your "
+          },
+          {
+            "bold": true,
+            "text": "ways"
+          },
+          {
+            "bold": true,
+            "text": ", to the glory of your holy na"
+          },
+          {
+            "bold": true,
+            "text": " "
+          },
+          {
+            "bold": true,
+            "text": "Amen."
+          }
+        ]
+      },
+      {
+        "index": 32,
+        "style": "Normal",
+        "text_preview": "P: In the mercy of almighty God, Jesus Christ was given to d",
+        "line_spacing_override_pt": 24.0,
+        "run_overrides": [
+          {
+            "bold": true,
+            "text": "P:"
+          },
+          {
+            "bold": true,
+            "font": "Segoe UI Symbol",
+            "text": "\u2629"
+          }
+        ]
+      },
+      {
+        "index": 33,
+        "style": "LITURGY HEADING",
+        "text_preview": "*GATHERING HYMN: ELW 335 - \nJESUS, KEEP ME NEAR THE CROSS"
+      },
+      {
+        "index": 34,
+        "style": "HYMN TEXT",
+        "text_preview": "1\tJesus, keep me near the cross,"
+      },
+      {
+        "index": 35,
+        "style": "HYMN TEXT",
+        "text_preview": "\tthere's a precious fountain;"
+      },
+      {
+        "index": 36,
+        "style": "HYMN TEXT",
+        "text_preview": "\tfree to all, a healing stream"
+      },
+      {
+        "index": 37,
+        "style": "HYMN TEXT",
+        "text_preview": "\tflows from Calv'ry's mountain."
+      },
+      {
+        "index": 38,
+        "style": "HYMN TEXT",
+        "text_preview": ""
+      },
+      {
+        "index": 39,
+        "style": "HYMN TEXT",
+        "text_preview": "Refrain",
+        "run_overrides": [
+          {
+            "italic": true,
+            "text": "Refrain"
+          }
+        ]
+      },
+      {
+        "index": 40,
+        "style": "HYMN TEXT",
+        "text_preview": "\tIn the cross, in the cross"
+      },
+      {
+        "index": 41,
+        "style": "HYMN TEXT",
+        "text_preview": "\tbe my glory ever;"
+      },
+      {
+        "index": 42,
+        "style": "HYMN TEXT",
+        "text_preview": "\ttill my ransomed soul shall find"
+      },
+      {
+        "index": 43,
+        "style": "HYMN TEXT",
+        "text_preview": "\trest beyond the river."
+      },
+      {
+        "index": 44,
+        "style": "HYMN TEXT",
+        "text_preview": ""
+      },
+      {
+        "index": 45,
+        "style": "HYMN TEXT",
+        "text_preview": "2\tNear the cross, a trembling soul,"
+      },
+      {
+        "index": 46,
+        "style": "HYMN TEXT",
+        "text_preview": "\tlove and mercy found me;"
+      },
+      {
+        "index": 47,
+        "style": "HYMN TEXT",
+        "text_preview": "\tthere the bright and morning star"
+      },
+      {
+        "index": 48,
+        "style": "HYMN TEXT",
+        "text_preview": "\tsheds its beams around me.  Refrain",
+        "run_overrides": [
+          {
+            "italic": true,
+            "text": "Refrain"
+          }
+        ]
+      },
+      {
+        "index": 49,
+        "style": "HYMN TEXT",
+        "text_preview": ""
+      }
+    ]
+  }
+}
