@@ -135,6 +135,16 @@ header h1 {
     color: var(--text-light);
 }
 
+.header-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.header-link:hover {
+    text-decoration: underline;
+}
+
 .logout-link {
     color: var(--danger);
     text-decoration: none;
@@ -239,6 +249,13 @@ main {
 
 .btn.secondary:hover {
     background: var(--primary-light);
+}
+
+.doc-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin-bottom: 14px;
 }
 
 .generate-btn {
@@ -439,6 +456,20 @@ main {
     border-radius: 4px;
     margin-top: 6px;
     color: var(--text);
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 0;
+    margin-top: 4px;
+}
+
+.btn-link:hover {
+    text-decoration: underline;
 }
 
 .hymn-slot + .hymn-slot {

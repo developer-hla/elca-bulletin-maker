@@ -38,6 +38,7 @@
         </div>
         <div class="header-right">
             <span id="user-display"></span>
+            <a href="#" id="new-bulletin-link" class="header-link">New Bulletin</a>
             <a href="#" id="logout-link" class="logout-link">Logout</a>
         </div>
     </header>
@@ -102,6 +103,7 @@
                 </div>
                 <div class="hymn-error error-msg" hidden></div>
                 <div class="hymn-info" hidden></div>
+                <button class="hymn-clear-btn btn-link" hidden>Clear</button>
             </div>
 
             <div class="hymn-slot" data-slot="sermon">
@@ -124,6 +126,7 @@
                 </div>
                 <div class="hymn-error error-msg" hidden></div>
                 <div class="hymn-info" hidden></div>
+                <button class="hymn-clear-btn btn-link" hidden>Clear</button>
             </div>
 
             <div class="hymn-slot" data-slot="communion">
@@ -146,6 +149,7 @@
                 </div>
                 <div class="hymn-error error-msg" hidden></div>
                 <div class="hymn-info" hidden></div>
+                <button class="hymn-clear-btn btn-link" hidden>Clear</button>
             </div>
 
             <div class="hymn-slot" data-slot="sending">
@@ -168,6 +172,7 @@
                 </div>
                 <div class="hymn-error error-msg" hidden></div>
                 <div class="hymn-info" hidden></div>
+                <button class="hymn-clear-btn btn-link" hidden>Clear</button>
             </div>
         </section>
 
@@ -265,6 +270,7 @@
                     <div class="file-picker">
                         <button id="cover-image-btn" class="btn secondary">Choose Image...</button>
                         <span id="cover-image-path" class="file-path">None selected</span>
+                        <button id="cover-image-clear" class="btn-link" hidden>Clear</button>
                     </div>
                 </div>
                 <div class="field">
@@ -281,7 +287,15 @@
         <section id="section-generate" class="card disabled-section">
             <h2>5. Generate Documents</h2>
 
-            <button id="generate-btn" class="btn primary generate-btn">Generate All Documents</button>
+            <div class="doc-checkboxes">
+                <label class="checkbox-label"><input type="checkbox" name="doc_select" value="bulletin" checked> Bulletin for Congregation</label>
+                <label class="checkbox-label"><input type="checkbox" name="doc_select" value="prayers" checked> Pulpit Prayers</label>
+                <label class="checkbox-label"><input type="checkbox" name="doc_select" value="scripture" checked> Pulpit Scripture</label>
+                <label class="checkbox-label"><input type="checkbox" name="doc_select" value="large_print" checked> Large Print</label>
+                <label class="checkbox-label"><input type="checkbox" name="doc_select" value="leader_guide" checked> Leader Guide</label>
+            </div>
+
+            <button id="generate-btn" class="btn primary generate-btn">Generate Selected Documents</button>
 
             <div id="progress-area" hidden>
                 <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Document generation progress">

@@ -162,6 +162,7 @@ class TestGenerateAll:
             ],
             prayers_html="<p>prayers</p>",
         )
+        api._date_str = "2026-02-22"
 
         # Cache a hymn
         api._hymn_cache["ELW_335"] = {
@@ -271,6 +272,7 @@ class TestGenerateAllErrors:
             ],
             prayers_html="<p>prayers</p>",
         )
+        api._date_str = "2026-02-22"
         return api
 
     def test_missing_date_field(self):

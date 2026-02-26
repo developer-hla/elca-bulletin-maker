@@ -72,6 +72,19 @@ function hideError(el) {
     hide(el);
 }
 
+/** Shows login overlay when session expires. Returns true if auth error was handled. */
+function handleAuthError(result) {
+    if (!result || !result.auth_error) return false;
+    show($("#login-overlay"));
+    var form = $("#login-form");
+    show(form);
+    hide($("#login-spinner"));
+    hideError($("#login-error"));
+    showError($("#login-error"), "Session expired. Please sign in again.");
+    $("#login-btn").disabled = false;
+    return true;
+}
+
 function showWarning(el, msg) {
     el.textContent = msg;
     show(el);
@@ -158,6 +171,13 @@ function setupLogin() {
     });
 }
 
+function setupNewBulletin() {
+    $("#new-bulletin-link").addEventListener("click", function(e) {
+        e.preventDefault();
+        resetAll();
+    });
+}
+
 function setupLogout() {
     $("#logout-link").addEventListener("click", async function(e) {
         e.preventDefault();
@@ -197,6 +217,7 @@ function resetAll() {
     $$(".hymn-number").forEach(function(el) { el.value = ""; });
     $$(".hymn-info").forEach(function(el) { hide(el); el.textContent = ""; });
     $$(".hymn-error").forEach(function(el) { hide(el); });
+    $$(".hymn-clear-btn").forEach(function(el) { hide(el); });
 
     // Reset details
     $("#prelude-title").value = "";
@@ -205,9 +226,11 @@ function resetAll() {
     $("#postlude-performer").value = "";
     $("#choral-title").value = "";
     $("#cover-image-path").textContent = "None selected";
+    hide($("#cover-image-clear"));
     $("#output-dir-path").textContent = "./output";
 
     // Reset generate section
+    $$('input[name="doc_select"]').forEach(function(el) { el.checked = true; });
     hide($("#progress-area"));
     hide($("#results-area"));
     hideError($("#generate-error"));
@@ -254,12 +277,28 @@ function setupDateFetch() {
         this.disabled = false;
 
         if (!result.success) {
+            if (handleAuthError(result)) return;
             showError($("#date-error"), result.error || "Failed to fetch content.");
             return;
         }
 
         state.season = result.season;
         state.defaults = result.defaults;
+
+        // Reset hymns and service details for the new date
+        state.hymns = { gathering: null, sermon: null, communion: null, sending: null };
+        state.coverImage = "";
+        $$(".hymn-number").forEach(function(el) { el.value = ""; });
+        $$(".hymn-info").forEach(function(el) { hide(el); el.textContent = ""; });
+        $$(".hymn-error").forEach(function(el) { hide(el); });
+        $$(".hymn-clear-btn").forEach(function(el) { hide(el); });
+        $("#prelude-title").value = "";
+        $("#prelude-performer").value = "";
+        $("#postlude-title").value = "";
+        $("#postlude-performer").value = "";
+        $("#choral-title").value = "";
+        $("#cover-image-path").textContent = "None selected";
+        hide($("#cover-image-clear"));
 
         // Display day info
         $("#day-name").textContent = result.day_name;
@@ -385,7 +424,26 @@ function setupResetDefaults() {
 
 // ── Hymn Fetching ────────────────────────────────────────────────────
 
+function clearHymnSlot(slot) {
+    var slotName = slot.dataset.slot;
+    state.hymns[slotName] = null;
+    slot.querySelector(".hymn-number").value = "";
+    var infoEl = slot.querySelector(".hymn-info");
+    infoEl.textContent = "";
+    hide(infoEl);
+    hideError(slot.querySelector(".hymn-error"));
+    var clearBtn = slot.querySelector(".hymn-clear-btn");
+    if (clearBtn) hide(clearBtn);
+}
+
 function setupHymnFetch() {
+    // Clear buttons
+    $$(".hymn-clear-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            clearHymnSlot(this.closest(".hymn-slot"));
+        });
+    });
+
     $$(".hymn-fetch-btn").forEach(function(btn) {
         btn.addEventListener("click", async function() {
             const slot = this.closest(".hymn-slot");
@@ -406,6 +464,8 @@ function setupHymnFetch() {
             hideError(errorEl);
             infoEl.textContent = "";
             hide(infoEl);
+            var clearBtn = slot.querySelector(".hymn-clear-btn");
+            if (clearBtn) hide(clearBtn);
             state.hymns[slotName] = null;
             this.disabled = true;
             this.textContent = "...";
@@ -427,6 +487,7 @@ function setupHymnFetch() {
                     this.textContent = "Fetch";
                     infoEl.textContent = searchResult.title + " (title only \u2014 no lyrics available)";
                     show(infoEl);
+                    if (clearBtn) show(clearBtn);
                     state.hymns[slotName] = {
                         number: number,
                         collection: collection,
@@ -448,6 +509,7 @@ function setupHymnFetch() {
                         " \u2014 " + lyricsResult.verse_count + " verse(s)" +
                         (lyricsResult.has_refrain ? " + refrain" : "");
                     show(infoEl);
+                    if (clearBtn) show(clearBtn);
                     state.hymns[slotName] = {
                         number: number,
                         collection: collection,
@@ -457,6 +519,7 @@ function setupHymnFetch() {
                     // Lyrics failed but search succeeded — still usable (title only)
                     infoEl.textContent = searchResult.title + " (title only \u2014 lyrics unavailable)";
                     show(infoEl);
+                    if (clearBtn) show(clearBtn);
                     state.hymns[slotName] = {
                         number: number,
                         collection: collection,
@@ -484,10 +547,17 @@ function setupFilePickers() {
                 state.coverImage = result.path;
                 const name = result.path.split("/").pop().split("\\").pop();
                 $("#cover-image-path").textContent = name;
+                show($("#cover-image-clear"));
             }
         } finally {
             this.disabled = false;
         }
+    });
+
+    $("#cover-image-clear").addEventListener("click", function() {
+        state.coverImage = "";
+        $("#cover-image-path").textContent = "None selected";
+        hide(this);
     });
 
     $("#output-dir-btn").addEventListener("click", async function() {
@@ -529,6 +599,7 @@ function collectFormData() {
         choral_title: $("#choral-title").value.trim(),
         cover_image: state.coverImage,
         output_dir: state.outputDir || "output",
+        selected_docs: Array.from($$('input[name="doc_select"]:checked')).map(function(el) { return el.value; }),
     };
 
     // Hymns
@@ -560,6 +631,27 @@ function setupGenerate() {
             return;
         }
 
+        var selectedDocs = $$('input[name="doc_select"]:checked');
+        if (selectedDocs.length === 0) {
+            showError(errorEl, "Select at least one document to generate.");
+            return;
+        }
+
+        const formData = collectFormData();
+
+        // Check for existing files before generating
+        var checkResult = await window.pywebview.api.check_existing_files(
+            formData.output_dir, formData.selected_docs
+        );
+        if (checkResult.existing && checkResult.existing.length > 0) {
+            var ok = confirm(
+                "The following files will be overwritten:\n\n" +
+                checkResult.existing.join("\n") +
+                "\n\nContinue?"
+            );
+            if (!ok) return;
+        }
+
         this.disabled = true;
         show($("#progress-area"));
         $("#progress-fill").style.width = "0%";
@@ -567,13 +659,13 @@ function setupGenerate() {
         const bar = document.querySelector(".progress-bar");
         if (bar) bar.setAttribute("aria-valuenow", 0);
 
-        const formData = collectFormData();
         const result = await window.pywebview.api.generate_all(formData);
 
         this.disabled = false;
 
         if (result.error && !result.results) {
             hide($("#progress-area"));
+            if (handleAuthError(result)) return;
             showError(errorEl, result.error);
             return;
         }
@@ -608,6 +700,8 @@ function setupGenerate() {
             hide(errorsArea);
         }
 
+        hide($("#progress-area"));
+
         // Store output dir for open folder button
         if (result.output_dir) {
             $("#open-folder-btn").dataset.path = result.output_dir;
@@ -630,6 +724,7 @@ function setupGenerate() {
 document.addEventListener("DOMContentLoaded", function() {
     setupLogin();
     setupLogout();
+    setupNewBulletin();
     setupDateFetch();
     setupResetDefaults();
     setupHymnFetch();

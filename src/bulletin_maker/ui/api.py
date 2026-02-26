@@ -36,6 +36,7 @@ class BulletinAPI:
     def __init__(self) -> None:
         self._client: Optional[SundaysClient] = None
         self._day: Optional[DayContent] = None
+        self._date_str: Optional[str] = None  # "YYYY-MM-DD" from last fetch
         self._window: Optional[webview.Window] = None
         self._hymn_cache: dict[str, dict] = {}
 
@@ -47,6 +48,20 @@ class BulletinAPI:
         if self._window:
             payload = json.dumps({"step": step, "detail": detail, "pct": pct})
             self._window.evaluate_js(f"updateProgress({payload})")
+
+    def _build_file_prefix(self) -> str:
+        """Build file prefix like '2026.02.22 FIRST SUNDAY IN LENT A'."""
+        dt = datetime.strptime(self._date_str, "%Y-%m-%d")
+        date_dot = dt.strftime("%Y.%m.%d")
+        day_label = self._day.title
+        title_match = re.search(r'\d{4}\s+(.+)', day_label)
+        if title_match:
+            day_label = title_match.group(1).strip()
+        year_match = re.search(r',?\s*Year\s+([ABC])$', day_label)
+        year_letter = year_match.group(1) if year_match else ""
+        day_label = re.sub(r',?\s*Year\s+[ABC]$', '', day_label).strip()
+        day_label = day_label.upper() + (" Year " + year_letter if year_letter else "")
+        return f"{date_dot} {day_label}"
 
     def _get_client(self) -> SundaysClient:
         """Get or create the S&S client."""
@@ -72,6 +87,7 @@ class BulletinAPI:
                 self._client.close()
                 self._client = None
             self._day = None
+            self._date_str = None
             self._hymn_cache.clear()
             return {"success": True}
         except Exception as e:
@@ -112,6 +128,7 @@ class BulletinAPI:
             api_date = f"{dt.year}-{dt.month}-{dt.day}"
 
             self._day = client.get_day_texts(api_date)
+            self._date_str = date_str
 
             season = detect_season(self._day.title)
             seasonal = get_seasonal_config(season)
@@ -145,6 +162,8 @@ class BulletinAPI:
                     "preface": seasonal.preface.value,
                 },
             }
+        except AuthError as e:
+            return {"success": False, "error": str(e), "auth_error": True}
         except BulletinError as e:
             return {"success": False, "error": str(e)}
 
@@ -342,6 +361,12 @@ class BulletinAPI:
             season = detect_season(self._day.title)
             fill_seasonal_defaults(config, season)
 
+            selected = set(form_data.get("selected_docs") or [
+                "bulletin", "prayers", "scripture", "large_print", "leader_guide",
+            ])
+
+            prefix = self._build_file_prefix()
+
             results = {}
             errors = {}
             creed_page = None  # Set by bulletin generation
@@ -355,84 +380,89 @@ class BulletinAPI:
             )
 
             # 1. Bulletin (must be first — determines creed page)
-            self._push_progress("bulletin", "Generating bulletin booklet...", 10)
-            try:
-                bulletin_path, creed_page = generate_bulletin(
-                    self._day, config,
-                    output_path=output_dir / "Bulletin for Congregation.pdf",
-                    season=season,
-                    client=self._client,
-                )
-                results["bulletin"] = str(bulletin_path)
-                self._push_progress("bulletin", f"Bulletin saved (creed p.{creed_page})", 30)
-            except Exception as e:
-                logger.exception("Bulletin generation failed")
-                errors["bulletin"] = str(e)
-                self._push_progress("bulletin", f"Bulletin failed: {e}", 30)
+            if "bulletin" in selected:
+                self._push_progress("bulletin", "Generating bulletin booklet...", 10)
+                try:
+                    bulletin_path, creed_page = generate_bulletin(
+                        self._day, config,
+                        output_path=output_dir / f"{prefix} - Bulletin for Congregation.pdf",
+                        season=season,
+                        client=self._client,
+                    )
+                    results["bulletin"] = str(bulletin_path)
+                    self._push_progress("bulletin", f"Bulletin saved (creed p.{creed_page})", 30)
+                except Exception as e:
+                    logger.exception("Bulletin generation failed")
+                    errors["bulletin"] = str(e)
+                    self._push_progress("bulletin", f"Bulletin failed: {e}", 30)
 
             # 2. Pulpit Prayers (needs creed page from bulletin)
-            self._push_progress("prayers", "Generating pulpit prayers...", 40)
-            try:
-                creed_type = config.creed_type or "apostles"
-                prayers_label = "NICENE" if creed_type == "nicene" else "APOSTLES"
-                prayers_path = generate_pulpit_prayers(
-                    self._day,
-                    config.date_display,
-                    creed_type=creed_type,
-                    creed_page_num=creed_page,
-                    output_path=output_dir / f"Pulpit PRAYERS + {prayers_label} 8.5 x 11.pdf",
-                )
-                results["prayers"] = str(prayers_path)
-                self._push_progress("prayers", "Pulpit prayers saved", 55)
-            except Exception as e:
-                logger.exception("Pulpit prayers generation failed")
-                errors["prayers"] = str(e)
-                self._push_progress("prayers", f"Prayers failed: {e}", 55)
+            if "prayers" in selected:
+                self._push_progress("prayers", "Generating pulpit prayers...", 40)
+                try:
+                    creed_type = config.creed_type or "apostles"
+                    prayers_label = "NICENE" if creed_type == "nicene" else "APOSTLES"
+                    prayers_path = generate_pulpit_prayers(
+                        self._day,
+                        config.date_display,
+                        creed_type=creed_type,
+                        creed_page_num=creed_page,
+                        output_path=output_dir / f"{prefix} - Pulpit PRAYERS + {prayers_label} 8.5 x 11.pdf",
+                    )
+                    results["prayers"] = str(prayers_path)
+                    self._push_progress("prayers", "Pulpit prayers saved", 55)
+                except Exception as e:
+                    logger.exception("Pulpit prayers generation failed")
+                    errors["prayers"] = str(e)
+                    self._push_progress("prayers", f"Prayers failed: {e}", 55)
 
             # 3. Pulpit Scripture
-            self._push_progress("scripture", "Generating pulpit scripture...", 60)
-            try:
-                scripture_path = generate_pulpit_scripture(
-                    self._day,
-                    config.date_display,
-                    output_path=output_dir / "Pulpit SCRIPTURE 8.5 x 11.pdf",
-                )
-                results["scripture"] = str(scripture_path)
-                self._push_progress("scripture", "Pulpit scripture saved", 75)
-            except Exception as e:
-                logger.exception("Pulpit scripture generation failed")
-                errors["scripture"] = str(e)
-                self._push_progress("scripture", f"Scripture failed: {e}", 75)
+            if "scripture" in selected:
+                self._push_progress("scripture", "Generating pulpit scripture...", 60)
+                try:
+                    scripture_path = generate_pulpit_scripture(
+                        self._day,
+                        config.date_display,
+                        output_path=output_dir / f"{prefix} - Pulpit SCRIPTURE 8.5 x 11.pdf",
+                    )
+                    results["scripture"] = str(scripture_path)
+                    self._push_progress("scripture", "Pulpit scripture saved", 75)
+                except Exception as e:
+                    logger.exception("Pulpit scripture generation failed")
+                    errors["scripture"] = str(e)
+                    self._push_progress("scripture", f"Scripture failed: {e}", 75)
 
             # 4. Large Print
-            self._push_progress("large_print", "Generating large print...", 75)
-            try:
-                lp_path = generate_large_print(
-                    self._day, config,
-                    output_path=output_dir / "Full with Hymns LARGE PRINT.pdf",
-                    season=season,
-                )
-                results["large_print"] = str(lp_path)
-                self._push_progress("large_print", "Large print saved", 85)
-            except Exception as e:
-                logger.exception("Large print generation failed")
-                errors["large_print"] = str(e)
-                self._push_progress("large_print", f"Large print failed: {e}", 85)
+            if "large_print" in selected:
+                self._push_progress("large_print", "Generating large print...", 75)
+                try:
+                    lp_path = generate_large_print(
+                        self._day, config,
+                        output_path=output_dir / f"{prefix} - Full with Hymns LARGE PRINT.pdf",
+                        season=season,
+                    )
+                    results["large_print"] = str(lp_path)
+                    self._push_progress("large_print", "Large print saved", 85)
+                except Exception as e:
+                    logger.exception("Large print generation failed")
+                    errors["large_print"] = str(e)
+                    self._push_progress("large_print", f"Large print failed: {e}", 85)
 
             # 5. Leader Guide
-            self._push_progress("leader_guide", "Generating leader guide...", 87)
-            try:
-                lg_path = generate_leader_guide(
-                    self._day, config,
-                    output_path=output_dir / "Leader Guide.pdf",
-                    season=season,
-                )
-                results["leader_guide"] = str(lg_path)
-                self._push_progress("leader_guide", "Leader guide saved", 95)
-            except Exception as e:
-                logger.exception("Leader guide generation failed")
-                errors["leader_guide"] = str(e)
-                self._push_progress("leader_guide", f"Leader guide failed: {e}", 95)
+            if "leader_guide" in selected:
+                self._push_progress("leader_guide", "Generating leader guide...", 87)
+                try:
+                    lg_path = generate_leader_guide(
+                        self._day, config,
+                        output_path=output_dir / f"{prefix} - Leader Guide.pdf",
+                        season=season,
+                    )
+                    results["leader_guide"] = str(lg_path)
+                    self._push_progress("leader_guide", "Leader guide saved", 95)
+                except Exception as e:
+                    logger.exception("Leader guide generation failed")
+                    errors["leader_guide"] = str(e)
+                    self._push_progress("leader_guide", f"Leader guide failed: {e}", 95)
 
             self._push_progress("done", "Generation complete!", 100)
 
@@ -442,9 +472,49 @@ class BulletinAPI:
                 "errors": errors,
                 "output_dir": str(output_dir),
             }
+        except AuthError as e:
+            logger.exception("Auth error during generation")
+            return {"success": False, "error": str(e), "auth_error": True}
         except Exception as e:
             logger.exception("Generation error")
             return {"success": False, "error": str(e)}
+
+    def check_existing_files(self, output_dir: str, selected_docs: list) -> dict:
+        """Check if any target PDFs already exist in the output directory."""
+        try:
+            folder = Path(output_dir or "output")
+            if not folder.exists() or self._day is None:
+                return {"success": True, "existing": []}
+
+            prefix = self._build_file_prefix()
+
+            # Map doc keys to suffixes
+            suffixes = {
+                "bulletin": "Bulletin for Congregation.pdf",
+                "scripture": "Pulpit SCRIPTURE 8.5 x 11.pdf",
+                "large_print": "Full with Hymns LARGE PRINT.pdf",
+                "leader_guide": "Leader Guide.pdf",
+            }
+
+            existing = []
+            for doc in (selected_docs or []):
+                if doc == "prayers":
+                    # Prayers filename varies by creed type
+                    for f in folder.iterdir():
+                        if f.is_file() and f.name.startswith(f"{prefix} - Pulpit PRAYERS"):
+                            existing.append(f.name)
+                            break
+                else:
+                    suffix = suffixes.get(doc, "")
+                    if suffix:
+                        target = folder / f"{prefix} - {suffix}"
+                        if target.exists():
+                            existing.append(target.name)
+
+            return {"success": True, "existing": existing}
+        except Exception as e:
+            logger.exception("Error checking existing files")
+            return {"success": True, "existing": []}
 
     # ── Utilities ─────────────────────────────────────────────────────
 
