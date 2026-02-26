@@ -9,6 +9,14 @@ if TYPE_CHECKING:
     from bulletin_maker.renderer.season import PrefaceType
 
 
+# ── Reading slot constants ───────────────────────────────────────────
+# Used as keys for reading lookups, overrides, and template variables.
+SLOT_FIRST = "first"
+SLOT_SECOND = "second"
+SLOT_PSALM = "psalm"
+SLOT_GOSPEL = "gospel"
+
+
 @dataclass
 class Reading:
     label: str        # e.g. "First Reading", "Psalm", "Gospel"
@@ -95,6 +103,18 @@ class ServiceConfig:
     sermon_hymn: Optional[HymnLyrics] = None
     communion_hymn: Optional[HymnLyrics] = None
     sending_hymn: Optional[HymnLyrics] = None
+
+    # ── Section toggles (None = use seasonal default) ──
+    show_confession: Optional[bool] = None      # Show Confession section?
+    show_nunc_dimittis: Optional[bool] = None   # Show Nunc Dimittis?
+
+    # ── Reading overrides — custom passages fetched via PassageSearch ──
+    # Dict mapping slot ("first", "second", "psalm", "gospel") to Reading
+    reading_overrides: Optional[dict] = None
+
+    # ── Baptism ──
+    include_baptism: bool = False
+    baptism_candidate_names: str = ""           # Comma-separated names
 
     # ── Other service details ──
     prelude_title: str = ""

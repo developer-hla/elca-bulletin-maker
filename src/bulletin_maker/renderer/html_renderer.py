@@ -19,7 +19,16 @@ import re
 from pathlib import Path
 
 from bulletin_maker.exceptions import BulletinError, ContentNotFoundError
-from bulletin_maker.sns.models import DayContent, HymnLyrics, Reading, ServiceConfig
+from bulletin_maker.sns.models import (
+    SLOT_FIRST,
+    SLOT_GOSPEL,
+    SLOT_PSALM,
+    SLOT_SECOND,
+    DayContent,
+    HymnLyrics,
+    Reading,
+    ServiceConfig,
+)
 from bulletin_maker.renderer.season import LiturgicalSeason
 from bulletin_maker.renderer.image_manager import (
     get_gospel_acclamation_image,
@@ -49,6 +58,13 @@ from bulletin_maker.renderer.static_text import (
     AARONIC_BLESSING,
     AGNUS_DEI,
     APOSTLES_CREED,
+    BAPTISM_FLOOD_PRAYER,
+    BAPTISM_FORMULA,
+    BAPTISM_PRESENTATION,
+    BAPTISM_PROFESSION,
+    BAPTISM_RENUNCIATION,
+    BAPTISM_WELCOME,
+    BAPTISM_WELCOME_RESPONSE,
     CHURCH_ADDRESS,
     CHURCH_NAME,
     COME_HOLY_SPIRIT,
@@ -165,6 +181,25 @@ def _get_reading(day: DayContent, keyword: str):
     return None
 
 
+def _get_reading_with_override(
+    day: DayContent, config: ServiceConfig, keyword: str,
+) -> Reading | None:
+    """Get reading, preferring override if present."""
+    if config.reading_overrides and keyword in config.reading_overrides:
+        ovr = config.reading_overrides[keyword]
+        if isinstance(ovr, Reading):
+            return ovr
+        # Dict form from UI — convert to Reading
+        if isinstance(ovr, dict):
+            return Reading(
+                label=ovr.get("label", keyword.title() + " Reading"),
+                citation=ovr.get("citation", ""),
+                intro=ovr.get("intro", ""),
+                text_html=ovr.get("text_html", ""),
+            )
+    return _get_reading(day, keyword)
+
+
 def _reading_data(reading: Reading | None) -> dict | None:
     """Build template-ready dict from a Reading object."""
     if reading is None:
@@ -179,26 +214,51 @@ def _reading_data(reading: Reading | None) -> dict | None:
 
 def _build_gospel_entry(day: DayContent) -> dict | None:
     """Build template-ready dict for the Gospel reading."""
-    gospel_raw = _get_reading(day, "gospel")
-    if gospel_raw and gospel_raw.label.lower() == "gospel":
+    gospel_raw = _get_reading(day, SLOT_GOSPEL)
+    if gospel_raw and gospel_raw.label.lower() == SLOT_GOSPEL:
         return _reading_data(gospel_raw)
     if gospel_raw is None:
         for r in day.readings:
-            if r.label.lower() == "gospel":
+            if r.label.lower() == SLOT_GOSPEL:
                 return _reading_data(r)
     return None
 
 
 def _build_psalm_data(day: DayContent) -> dict | None:
     """Build template-ready dict for the Psalm."""
-    psalm_raw = _get_reading(day, "psalm")
+    psalm_raw = _get_reading(day, SLOT_PSALM)
     if not psalm_raw:
         return None
-    psalm_num = psalm_raw.citation.replace("Psalm", "").replace("psalm", "").strip()
+    return _build_psalm_data_from_reading(psalm_raw)
+
+
+def _build_psalm_data_from_reading(reading: Reading | None) -> dict | None:
+    """Build template-ready dict for a Psalm from a Reading object."""
+    if not reading:
+        return None
+    psalm_num = reading.citation.replace("Psalm", "").strip()
     return {
         "number": psalm_num,
-        "intro": strip_tags(psalm_raw.intro) if psalm_raw.intro else "",
-        "verses": group_psalm_verses(psalm_raw.text_html),
+        "intro": strip_tags(reading.intro) if reading.intro else "",
+        "verses": group_psalm_verses(reading.text_html),
+    }
+
+
+def _build_baptism_context(config: ServiceConfig) -> dict:
+    """Build template-ready dict for the Holy Baptism rite."""
+    names = [n.strip() for n in config.baptism_candidate_names.split(",") if n.strip()]
+    formulas = [BAPTISM_FORMULA.format(name=name) for name in names] if names else [
+        BAPTISM_FORMULA.format(name="___________")
+    ]
+    return {
+        "include_baptism": True,
+        "baptism_presentation": BAPTISM_PRESENTATION,
+        "baptism_renunciation": BAPTISM_RENUNCIATION,
+        "baptism_profession": BAPTISM_PROFESSION,
+        "baptism_flood_prayer": BAPTISM_FLOOD_PRAYER,
+        "baptism_formulas": formulas,
+        "baptism_welcome": BAPTISM_WELCOME,
+        "baptism_welcome_response": BAPTISM_WELCOME_RESPONSE,
     }
 
 
@@ -336,11 +396,13 @@ def _build_large_print_context(
 ) -> dict:
     """Build the full template context for the Large Print document."""
 
-    # Readings
-    first_reading = _reading_data(_get_reading(day, "first"))
-    second_reading = _reading_data(_get_reading(day, "second"))
-    gospel_entry = _build_gospel_entry(day)
-    psalm_data = _build_psalm_data(day)
+    # Readings (with override support)
+    first_reading = _reading_data(_get_reading_with_override(day, config, SLOT_FIRST))
+    second_reading = _reading_data(_get_reading_with_override(day, config, SLOT_SECOND))
+    gospel_override = _get_reading_with_override(day, config, SLOT_GOSPEL)
+    gospel_entry = _reading_data(gospel_override) if gospel_override else _build_gospel_entry(day)
+    psalm_override = _get_reading_with_override(day, config, SLOT_PSALM)
+    psalm_data = _build_psalm_data_from_reading(psalm_override) if (config.reading_overrides and SLOT_PSALM in config.reading_overrides) else _build_psalm_data(day)
 
     # Gospel Acclamation image
     ga_image_uri = ""
@@ -397,6 +459,7 @@ def _build_large_print_context(
         "standing_instructions": STANDING_INSTRUCTIONS,
 
         # Gathering
+        "show_confession": config.show_confession,
         "choral_title": config.choral_title,
         "confession_entries": config.confession_entries,
         "gathering_hymn": config.gathering_hymn,
@@ -419,9 +482,11 @@ def _build_large_print_context(
         # Sermon
         "sermon_hymn": config.sermon_hymn,
 
-        # Creed
+        # Creed / Baptism
+        "include_baptism": config.include_baptism,
         "creed_name": creed_name,
         "creed_stanzas": _split_stanzas(creed_text),
+        **(_build_baptism_context(config) if config.include_baptism else {}),
 
         # Prayers
         "prayers_response": prayers_response,
@@ -462,6 +527,7 @@ def _build_large_print_context(
         "communion_hymn": config.communion_hymn,
 
         # Closing
+        "show_nunc_dimittis": config.show_nunc_dimittis,
         "nunc_dimittis_lines": NUNC_DIMITTIS.split("\n"),
         "offering_prayer_text": config.offering_prayer_text or "",
         "prayer_after_communion_text": config.prayer_after_communion_text or "",
@@ -471,11 +537,19 @@ def _build_large_print_context(
     }
 
 
-def _build_pulpit_scripture_context(day: DayContent, date_display: str) -> dict:
+def _build_pulpit_scripture_context(
+    day: DayContent, date_display: str, config: ServiceConfig | None = None,
+) -> dict:
     """Build template context for the Pulpit Scripture document."""
-    first_reading = _reading_data(_get_reading(day, "first"))
-    second_reading = _reading_data(_get_reading(day, "second"))
-    psalm_data = _build_psalm_data(day)
+    if config:
+        first_reading = _reading_data(_get_reading_with_override(day, config, SLOT_FIRST))
+        second_reading = _reading_data(_get_reading_with_override(day, config, SLOT_SECOND))
+        psalm_override = _get_reading_with_override(day, config, SLOT_PSALM)
+        psalm_data = _build_psalm_data_from_reading(psalm_override) if (config.reading_overrides and SLOT_PSALM in config.reading_overrides) else _build_psalm_data(day)
+    else:
+        first_reading = _reading_data(_get_reading(day, SLOT_FIRST))
+        second_reading = _reading_data(_get_reading(day, SLOT_SECOND))
+        psalm_data = _build_psalm_data(day)
 
     css = (TEMPLATE_DIR / "pulpit_scripture.css").read_text()
 
@@ -546,11 +620,13 @@ def _build_bulletin_context(
 ) -> dict:
     """Build template context for the standard Bulletin for Congregation."""
 
-    # Readings
-    first_reading = _reading_data(_get_reading(day, "first"))
-    second_reading = _reading_data(_get_reading(day, "second"))
-    gospel_entry = _build_gospel_entry(day)
-    psalm_data = _build_psalm_data(day)
+    # Readings (with override support)
+    first_reading = _reading_data(_get_reading_with_override(day, config, SLOT_FIRST))
+    second_reading = _reading_data(_get_reading_with_override(day, config, SLOT_SECOND))
+    gospel_override = _get_reading_with_override(day, config, SLOT_GOSPEL)
+    gospel_entry = _reading_data(gospel_override) if gospel_override else _build_gospel_entry(day)
+    psalm_override = _get_reading_with_override(day, config, SLOT_PSALM)
+    psalm_data = _build_psalm_data_from_reading(psalm_override) if (config.reading_overrides and SLOT_PSALM in config.reading_overrides) else _build_psalm_data(day)
 
     # Gospel Acclamation image
     ga_image_uri = ""
@@ -627,7 +703,7 @@ def _build_bulletin_context(
         "choral_title": config.choral_title,
 
         # Confession
-        "show_confession": season != LiturgicalSeason.CHRISTMAS_EVE,
+        "show_confession": config.show_confession,
         "confession_entries": config.confession_entries,
 
         # Notation images — setting pieces
@@ -654,9 +730,11 @@ def _build_bulletin_context(
         # Sermon hymn (title only)
         "sermon_hymn_title": _hymn_title_str(config.sermon_hymn),
 
-        # Creed
+        # Creed / Baptism
+        "include_baptism": config.include_baptism,
         "creed_name": creed_name,
         "creed_stanzas": _split_stanzas(creed_text),
+        **(_build_baptism_context(config) if config.include_baptism else {}),
 
         # Prayers
         "prayers_response": prayers_response,
@@ -701,6 +779,7 @@ def _build_bulletin_context(
         "communion_hymn_image_uri": communion_hymn_image_uri,
 
         # Nunc Dimittis
+        "show_nunc_dimittis": config.show_nunc_dimittis,
         "nunc_dimittis_image_uri": nunc_dimittis_uri,
 
         # Offering Prayer / Prayer After Communion
@@ -882,6 +961,7 @@ def generate_pulpit_scripture(
     date_display: str,
     output_path: Path,
     *,
+    config: ServiceConfig | None = None,
     keep_intermediates: bool = False,
 ) -> Path:
     """Generate the Pulpit Scripture PDF via HTML + Playwright."""
@@ -890,7 +970,7 @@ def generate_pulpit_scripture(
 
     env = setup_jinja_env()
     template = env.get_template("pulpit_scripture.html")
-    ctx = _build_pulpit_scripture_context(day, date_display)
+    ctx = _build_pulpit_scripture_context(day, date_display, config)
     html_string = template.render(**ctx)
 
     output_path = Path(output_path).with_suffix(".pdf")

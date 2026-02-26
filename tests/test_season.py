@@ -71,6 +71,22 @@ class TestGetSeasonalConfig:
         config = get_seasonal_config(LiturgicalSeason.CHRISTMAS_EVE)
         assert config.has_kyrie is False
 
+    def test_christmas_eve_no_confession(self):
+        config = get_seasonal_config(LiturgicalSeason.CHRISTMAS_EVE)
+        assert config.show_confession is False
+
+    def test_most_seasons_show_confession(self):
+        for season in LiturgicalSeason:
+            if season == LiturgicalSeason.CHRISTMAS_EVE:
+                continue
+            config = get_seasonal_config(season)
+            assert config.show_confession is True
+
+    def test_all_seasons_show_nunc_dimittis(self):
+        for season in LiturgicalSeason:
+            config = get_seasonal_config(season)
+            assert config.show_nunc_dimittis is True
+
     def test_all_seasons_have_config(self):
         for season in LiturgicalSeason:
             config = get_seasonal_config(season)
@@ -131,6 +147,8 @@ class TestFillSeasonalDefaults:
         assert config.eucharistic_form == "extended"
         assert config.include_memorial_acclamation is True
         assert config.preface is PrefaceType.LENT
+        assert config.show_confession is True
+        assert config.show_nunc_dimittis is True
 
     def test_preserves_explicit_values(self):
         config = ServiceConfig(
@@ -175,3 +193,26 @@ class TestFillSeasonalDefaults:
             assert config.eucharistic_form is not None
             assert config.include_memorial_acclamation is not None
             assert config.preface is not None
+            assert config.show_confession is not None
+            assert config.show_nunc_dimittis is not None
+
+    def test_christmas_eve_no_confession(self):
+        config = ServiceConfig(date="2026-12-24", date_display="December 24, 2026")
+        fill_seasonal_defaults(config, LiturgicalSeason.CHRISTMAS_EVE)
+        assert config.show_confession is False
+
+    def test_show_confession_preserves_explicit(self):
+        config = ServiceConfig(
+            date="2026-12-24", date_display="December 24, 2026",
+            show_confession=True,
+        )
+        fill_seasonal_defaults(config, LiturgicalSeason.CHRISTMAS_EVE)
+        assert config.show_confession is True  # Preserved, not overwritten
+
+    def test_show_nunc_dimittis_preserves_explicit(self):
+        config = ServiceConfig(
+            date="2026-2-22", date_display="February 22, 2026",
+            show_nunc_dimittis=False,
+        )
+        fill_seasonal_defaults(config, LiturgicalSeason.LENT)
+        assert config.show_nunc_dimittis is False  # Preserved

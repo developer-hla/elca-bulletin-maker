@@ -182,3 +182,34 @@ class TestClientIntegration:
         assert len(day.readings) == 4
         assert len(results) == 1
         assert results[0].title == "Jesus, Keep Me Near the Cross"
+
+    def test_search_passage_returns_html(self):
+        """search_passage() sends citation and returns passage HTML."""
+        client = SundaysClient()
+        client._logged_in = True
+
+        passage_html = '<div class="passage"><p><sup>15</sup>The Lord God took...</p></div>'
+        resp = self._make_response(passage_html)
+        client.client.request = MagicMock(return_value=resp)
+
+        result = client.search_passage("Genesis 2:15-17")
+        assert "Lord God took" in result
+
+    def test_search_passage_with_passage_div(self):
+        """search_passage() extracts content from passage div."""
+        client = SundaysClient()
+        client._logged_in = True
+
+        html = '<html><div class="passage-text"><p>Some text</p></div><div class="passage"><p>Actual passage</p></div></html>'
+        resp = self._make_response(html)
+        client.client.request = MagicMock(return_value=resp)
+
+        result = client.search_passage("Genesis 1:1")
+        assert "Actual passage" in result
+
+    def test_search_passage_empty_citation_raises(self):
+        """search_passage() raises ValueError on empty citation."""
+        client = SundaysClient()
+        client._logged_in = True
+        with pytest.raises(ValueError, match="Citation must not be empty"):
+            client.search_passage("")

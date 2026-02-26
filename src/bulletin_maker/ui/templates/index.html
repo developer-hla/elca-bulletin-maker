@@ -241,6 +241,33 @@
                     </select>
                     <span class="default-hint" id="hint-preface"></span>
                 </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">Confession</label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="show-confession"> Include Confession and Forgiveness
+                    </label>
+                    <span class="default-hint" id="hint-confession"></span>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">Nunc Dimittis</label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="show-nunc-dimittis"> Include Nunc Dimittis
+                    </label>
+                    <span class="default-hint" id="hint-nunc-dimittis"></span>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">Baptism</label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="include-baptism"> Include Holy Baptism
+                    </label>
+                    <div id="baptism-names-group" hidden>
+                        <label for="baptism-names">Candidate Name(s)</label>
+                        <input type="text" id="baptism-names" placeholder="e.g. John Smith, Jane Doe">
+                    </div>
+                </div>
             </div>
 
             <button id="reset-defaults-btn" class="btn secondary">Reset to Seasonal Defaults</button>

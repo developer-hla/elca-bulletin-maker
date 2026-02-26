@@ -171,10 +171,23 @@ class BulletinAPI:
                     "eucharistic_form": seasonal.eucharistic_form,
                     "include_memorial_acclamation": seasonal.has_memorial_acclamation,
                     "preface": seasonal.preface.value,
+                    "show_confession": seasonal.show_confession,
+                    "show_nunc_dimittis": seasonal.show_nunc_dimittis,
                 },
             }
         except AuthError as e:
             return {"success": False, "error": str(e), "auth_error": True}
+        except BulletinError as e:
+            return {"success": False, "error": str(e)}
+
+    # ── Custom Reading ─────────────────────────────────────────────────
+
+    def fetch_custom_reading(self, citation: str) -> dict:
+        """Fetch a Bible passage from S&S for a custom reading citation."""
+        try:
+            client = self._get_client()
+            html = client.search_passage(citation)
+            return {"success": True, "text_html": html, "citation": citation}
         except BulletinError as e:
             return {"success": False, "error": str(e)}
 
@@ -417,6 +430,11 @@ class BulletinAPI:
             eucharistic_form=form_data.get("eucharistic_form"),
             include_memorial_acclamation=form_data.get("include_memorial_acclamation"),
             preface=self._parse_preface(form_data.get("preface")),
+            show_confession=form_data.get("show_confession"),
+            show_nunc_dimittis=form_data.get("show_nunc_dimittis"),
+            reading_overrides=form_data.get("reading_overrides") or None,
+            include_baptism=form_data.get("include_baptism", False),
+            baptism_candidate_names=form_data.get("baptism_candidate_names", ""),
             confession_entries=self._parse_dialog_entries(
                 form_data.get("confession_entries")
             ),
@@ -529,6 +547,7 @@ class BulletinAPI:
                         self._day,
                         config.date_display,
                         output_path=output_dir / f"{prefix} - Pulpit SCRIPTURE 8.5 x 11.pdf",
+                        config=config,
                     )
                     results["scripture"] = str(scripture_path)
                     self._push_progress("scripture", "Pulpit scripture saved", 75)

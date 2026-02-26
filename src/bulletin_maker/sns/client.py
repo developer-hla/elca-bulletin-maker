@@ -246,6 +246,41 @@ class SundaysClient:
             raw_html=content,
         )
 
+    # -- Bible Passage Search ------------------------------------------------
+
+    def search_passage(self, citation: str) -> str:
+        """Fetch Bible passage HTML from S&S PassageSearch.
+
+        Args:
+            citation: Citation string (e.g. "Genesis 2:15-17; 3:1-7").
+
+        Returns:
+            Raw HTML of the passage text.
+        """
+        if not citation or not citation.strip():
+            raise ValueError("Citation must not be empty.")
+
+        self._ensure_logged_in()
+
+        resp = self._request(
+            "POST",
+            f"{BASE}/Bible/PassageSearch",
+            data={"searchText": citation},
+        )
+
+        # Extract the passage content from the response HTML
+        passage_match = re.search(
+            r'<div[^>]*class="passage"[^>]*>(.*?)</div>\s*(?=<div|$)',
+            resp.text,
+            re.DOTALL,
+        )
+        if passage_match:
+            return passage_match.group(1).strip()
+
+        # Fallback: return entire response if no passage div found
+        # (the endpoint may return just the passage HTML directly)
+        return resp.text
+
     # -- Music Search -------------------------------------------------------
 
     def _get_music_form_fields(self) -> dict:

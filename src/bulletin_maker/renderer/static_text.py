@@ -367,3 +367,81 @@ INVITATION_TO_LENT = (
     "Let us continue our journey through these forty days to the great "
     f"Three Days of Jesus{APOSTROPHE} death and resurrection."
 )
+
+
+# ── Holy Baptism (abbreviated Sunday rite, ELW pp. 227-231) ──────
+
+BAPTISM_PRESENTATION = (
+    "God, who is rich in mercy and love, gives us a new birth into "
+    "a living hope through the sacrament of baptism. By water and "
+    "the Word, God delivers us from sin and death and raises us to "
+    "new life in Jesus Christ."
+)
+
+BAPTISM_FLOOD_PRAYER = (
+    "We give you thanks, O God, for in the beginning your Spirit moved "
+    "over the waters and by your Word you created the world, calling "
+    "forth life in which you took delight. Through the waters of the "
+    "flood you delivered Noah and his family, and through the sea you "
+    "led your people Israel from slavery into freedom. At the river "
+    "your Son was baptized by John and anointed with the Holy Spirit. "
+    "By the baptism of Jesus{APOSTROPHE} death and resurrection you set us "
+    "free from the power of sin and death and raise us up to live in you."
+).format(APOSTROPHE=APOSTROPHE)
+
+BAPTISM_RENUNCIATION = [
+    (DialogRole.PASTOR,
+     "Do you renounce the devil and all the forces that defy God?"),
+    (DialogRole.CONGREGATION, "I renounce them."),
+    (DialogRole.PASTOR,
+     "Do you renounce the powers of this world that rebel against God?"),
+    (DialogRole.CONGREGATION, "I renounce them."),
+    (DialogRole.PASTOR,
+     "Do you renounce the ways of sin that draw you from God?"),
+    (DialogRole.CONGREGATION, "I renounce them."),
+]
+
+BAPTISM_PROFESSION = [
+    (DialogRole.PASTOR,
+     "Do you believe in God the Father?"),
+    (DialogRole.CONGREGATION,
+     "I believe in God, the Father almighty, "
+     "creator of heaven and earth."),
+    (DialogRole.PASTOR,
+     f"Do you believe in Jesus Christ, the Son of God?"),
+    (DialogRole.CONGREGATION,
+     f"I believe in Jesus Christ, God{APOSTROPHE}s only Son, our Lord, "
+     "who was conceived by the Holy Spirit, "
+     "born of the virgin Mary, "
+     "suffered under Pontius Pilate, "
+     "was crucified, died, and was buried; "
+     "he descended to the dead. "
+     "On the third day he rose again; "
+     "he ascended into heaven, "
+     "he is seated at the right hand of the Father, "
+     "and he will come to judge the living and the dead."),
+    (DialogRole.PASTOR,
+     "Do you believe in God the Holy Spirit?"),
+    (DialogRole.CONGREGATION,
+     "I believe in the Holy Spirit, "
+     "the holy catholic church, "
+     "the communion of saints, "
+     "the forgiveness of sins, "
+     "the resurrection of the body, "
+     "and the life everlasting."),
+]
+
+BAPTISM_FORMULA = (
+    "{name}, I baptize you in the name of the Father, "
+    f"and of the {CROSS} Son, and of the Holy Spirit. Amen."
+)
+
+BAPTISM_WELCOME = (
+    "Let us welcome the newly baptized."
+)
+
+BAPTISM_WELCOME_RESPONSE = (
+    "We welcome you into the body of Christ and into the mission "
+    "we share: join us in giving thanks and praise to God "
+    "and bearing God{APOSTROPHE}s creative and redeeming word to all the world."
+).format(APOSTROPHE=APOSTROPHE)

@@ -13,6 +13,13 @@ from bulletin_maker.renderer.static_text import (
     AARONIC_BLESSING,
     AGNUS_DEI,
     APOSTLES_CREED,
+    BAPTISM_FLOOD_PRAYER,
+    BAPTISM_FORMULA,
+    BAPTISM_PRESENTATION,
+    BAPTISM_PROFESSION,
+    BAPTISM_RENUNCIATION,
+    BAPTISM_WELCOME,
+    BAPTISM_WELCOME_RESPONSE,
     CHURCH_ADDRESS,
     CHURCH_NAME,
     CONFESSION_AND_FORGIVENESS,
@@ -183,3 +190,55 @@ class TestMiscTexts:
 
     def test_aaronic_blessing_has_cross_symbol(self):
         assert "\u2629" in AARONIC_BLESSING
+
+
+class TestBaptismTexts:
+    def test_presentation_nonempty(self):
+        assert len(BAPTISM_PRESENTATION) > 50
+
+    def test_flood_prayer_nonempty(self):
+        assert len(BAPTISM_FLOOD_PRAYER) > 100
+
+    def test_renunciation_has_three_exchanges(self):
+        # Three renunciation questions + three responses = 6 entries
+        assert len(BAPTISM_RENUNCIATION) == 6
+
+    def test_renunciation_entries_are_tuples(self):
+        for entry in BAPTISM_RENUNCIATION:
+            assert isinstance(entry, tuple)
+            assert len(entry) == 2
+
+    def test_renunciation_has_congregation_responses(self):
+        c_entries = [e for e in BAPTISM_RENUNCIATION
+                     if e[0] is DialogRole.CONGREGATION]
+        assert len(c_entries) == 3
+
+    def test_profession_has_three_exchanges(self):
+        # Three belief questions + three responses = 6 entries
+        assert len(BAPTISM_PROFESSION) == 6
+
+    def test_profession_entries_are_tuples(self):
+        for entry in BAPTISM_PROFESSION:
+            assert isinstance(entry, tuple)
+            assert len(entry) == 2
+
+    def test_profession_has_apostles_creed_content(self):
+        # The congregation responses contain the Apostles' Creed in Q&A form
+        all_text = " ".join(t for _, t in BAPTISM_PROFESSION)
+        assert "Father almighty" in all_text
+        assert "Jesus Christ" in all_text
+        assert "Holy Spirit" in all_text
+
+    def test_formula_has_name_placeholder(self):
+        assert "{name}" in BAPTISM_FORMULA
+
+    def test_formula_formats_correctly(self):
+        result = BAPTISM_FORMULA.format(name="John")
+        assert "John" in result
+        assert "baptize" in result
+
+    def test_welcome_nonempty(self):
+        assert len(BAPTISM_WELCOME) > 10
+
+    def test_welcome_response_nonempty(self):
+        assert len(BAPTISM_WELCOME_RESPONSE) > 50

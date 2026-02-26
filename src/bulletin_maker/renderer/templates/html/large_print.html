@@ -79,6 +79,7 @@
 
 
 {# ── Confession and Forgiveness ── #}
+{% if show_confession %}
 <div class="liturgy-heading"><span>*CONFESSION AND FORGIVENESS</span></div>
 {% for role, text in confession_entries %}
 {% if role.value == "instruction" %}
@@ -91,6 +92,7 @@
 <p>{{ text }}</p>
 {% endif %}
 {% endfor %}
+{% endif %}
 
 
 {# ── Gathering Hymn ── #}
@@ -222,7 +224,47 @@
    MEAL
    ════════════════════════════════════════════════════════════════════ #}
 
-{# ── Creed ── #}
+{# ── Creed / Baptism ── #}
+{% if include_baptism | default(false) %}
+<div class="scripture-heading mt-24"><span>*HOLY BAPTISM</span></div>
+
+<p class="instruction mb-6">{{ baptism_presentation }}</p>
+
+<div class="scripture-heading"><span>Renunciation</span></div>
+{% for role, text in baptism_renunciation %}
+{% if role.value == "P" %}
+<p><span class="role-label">P: </span>{{ text }}</p>
+{% elif role.value == "C" %}
+<p><strong>{{ text }}</strong></p>
+{% else %}
+<p>{{ text }}</p>
+{% endif %}
+{% endfor %}
+
+<div class="scripture-heading"><span>Profession of Faith</span></div>
+{% for role, text in baptism_profession %}
+{% if role.value == "P" %}
+<p><span class="role-label">P: </span>{{ text }}</p>
+{% elif role.value == "C" %}
+<p><strong>{{ text }}</strong></p>
+{% else %}
+<p>{{ text }}</p>
+{% endif %}
+{% endfor %}
+
+<div class="scripture-heading"><span>Thanksgiving at the Font</span></div>
+<p>{{ baptism_flood_prayer }}</p>
+
+<div class="scripture-heading"><span>The Baptism</span></div>
+{% for formula in baptism_formulas %}
+<p><span class="role-label">P: </span>{{ formula }}</p>
+{% endfor %}
+
+<div class="scripture-heading"><span>Welcome</span></div>
+<p><span class="role-label">P: </span>{{ baptism_welcome }}</p>
+<p><strong>{{ baptism_welcome_response }}</strong></p>
+
+{% else %}
 <div class="creed-section">
 <div class="scripture-heading mt-24">
     <span>*{{ creed_name }}</span>
@@ -234,6 +276,7 @@
 {% endfor %}
 </div>
 </div>
+{% endif %}
 
 
 {# ── Prayers of Intercession ── #}
@@ -410,12 +453,14 @@
 
 
 {# ── Nunc Dimittis ── #}
+{% if show_nunc_dimittis %}
 <div class="flow-group">
 <p class="instruction-left">The Congregation SINGS:</p>
 {% for line in nunc_dimittis_lines %}
 <p class="nunc-dimittis-line">{{ line }}</p>
 {% endfor %}
 </div>
+{% endif %}
 
 
 {# ── Prayer After Communion ── #}

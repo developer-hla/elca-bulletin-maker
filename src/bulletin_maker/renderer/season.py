@@ -97,6 +97,8 @@ class SeasonalConfig:
     eucharistic_form: str          # "short", "poetic", or "extended"
     has_memorial_acclamation: bool # Memorial Acclamation in eucharistic prayer
     preface: PrefaceType           # Default preface for this season
+    show_confession: bool = True   # False for Christmas Eve
+    show_nunc_dimittis: bool = True  # True always (user can override)
 
 
 # Season -> config mapping (from bulletin-format-notes.md)
@@ -156,6 +158,7 @@ _SEASON_CONFIGS = {
         eucharistic_form="short",
         has_memorial_acclamation=False,
         preface=PrefaceType.CHRISTMAS,
+        show_confession=False,
     ),
 }
 
@@ -236,3 +239,7 @@ def fill_seasonal_defaults(config: object, season: LiturgicalSeason) -> None:
         config.include_memorial_acclamation = seasonal.has_memorial_acclamation  # type: ignore[attr-defined]
     if getattr(config, "preface", None) is None:
         config.preface = seasonal.preface  # type: ignore[attr-defined]
+    if getattr(config, "show_confession", None) is None:
+        config.show_confession = seasonal.show_confession  # type: ignore[attr-defined]
+    if getattr(config, "show_nunc_dimittis", None) is None:
+        config.show_nunc_dimittis = seasonal.show_nunc_dimittis  # type: ignore[attr-defined]

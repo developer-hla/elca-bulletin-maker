@@ -218,7 +218,50 @@
    CREED + PRAYERS + PEACE
    ════════════════════════════════════════════════════════════════════ #}
 
-{# ── Creed ── #}
+{# ── Creed / Baptism ── #}
+{% if include_baptism | default(false) %}
+<div class="section-heading red-heading"><span>*HOLY BAPTISM</span></div>
+<span class="creed-marker">CREED_PAGE_MARKER</span>
+
+<p class="instruction mb-2">{{ baptism_presentation }}</p>
+
+<div class="section-heading"><span>Renunciation</span></div>
+{% for role, text in baptism_renunciation %}
+{% if role.value == "P" %}
+<p><span class="role-label">P: </span>{{ text }}</p>
+{% elif role.value == "C" %}
+<p><strong>{{ text }}</strong></p>
+{% else %}
+<p>{{ text }}</p>
+{% endif %}
+{% endfor %}
+
+<div class="section-heading"><span>Profession of Faith</span></div>
+{% for role, text in baptism_profession %}
+{% if role.value == "P" %}
+<p><span class="role-label">P: </span>{{ text }}</p>
+{% elif role.value == "C" %}
+<p><strong>{{ text }}</strong></p>
+{% else %}
+<p>{{ text }}</p>
+{% endif %}
+{% endfor %}
+
+<div class="section-heading"><span>Thanksgiving at the Font</span></div>
+<div class="two-col">
+<p>{{ baptism_flood_prayer }}</p>
+</div>
+
+<div class="section-heading"><span>The Baptism</span></div>
+{% for formula in baptism_formulas %}
+<p><span class="role-label">P: </span>{{ formula }}</p>
+{% endfor %}
+
+<div class="section-heading"><span>Welcome</span></div>
+<p><span class="role-label">P: </span>{{ baptism_welcome }}</p>
+<p><strong>{{ baptism_welcome_response }}</strong></p>
+
+{% else %}
 <div class="section-heading red-heading">
     <span>*{{ creed_name }}</span>
     <span class="heading-role">Prayer Leader</span>
@@ -229,6 +272,7 @@
 <p class="creed-stanza">{{ stanza | nl2br }}</p>
 {% endfor %}
 </div>
+{% endif %}
 
 
 {# ── Prayers of Intercession ── #}
@@ -418,7 +462,7 @@
 
 
 {# ── Nunc Dimittis (notation image) ── #}
-{% if nunc_dimittis_image_uri %}
+{% if show_nunc_dimittis and nunc_dimittis_image_uri %}
 <div class="notation-image"><img src="{{ nunc_dimittis_image_uri }}" alt="Nunc Dimittis"></div>
 {% endif %}
 

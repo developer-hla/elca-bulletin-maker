@@ -47,6 +47,7 @@ function initialState() {
             communion: null,
             sending: null,
         },
+        readingOverrides: {},  // {slot: {label, citation, intro, text_html}}
         coverImage: "",
         outputDir: "",
         liturgicalTexts: null,  // raw texts from API
@@ -112,6 +113,16 @@ function formatDate(dateStr) {
 /** Returns the display label for a liturgical season key. */
 function seasonLabel(season) {
     return SEASON_LABELS[season] || season;
+}
+
+/** Maps a reading label to an override slot key. */
+function readingSlotKey(label) {
+    var l = label.toLowerCase();
+    if (l.indexOf("first") !== -1) return "first";
+    if (l.indexOf("second") !== -1) return "second";
+    if (l.indexOf("psalm") !== -1) return "psalm";
+    if (l.indexOf("gospel") !== -1) return "gospel";
+    return l;
 }
 
 /** Waits for pywebview JS bridge to be ready. */
@@ -339,14 +350,92 @@ function setupDateFetch() {
 
         const readingsEl = $("#readings-list");
         readingsEl.innerHTML = "";
+        state.readingOverrides = {};
         (result.readings || []).forEach(function(r) {
-            const div = document.createElement("div");
+            var slot = readingSlotKey(r.label);
+            var div = document.createElement("div");
             div.className = "reading-item";
-            const span = document.createElement("span");
-            span.className = "reading-label";
-            span.textContent = r.label + ":";
-            div.appendChild(span);
-            div.appendChild(document.createTextNode(" " + r.citation));
+            div.dataset.slot = slot;
+
+            var labelSpan = document.createElement("span");
+            labelSpan.className = "reading-label";
+            labelSpan.textContent = r.label + ":";
+            div.appendChild(labelSpan);
+
+            var citationSpan = document.createElement("span");
+            citationSpan.className = "reading-citation-text";
+            citationSpan.textContent = " " + r.citation;
+            div.appendChild(citationSpan);
+
+            var editBtn = document.createElement("button");
+            editBtn.type = "button";
+            editBtn.className = "btn-link reading-edit-btn";
+            editBtn.textContent = "Edit";
+            editBtn.addEventListener("click", function() {
+                var editArea = div.querySelector(".reading-edit-area");
+                if (editArea) {
+                    editArea.hidden = !editArea.hidden;
+                    return;
+                }
+                var area = document.createElement("div");
+                area.className = "reading-edit-area";
+                var input = document.createElement("input");
+                input.type = "text";
+                input.className = "reading-citation-input";
+                input.value = r.citation;
+                input.placeholder = "Enter citation (e.g. Genesis 2:15-25)";
+                area.appendChild(input);
+
+                var fetchBtn = document.createElement("button");
+                fetchBtn.type = "button";
+                fetchBtn.className = "btn secondary reading-fetch-btn";
+                fetchBtn.textContent = "Fetch";
+                fetchBtn.addEventListener("click", async function() {
+                    var citation = input.value.trim();
+                    if (!citation) return;
+                    fetchBtn.disabled = true;
+                    fetchBtn.textContent = "...";
+                    var result = await window.pywebview.api.fetch_custom_reading(citation);
+                    fetchBtn.disabled = false;
+                    fetchBtn.textContent = "Fetch";
+                    var preview = area.querySelector(".reading-preview");
+                    if (!preview) {
+                        preview = document.createElement("div");
+                        preview.className = "reading-preview";
+                        area.appendChild(preview);
+                    }
+                    if (result.success) {
+                        preview.innerHTML = '<p class="reading-preview-ok">Passage fetched. Will use custom citation.</p>';
+                        state.readingOverrides[slot] = {
+                            label: r.label,
+                            citation: citation,
+                            intro: "",
+                            text_html: result.text_html,
+                        };
+                        citationSpan.textContent = " " + citation + " (custom)";
+                    } else {
+                        preview.innerHTML = '<p class="error-msg">' + escapeHtml(result.error || "Failed to fetch") + '</p>';
+                    }
+                });
+                area.appendChild(fetchBtn);
+
+                var resetBtn = document.createElement("button");
+                resetBtn.type = "button";
+                resetBtn.className = "btn-link reading-reset-btn";
+                resetBtn.textContent = "Reset";
+                resetBtn.addEventListener("click", function() {
+                    delete state.readingOverrides[slot];
+                    input.value = r.citation;
+                    citationSpan.textContent = " " + r.citation;
+                    var preview = area.querySelector(".reading-preview");
+                    if (preview) preview.innerHTML = "";
+                });
+                area.appendChild(resetBtn);
+
+                div.appendChild(area);
+            });
+            div.appendChild(editBtn);
+
             readingsEl.appendChild(div);
         });
 
@@ -403,6 +492,21 @@ function applyDefaults(defaults) {
     if (defaults.preface) {
         populatePrefaceDropdown(defaults.preface);
     }
+
+    // Confession
+    var showConf = defaults.show_confession !== undefined ? defaults.show_confession : true;
+    $("#show-confession").checked = showConf;
+    $("#hint-confession").textContent = "Default: " + (showConf ? "Yes" : "No");
+
+    // Nunc Dimittis
+    var showNunc = defaults.show_nunc_dimittis !== undefined ? defaults.show_nunc_dimittis : true;
+    $("#show-nunc-dimittis").checked = showNunc;
+    $("#hint-nunc-dimittis").textContent = "Default: Yes";
+
+    // Baptism (always unchecked by default)
+    $("#include-baptism").checked = false;
+    hide($("#baptism-names-group"));
+    $("#baptism-names").value = "";
 }
 
 /** Populate preface dropdown from API, pre-selecting the seasonal default. */
@@ -874,6 +978,10 @@ function collectFormData() {
         eucharistic_form: epEl ? epEl.value : null,
         include_memorial_acclamation: $("#include-memorial").checked,
         preface: $("#preface-select").value || null,
+        show_confession: $("#show-confession").checked,
+        show_nunc_dimittis: $("#show-nunc-dimittis").checked,
+        include_baptism: $("#include-baptism").checked,
+        baptism_candidate_names: $("#baptism-names").value.trim(),
         prelude_title: $("#prelude-title").value.trim(),
         prelude_performer: $("#prelude-performer").value.trim(),
         postlude_title: $("#postlude-title").value.trim(),
@@ -883,6 +991,11 @@ function collectFormData() {
         output_dir: state.outputDir || "output",
         selected_docs: Array.from($$('input[name="doc_select"]:checked')).map(function(el) { return el.value; }),
     };
+
+    // Reading overrides
+    if (state.readingOverrides && Object.keys(state.readingOverrides).length > 0) {
+        formData.reading_overrides = state.readingOverrides;
+    }
 
     // Hymns
     ["gathering", "sermon", "communion", "sending"].forEach(function(slot) {
@@ -1022,6 +1135,17 @@ function setupGenerate() {
 
 // ── Init ─────────────────────────────────────────────────────────────
 
+function setupBaptismToggle() {
+    $("#include-baptism").addEventListener("change", function() {
+        if (this.checked) {
+            show($("#baptism-names-group"));
+        } else {
+            hide($("#baptism-names-group"));
+            $("#baptism-names").value = "";
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     setupLogin();
     setupLogout();
@@ -1032,5 +1156,6 @@ document.addEventListener("DOMContentLoaded", function() {
     setupHymnFetch();
     setupFilePickers();
     setupGenerate();
+    setupBaptismToggle();
     initLogin();
 });
