@@ -134,6 +134,31 @@ window.updateProgress = function(data) {
     if (bar) bar.setAttribute("aria-valuenow", data.pct);
 };
 
+// ── Update Check ─────────────────────────────────────────────────────
+
+async function checkForUpdate() {
+    try {
+        var result = await window.pywebview.api.check_for_update();
+        if (result.success && result.update_available) {
+            var banner = $("#update-banner");
+            $("#update-message").textContent =
+                "Version " + result.latest + " is available (you have " + result.current + ").";
+            var link = $("#update-link");
+            link.href = result.download_url || "#";
+            if (!result.download_url) hide(link);
+            show(banner);
+        }
+    } catch (e) {
+        // Silently ignore — update check is non-critical
+    }
+}
+
+function setupUpdateBanner() {
+    $("#update-dismiss").addEventListener("click", function() {
+        hide($("#update-banner"));
+    });
+}
+
 // ── Login ────────────────────────────────────────────────────────────
 
 async function initLogin() {
@@ -162,6 +187,7 @@ function setupLogin() {
             hide($("#login-overlay"));
             show($("#app"));
             $("#user-display").textContent = result.username;
+            checkForUpdate();
         } else {
             hide(spinner);
             show(form);
@@ -725,6 +751,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setupLogin();
     setupLogout();
     setupNewBulletin();
+    setupUpdateBanner();
     setupDateFetch();
     setupResetDefaults();
     setupHymnFetch();

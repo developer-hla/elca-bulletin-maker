@@ -3,9 +3,16 @@
 from __future__ import annotations
 
 import logging
+import os
+import sys
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+# When running as a PyInstaller bundle, tell Playwright where to find
+# the bundled Chromium browser (installed with PLAYWRIGHT_BROWSERS_PATH=0).
+if getattr(sys, "frozen", False):
+    os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "0")
 
 # Page dimensions in points (72pt = 1in)
 HALF_PAGE_WIDTH_PT = 504.0  # 7 inches

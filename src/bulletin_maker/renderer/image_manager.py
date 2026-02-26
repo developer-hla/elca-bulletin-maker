@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -25,7 +26,10 @@ from bulletin_maker.renderer.season import LiturgicalSeason, PrefaceType
 
 logger = logging.getLogger(__name__)
 
-ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+if getattr(sys, "frozen", False):
+    ASSETS_DIR = Path(sys._MEIPASS) / "bulletin_maker" / "renderer" / "assets"
+else:
+    ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 SETTING_TWO_DIR = ASSETS_DIR / "setting_two"
 GOSPEL_ACCLAMATION_DIR = ASSETS_DIR / "gospel_acclamation"
 

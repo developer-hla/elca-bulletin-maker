@@ -22,6 +22,9 @@ venv/
 # macOS
 .DS_Store
 
+# PyInstaller
+*.spec.bak
+
 # Project
 examples/
 output/

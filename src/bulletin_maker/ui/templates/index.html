@@ -31,6 +31,13 @@
 <!-- Main app (hidden until logged in) -->
 <div id="app" hidden>
 
+    <!-- Update banner (shown when newer version available) -->
+    <div id="update-banner" class="update-banner" hidden>
+        <span id="update-message"></span>
+        <a id="update-link" href="#" target="_blank" class="update-link">Download</a>
+        <button id="update-dismiss" class="update-dismiss" aria-label="Dismiss">&times;</button>
+    </div>
+
     <!-- Header -->
     <header>
         <div class="header-left">

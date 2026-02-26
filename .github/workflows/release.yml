@@ -1,0 +1,90 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[app,build]"
+
+      - name: Install Playwright Chromium
+        run: |
+          PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium
+
+      - name: Build with PyInstaller
+        run: pyinstaller bulletin_maker.spec
+
+      - name: Zip .app bundle
+        run: |
+          cd dist
+          zip -r "../Bulletin-Maker-macos.zip" "Bulletin Maker.app"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: Bulletin-Maker-macos.zip
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[app,build]"
+
+      - name: Install Playwright Chromium
+        run: |
+          $env:PLAYWRIGHT_BROWSERS_PATH = "0"
+          playwright install chromium
+
+      - name: Build with PyInstaller
+        run: pyinstaller bulletin_maker.spec
+
+      - name: Zip build folder
+        run: Compress-Archive -Path "dist\Bulletin Maker" -DestinationPath "Bulletin-Maker-windows.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: Bulletin-Maker-windows.zip
+
+  release:
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-build
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            Bulletin-Maker-macos.zip
+            Bulletin-Maker-windows.zip
+          generate_release_notes: true

@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-TEMPLATE_DIR = Path(__file__).resolve().parent / "templates" / "html"
+if getattr(sys, "frozen", False):
+    TEMPLATE_DIR = Path(sys._MEIPASS) / "bulletin_maker" / "renderer" / "templates" / "html"
+else:
+    TEMPLATE_DIR = Path(__file__).resolve().parent / "templates" / "html"
 
 
 def nl2br(text: str) -> str:

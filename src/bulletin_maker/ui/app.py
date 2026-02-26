@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 from pathlib import Path
 
 import webview
@@ -11,7 +12,10 @@ from bulletin_maker.ui.api import BulletinAPI
 
 logger = logging.getLogger(__name__)
 
-TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+if getattr(sys, "frozen", False):
+    TEMPLATES_DIR = Path(sys._MEIPASS) / "bulletin_maker" / "ui" / "templates"
+else:
+    TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
 
 def _on_closing(api: BulletinAPI) -> None:

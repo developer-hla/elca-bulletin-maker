@@ -69,6 +69,16 @@ class BulletinAPI:
             self._client = SundaysClient()
         return self._client
 
+    # ── Update Check ─────────────────────────────────────────────────
+
+    def check_for_update(self) -> dict:
+        """Check GitHub for a newer release."""
+        from bulletin_maker.updater import check_for_update
+        result = check_for_update()
+        if result:
+            return {"success": True, "update_available": True, **result}
+        return {"success": True, "update_available": False}
+
     # ── Credentials ───────────────────────────────────────────────────
 
     def login(self, username: str, password: str) -> dict:
