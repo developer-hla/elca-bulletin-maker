@@ -21,6 +21,7 @@ from bulletin_maker.exceptions import AuthError, BulletinError
 from bulletin_maker.sns.client import SundaysClient
 from bulletin_maker.sns.models import DayContent, HymnLyrics, ServiceConfig
 from bulletin_maker.renderer.season import (
+    PrefaceType,
     detect_season,
     get_seasonal_config,
 )
@@ -79,6 +80,17 @@ class BulletinAPI:
             logger.exception("Logout error")
             return {"success": False, "error": str(e)}
 
+    # ── Preface Options ─────────────────────────────────────────────
+
+    def get_preface_options(self) -> dict:
+        """Return available preface options for the UI dropdown."""
+        from bulletin_maker.renderer.image_manager import get_preface_options
+        try:
+            options = get_preface_options()
+            return {"success": True, "prefaces": options}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
     # ── Content Fetching ──────────────────────────────────────────────
 
     def fetch_day_content(self, date_str: str, date_display: str) -> dict:
@@ -132,6 +144,7 @@ class BulletinAPI:
                     "canticle": seasonal.canticle,
                     "eucharistic_form": seasonal.eucharistic_form,
                     "include_memorial_acclamation": seasonal.has_memorial_acclamation,
+                    "preface": seasonal.preface.value,
                 },
             }
         except BulletinError as e:
@@ -286,6 +299,7 @@ class BulletinAPI:
             canticle=form_data.get("canticle"),
             eucharistic_form=form_data.get("eucharistic_form"),
             include_memorial_acclamation=form_data.get("include_memorial_acclamation"),
+            preface=PrefaceType(form_data["preface"]) if form_data.get("preface") else None,
             gathering_hymn=self._build_hymn(form_data, "gathering_hymn"),
             sermon_hymn=self._build_hymn(form_data, "sermon_hymn"),
             communion_hymn=self._build_hymn(form_data, "communion_hymn"),

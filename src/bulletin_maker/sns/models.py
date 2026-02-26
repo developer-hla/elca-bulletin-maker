@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from bulletin_maker.renderer.season import PrefaceType
 
 
 @dataclass
@@ -78,6 +81,7 @@ class ServiceConfig:
     canticle: Optional[str] = None              # "glory_to_god", "this_is_the_feast", or "none"
     eucharistic_form: Optional[str] = None      # "short", "poetic", or "extended"
     include_memorial_acclamation: Optional[bool] = None  # Memorial Acclamation in EP?
+    preface: Optional[PrefaceType] = None       # Preface type. None = seasonal default.
 
     # ── Hymns ──
     gathering_hymn: Optional[HymnLyrics] = None

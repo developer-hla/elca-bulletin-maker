@@ -358,6 +358,21 @@ main {
     cursor: pointer;
 }
 
+.setting-group select {
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+    background: white;
+    min-width: 180px;
+}
+
+.setting-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(44, 95, 138, 0.15);
+}
+
 .default-hint {
     font-size: 11px;
     color: var(--text-light);
@@ -432,11 +447,20 @@ main {
     border-top: 1px solid var(--border);
 }
 
-/* ── Error Messages ────────────────────────────────────── */
+/* ── Error & Warning Messages ──────────────────────────── */
 
 .error-msg {
     background: var(--danger-bg);
     color: var(--danger);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+.warning-msg {
+    background: #fef9e7;
+    color: #7d6608;
     padding: 8px 12px;
     border-radius: 4px;
     font-size: 13px;

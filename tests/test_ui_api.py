@@ -96,6 +96,16 @@ class TestFetchDayContent:
         assert "First Sunday in Lent" in result["day_name"]
         assert len(result["readings"]) == 2
         assert result["defaults"]["creed_type"] == "nicene"  # Lent default
+        assert result["defaults"]["preface"] == "lent"
+
+
+class TestGetPrefaceOptions:
+    def test_returns_preface_groups(self):
+        api = BulletinAPI()
+        result = api.get_preface_options()
+        assert result["success"] is True
+        assert "seasonal" in result["prefaces"]
+        assert "occasional" in result["prefaces"]
 
 
 class TestSearchHymn:

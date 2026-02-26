@@ -748,15 +748,15 @@ def _build_leader_guide_context(day: DayContent, config: ServiceConfig) -> dict:
     ctx = _build_large_print_context(day, config)
     ctx["is_leader_guide"] = True
 
-    season = detect_season(day.title)
     preface_image_uri = ""
-    try:
-        path = get_preface_image(season)
-        preface_image_uri = _image_to_data_uri(path)
-    except FileNotFoundError:
-        logger.warning("Preface image not found for season %s", season)
-    except ImportError:
-        logger.warning("Pillow not installed — cannot convert preface image")
+    if config.preface:
+        try:
+            path = get_preface_image(config.preface)
+            preface_image_uri = _image_to_data_uri(path)
+        except FileNotFoundError:
+            logger.warning("Preface image not found: %s", config.preface)
+        except ImportError:
+            logger.warning("Pillow not installed — cannot convert preface image")
 
     ctx["preface_image_uri"] = preface_image_uri
     return ctx

@@ -22,6 +22,72 @@ class LiturgicalSeason(Enum):
     CHRISTMAS_EVE = "christmas_eve"
 
 
+class PrefaceType(Enum):
+    """All sung preface variants available in Setting Two.
+
+    Each member's value is the key used in file stems (preface_{value}.jpg)
+    and serialized to/from the UI.
+    """
+    # Seasonal
+    ADVENT = "advent"
+    CHRISTMAS = "christmas"
+    EPIPHANY = "epiphany"
+    LENT = "lent"
+    EASTER = "easter"
+    SUNDAYS = "sundays"           # Ordinary Time
+    PENTECOST = "pentecost"
+    # Occasional
+    APOSTLES = "apostles"
+    ASCENSION = "ascension"
+    FUNERAL = "funeral"
+    HEALING = "healing"
+    HOLY_TRINITY = "holy_trinity"
+    HOLY_WEEK = "holy_week"
+    MARRIAGE = "marriage"
+    SAINTS = "saints"
+    TRANSFIGURATION = "transfiguration"
+    WEEKDAYS = "weekdays"
+
+    @property
+    def label(self) -> str:
+        return _PREFACE_LABELS[self]
+
+    @property
+    def group(self) -> str:
+        return "seasonal" if self in _SEASONAL_PREFACES else "occasional"
+
+
+_PREFACE_LABELS: dict[PrefaceType, str] = {
+    PrefaceType.ADVENT: "Advent",
+    PrefaceType.CHRISTMAS: "Christmas",
+    PrefaceType.EPIPHANY: "Epiphany",
+    PrefaceType.LENT: "Lent",
+    PrefaceType.EASTER: "Easter",
+    PrefaceType.SUNDAYS: "Sundays (Ordinary Time)",
+    PrefaceType.PENTECOST: "Pentecost",
+    PrefaceType.APOSTLES: "Apostles",
+    PrefaceType.ASCENSION: "Ascension",
+    PrefaceType.FUNERAL: "Funeral",
+    PrefaceType.HEALING: "Healing",
+    PrefaceType.HOLY_TRINITY: "Holy Trinity",
+    PrefaceType.HOLY_WEEK: "Holy Week",
+    PrefaceType.MARRIAGE: "Marriage",
+    PrefaceType.SAINTS: "Saints",
+    PrefaceType.TRANSFIGURATION: "Transfiguration",
+    PrefaceType.WEEKDAYS: "Weekdays",
+}
+
+_SEASONAL_PREFACES: frozenset[PrefaceType] = frozenset({
+    PrefaceType.ADVENT,
+    PrefaceType.CHRISTMAS,
+    PrefaceType.EPIPHANY,
+    PrefaceType.LENT,
+    PrefaceType.EASTER,
+    PrefaceType.SUNDAYS,
+    PrefaceType.PENTECOST,
+})
+
+
 @dataclass
 class SeasonalConfig:
     """What liturgical elements are present/which forms are used for a season."""
@@ -30,6 +96,7 @@ class SeasonalConfig:
     creed_default: str             # "apostles" or "nicene"
     eucharistic_form: str          # "short", "poetic", or "extended"
     has_memorial_acclamation: bool # Memorial Acclamation in eucharistic prayer
+    preface: PrefaceType           # Default preface for this season
 
 
 # Season -> config mapping (from bulletin-format-notes.md)
@@ -40,6 +107,7 @@ _SEASON_CONFIGS = {
         creed_default="apostles",
         eucharistic_form="poetic",
         has_memorial_acclamation=False,
+        preface=PrefaceType.ADVENT,
     ),
     LiturgicalSeason.CHRISTMAS: SeasonalConfig(
         has_kyrie=True,
@@ -47,6 +115,7 @@ _SEASON_CONFIGS = {
         creed_default="apostles",
         eucharistic_form="extended",
         has_memorial_acclamation=True,
+        preface=PrefaceType.CHRISTMAS,
     ),
     LiturgicalSeason.EPIPHANY: SeasonalConfig(
         has_kyrie=True,
@@ -54,6 +123,7 @@ _SEASON_CONFIGS = {
         creed_default="apostles",
         eucharistic_form="extended",
         has_memorial_acclamation=True,
+        preface=PrefaceType.EPIPHANY,
     ),
     LiturgicalSeason.LENT: SeasonalConfig(
         has_kyrie=False,
@@ -61,6 +131,7 @@ _SEASON_CONFIGS = {
         creed_default="nicene",
         eucharistic_form="extended",
         has_memorial_acclamation=True,
+        preface=PrefaceType.LENT,
     ),
     LiturgicalSeason.EASTER: SeasonalConfig(
         has_kyrie=True,
@@ -68,6 +139,7 @@ _SEASON_CONFIGS = {
         creed_default="nicene",
         eucharistic_form="extended",
         has_memorial_acclamation=True,
+        preface=PrefaceType.EASTER,
     ),
     LiturgicalSeason.PENTECOST: SeasonalConfig(
         has_kyrie=True,
@@ -75,6 +147,7 @@ _SEASON_CONFIGS = {
         creed_default="apostles",
         eucharistic_form="short",
         has_memorial_acclamation=False,
+        preface=PrefaceType.SUNDAYS,
     ),
     LiturgicalSeason.CHRISTMAS_EVE: SeasonalConfig(
         has_kyrie=False,
@@ -82,6 +155,7 @@ _SEASON_CONFIGS = {
         creed_default="apostles",
         eucharistic_form="short",
         has_memorial_acclamation=False,
+        preface=PrefaceType.CHRISTMAS,
     ),
 }
 
@@ -121,6 +195,17 @@ def detect_season(title: str) -> LiturgicalSeason:
     return LiturgicalSeason.PENTECOST
 
 
+def get_preface_options() -> dict[str, list[dict[str, str]]]:
+    """Return preface options grouped by seasonal/occasional.
+
+    Built from PrefaceType — this is the single source of truth for the UI.
+    """
+    groups: dict[str, list[dict[str, str]]] = {"seasonal": [], "occasional": []}
+    for preface in PrefaceType:
+        groups[preface.group].append({"key": preface.value, "label": preface.label})
+    return groups
+
+
 def get_seasonal_config(season: LiturgicalSeason) -> SeasonalConfig:
     """Get the liturgical configuration for a season."""
     return _SEASON_CONFIGS[season]
@@ -149,3 +234,5 @@ def fill_seasonal_defaults(config: object, season: LiturgicalSeason) -> None:
         config.eucharistic_form = seasonal.eucharistic_form  # type: ignore[attr-defined]
     if getattr(config, "include_memorial_acclamation", None) is None:
         config.include_memorial_acclamation = seasonal.has_memorial_acclamation  # type: ignore[attr-defined]
+    if getattr(config, "preface", None) is None:
+        config.preface = seasonal.preface  # type: ignore[attr-defined]

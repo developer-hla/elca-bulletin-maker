@@ -28,6 +28,7 @@ const DOC_LABELS = {
     prayers: "Pulpit Prayers",
     scripture: "Pulpit Scripture",
     large_print: "Full with Hymns LARGE PRINT",
+    leader_guide: "Leader Guide",
 };
 
 // ── State ────────────────────────────────────────────────────────────
@@ -67,6 +68,16 @@ function showError(el, msg) {
 }
 
 function hideError(el) {
+    el.textContent = "";
+    hide(el);
+}
+
+function showWarning(el, msg) {
+    el.textContent = msg;
+    show(el);
+}
+
+function hideWarning(el) {
     el.textContent = "";
     hide(el);
 }
@@ -174,7 +185,9 @@ function resetAll() {
     // Reset UI
     hide($("#day-info"));
     hideError($("#date-error"));
+    hideWarning($("#date-warning"));
     $("#date-input").value = "";
+    $("#preface-select").innerHTML = "";
 
     ["section-hymns", "section-liturgy", "section-details", "section-generate"].forEach(function(id) {
         document.getElementById(id).classList.add("disabled-section");
@@ -219,7 +232,14 @@ function setupDateFetch() {
         }
 
         hideError($("#date-error"));
+        hideWarning($("#date-warning"));
         hide($("#day-info"));
+
+        // M14: Warn if date is not a Sunday (non-blocking)
+        if (dateVal.getDay() !== 0) {
+            showWarning($("#date-warning"), "Note: this date is not a Sunday.");
+        }
+
         const spinner = $("#date-spinner");
         show(spinner);
         this.disabled = true;
@@ -302,6 +322,57 @@ function applyDefaults(defaults) {
     // Memorial acclamation
     $("#include-memorial").checked = defaults.include_memorial_acclamation;
     $("#hint-memorial").textContent = "Default: " + (defaults.include_memorial_acclamation ? "Yes" : "No");
+
+    // Preface
+    if (defaults.preface) {
+        populatePrefaceDropdown(defaults.preface);
+    }
+}
+
+/** Populate preface dropdown from API, pre-selecting the seasonal default. */
+async function populatePrefaceDropdown(defaultKey) {
+    var select = $("#preface-select");
+    select.innerHTML = "";
+
+    try {
+        var result = await window.pywebview.api.get_preface_options();
+        if (!result.success) return;
+
+        var prefaces = result.prefaces;
+
+        // Seasonal group
+        var seasonalGroup = document.createElement("optgroup");
+        seasonalGroup.label = "Seasonal";
+        (prefaces.seasonal || []).forEach(function(p) {
+            var opt = document.createElement("option");
+            opt.value = p.key;
+            opt.textContent = p.label;
+            if (p.key === defaultKey) opt.selected = true;
+            seasonalGroup.appendChild(opt);
+        });
+        select.appendChild(seasonalGroup);
+
+        // Occasional group
+        var occasionalGroup = document.createElement("optgroup");
+        occasionalGroup.label = "Occasional";
+        (prefaces.occasional || []).forEach(function(p) {
+            var opt = document.createElement("option");
+            opt.value = p.key;
+            opt.textContent = p.label;
+            if (p.key === defaultKey) opt.selected = true;
+            occasionalGroup.appendChild(opt);
+        });
+        select.appendChild(occasionalGroup);
+
+        $("#hint-preface").textContent = "Default: " + (select.options[select.selectedIndex] ? select.options[select.selectedIndex].textContent : defaultKey);
+    } catch (err) {
+        // Fallback: just set the key directly
+        var opt = document.createElement("option");
+        opt.value = defaultKey;
+        opt.textContent = defaultKey;
+        opt.selected = true;
+        select.appendChild(opt);
+    }
 }
 
 function setupResetDefaults() {
@@ -436,6 +507,7 @@ function collectFormData() {
         canticle: canticleEl ? canticleEl.value : null,
         eucharistic_form: epEl ? epEl.value : null,
         include_memorial_acclamation: $("#include-memorial").checked,
+        preface: $("#preface-select").value || null,
         prelude_title: $("#prelude-title").value.trim(),
         prelude_performer: $("#prelude-performer").value.trim(),
         postlude_title: $("#postlude-title").value.trim(),

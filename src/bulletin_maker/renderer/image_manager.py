@@ -12,6 +12,7 @@ The standard bulletin needs all setting pieces + communion hymn.
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
     from bulletin_maker.sns.client import SundaysClient
 
 from bulletin_maker.exceptions import ContentNotFoundError
-from bulletin_maker.renderer.season import LiturgicalSeason
+from bulletin_maker.renderer.season import LiturgicalSeason, PrefaceType
 
 logger = logging.getLogger(__name__)
 
@@ -70,17 +71,6 @@ _GA_SEASON_MAP = {
     LiturgicalSeason.EASTER: "alleluia",
     LiturgicalSeason.PENTECOST: "alleluia",
     LiturgicalSeason.CHRISTMAS_EVE: "alleluia",
-}
-
-# Season → Preface image file stem
-_SEASON_PREFACE_MAP = {
-    LiturgicalSeason.ADVENT: "preface_advent",
-    LiturgicalSeason.CHRISTMAS: "preface_christmas",
-    LiturgicalSeason.CHRISTMAS_EVE: "preface_christmas",
-    LiturgicalSeason.EPIPHANY: "preface_epiphany",
-    LiturgicalSeason.LENT: "preface_lent",
-    LiturgicalSeason.EASTER: "preface_easter",
-    LiturgicalSeason.PENTECOST: "preface_sundays",
 }
 
 _IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".tif", ".tiff")
@@ -174,11 +164,11 @@ def get_gospel_acclamation_image(season: LiturgicalSeason) -> Path:
     return found
 
 
-def get_preface_image(season: LiturgicalSeason) -> Path:
-    """Return the path to the sung preface notation image for the given season.
+def get_preface_image(preface: PrefaceType) -> Path:
+    """Return the path to the sung preface notation image.
 
     Args:
-        season: The liturgical season.
+        preface: The preface type.
 
     Returns:
         Path to the image file.
@@ -186,7 +176,7 @@ def get_preface_image(season: LiturgicalSeason) -> Path:
     Raises:
         FileNotFoundError: If the asset file hasn't been downloaded yet.
     """
-    stem = _SEASON_PREFACE_MAP.get(season, "preface_sundays")
+    stem = f"preface_{preface.value}"
     found = _find_image(SETTING_TWO_DIR, stem)
     if found is None:
         raise FileNotFoundError(
@@ -194,6 +184,25 @@ def get_preface_image(season: LiturgicalSeason) -> Path:
             f"Run download_setting_assets() or see assets/README.md"
         )
     return found
+
+
+# ── Asset catalog ────────────────────────────────────────────────────
+
+def load_asset_catalog() -> dict:
+    """Load the asset catalog JSON."""
+    catalog_path = ASSETS_DIR / "catalog.json"
+    with open(catalog_path) as f:
+        return json.load(f)
+
+
+def get_preface_options() -> dict:
+    """Return preface options grouped by seasonal/occasional.
+
+    Delegates to season.get_preface_options() — the PrefaceType enum
+    is the single source of truth.
+    """
+    from bulletin_maker.renderer.season import get_preface_options as _get
+    return _get()
 
 
 # ── Bulk download from S&S Library ───────────────────────────────────

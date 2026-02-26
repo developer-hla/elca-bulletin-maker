@@ -6,8 +6,10 @@ import pytest
 
 from bulletin_maker.renderer.season import (
     LiturgicalSeason,
+    PrefaceType,
     detect_season,
     fill_seasonal_defaults,
+    get_preface_options,
     get_seasonal_config,
 )
 from bulletin_maker.sns.models import ServiceConfig
@@ -73,6 +75,48 @@ class TestGetSeasonalConfig:
         for season in LiturgicalSeason:
             config = get_seasonal_config(season)
             assert config is not None
+            assert config.preface  # non-empty string
+
+    def test_lent_preface(self):
+        config = get_seasonal_config(LiturgicalSeason.LENT)
+        assert config.preface is PrefaceType.LENT
+
+    def test_pentecost_preface(self):
+        config = get_seasonal_config(LiturgicalSeason.PENTECOST)
+        assert config.preface is PrefaceType.SUNDAYS
+
+    def test_christmas_eve_preface(self):
+        config = get_seasonal_config(LiturgicalSeason.CHRISTMAS_EVE)
+        assert config.preface is PrefaceType.CHRISTMAS
+
+
+class TestPrefaceType:
+    """PrefaceType enum carries label and group metadata."""
+
+    def test_every_member_has_label(self):
+        for p in PrefaceType:
+            assert p.label  # non-empty string
+
+    def test_seasonal_group(self):
+        assert PrefaceType.ADVENT.group == "seasonal"
+        assert PrefaceType.SUNDAYS.group == "seasonal"
+
+    def test_occasional_group(self):
+        assert PrefaceType.HOLY_TRINITY.group == "occasional"
+        assert PrefaceType.FUNERAL.group == "occasional"
+
+    def test_get_preface_options_from_enum(self):
+        options = get_preface_options()
+        assert "seasonal" in options
+        assert "occasional" in options
+        keys = {item["key"] for group in options.values() for item in group}
+        assert keys == {p.value for p in PrefaceType}
+
+    def test_labels_in_options(self):
+        options = get_preface_options()
+        for item in options["seasonal"]:
+            preface = PrefaceType(item["key"])
+            assert item["label"] == preface.label
 
 
 class TestFillSeasonalDefaults:
@@ -86,6 +130,7 @@ class TestFillSeasonalDefaults:
         assert config.canticle == "none"
         assert config.eucharistic_form == "extended"
         assert config.include_memorial_acclamation is True
+        assert config.preface is PrefaceType.LENT
 
     def test_preserves_explicit_values(self):
         config = ServiceConfig(
@@ -96,6 +141,7 @@ class TestFillSeasonalDefaults:
             canticle="glory_to_god",
             eucharistic_form="short",
             include_memorial_acclamation=False,
+            preface=PrefaceType.SUNDAYS,
         )
         fill_seasonal_defaults(config, LiturgicalSeason.LENT)
         # All values should be preserved, not overwritten by Lent defaults
@@ -104,6 +150,7 @@ class TestFillSeasonalDefaults:
         assert config.canticle == "glory_to_god"
         assert config.eucharistic_form == "short"
         assert config.include_memorial_acclamation is False
+        assert config.preface is PrefaceType.SUNDAYS
 
     def test_partial_override(self):
         config = ServiceConfig(
@@ -127,3 +174,4 @@ class TestFillSeasonalDefaults:
             assert config.canticle is not None
             assert config.eucharistic_form is not None
             assert config.include_memorial_acclamation is not None
+            assert config.preface is not None

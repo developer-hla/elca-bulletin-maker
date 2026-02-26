@@ -56,6 +56,7 @@
                     <button id="fetch-btn" class="btn primary">Fetch Content</button>
                 </div>
             </div>
+            <div id="date-warning" class="warning-msg" hidden></div>
             <div id="date-error" class="error-msg" hidden></div>
             <div id="date-spinner" class="spinner" hidden>
                 <div class="spinner-ring"></div>
@@ -219,6 +220,14 @@
                         <input type="checkbox" id="include-memorial"> Include Memorial Acclamation
                     </label>
                     <span class="default-hint" id="hint-memorial"></span>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">Preface</label>
+                    <select id="preface-select">
+                        <!-- populated by JS from API -->
+                    </select>
+                    <span class="default-hint" id="hint-preface"></span>
                 </div>
             </div>
 

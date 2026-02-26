@@ -1,0 +1,23 @@
+{
+  "gospel_acclamation": [
+    {"key": "alleluia", "label": "Alleluia"},
+    {"key": "lenten_verse", "label": "Lenten Verse"},
+    {"key": "advent", "label": "Advent"}
+  ],
+  "setting_pieces": [
+    {"key": "kyrie", "label": "Kyrie"},
+    {"key": "glory_to_god", "label": "Glory to God"},
+    {"key": "this_is_the_feast", "label": "This Is the Feast"},
+    {"key": "great_thanksgiving", "label": "Great Thanksgiving"},
+    {"key": "sanctus", "label": "Sanctus"},
+    {"key": "agnus_dei", "label": "Agnus Dei"},
+    {"key": "nunc_dimittis", "label": "Nunc Dimittis"},
+    {"key": "memorial_acclamation", "label": "Memorial Acclamation"},
+    {"key": "amen", "label": "Amen"}
+  ],
+  "sung_liturgy": [
+    {"key": "acclamation_tone", "label": "Acclamation Tone"},
+    {"key": "lords_prayer_sung", "label": "Lord's Prayer (Sung)"},
+    {"key": "words_of_institution_sung", "label": "Words of Institution (Sung)"}
+  ]
+}
