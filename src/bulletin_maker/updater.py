@@ -13,7 +13,7 @@ from bulletin_maker.version import __version__
 
 logger = logging.getLogger(__name__)
 
-GITHUB_REPO = "hunter-ashmore/elca-bulletin-maker"
+GITHUB_REPO = "developer-hla/elca-bulletin-maker"
 RELEASES_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
 
