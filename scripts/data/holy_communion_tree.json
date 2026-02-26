@@ -1,0 +1,2700 @@
+[
+  {
+    "name": "Pattern for Worship",
+    "atomId": 26674,
+    "atomCode": "elw_hcPattern",
+    "typeName": "Liturgical Text (General)",
+    "hasChildren": false,
+    "isLeaf": true,
+    "children": []
+  },
+  {
+    "name": "ELW Setting One",
+    "atomId": 6888,
+    "atomCode": "",
+    "typeName": "Node",
+    "hasChildren": true,
+    "isLeaf": false,
+    "children": [
+      {
+        "name": "ELW Holy Communion Setting One",
+        "atomId": 9397,
+        "atomCode": "elw_hc1",
+        "typeName": "Holy Communion Setting",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting One Text Only",
+        "atomId": 33403,
+        "atomCode": "elw_hc1textOnly",
+        "typeName": "Liturgical Text (General)",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting One Meal Only",
+        "atomId": 11347,
+        "atomCode": "elw_hc1meal",
+        "typeName": "Subrite",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting One Liturgical Music",
+        "atomId": 10935,
+        "atomCode": "",
+        "typeName": "Node",
+        "hasChildren": true,
+        "isLeaf": false,
+        "children": [
+          {
+            "name": "ELW Setting One Kyrie",
+            "atomId": 11044,
+            "atomCode": "elw_hc1_kyrie_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Glory",
+            "atomId": 11045,
+            "atomCode": "elw_hc1_glory_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Feast",
+            "atomId": 11046,
+            "atomCode": "elw_hc1_feast_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Standard Acclamation",
+            "atomId": 14152,
+            "atomCode": "elw_hc1_accltext_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Lenten Acclamation",
+            "atomId": 11048,
+            "atomCode": "elw_hc1_lentaccl_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Proper Acclamation",
+            "atomId": 14153,
+            "atomCode": "elw_hc1_accltone_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Dialogue",
+            "atomId": 11049,
+            "atomCode": "elw_hc1_dialogue_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Sundays",
+            "atomId": 13810,
+            "atomCode": "elw_hc1_pref_sundays_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Advent",
+            "atomId": 13794,
+            "atomCode": "elw_hc1_pref_advent_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Christmas",
+            "atomId": 13803,
+            "atomCode": "elw_hc1_pref_christmas_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Epiphany/Baptism of Our Lord",
+            "atomId": 13805,
+            "atomCode": "elw_hc1_pref_epiphany_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Transfiguration",
+            "atomId": 13811,
+            "atomCode": "elw_hc1_pref_transfig_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Lent",
+            "atomId": 13807,
+            "atomCode": "elw_hc1_pref_lent_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Holy Week",
+            "atomId": 13806,
+            "atomCode": "elw_hc1_pref_holyweek_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Easter",
+            "atomId": 13804,
+            "atomCode": "elw_hc1_pref_easter_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Ascension",
+            "atomId": 13802,
+            "atomCode": "elw_hc1_pref_ascension_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Pentecost",
+            "atomId": 13808,
+            "atomCode": "elw_hc1_pref_pentecost_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Holy Trinity",
+            "atomId": 13812,
+            "atomCode": "elw_hc1_pref_trinity_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Weekdays",
+            "atomId": 13813,
+            "atomCode": "elw_hc1_pref_weekdays_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Apostles",
+            "atomId": 13801,
+            "atomCode": "elw_hc1_pref_apostles_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Saints / All Saints",
+            "atomId": 13809,
+            "atomCode": "elw_hc1_pref_saints_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Healing",
+            "atomId": 29506,
+            "atomCode": "elw_hc1_pref_healing_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Funeral",
+            "atomId": 29508,
+            "atomCode": "elw_hc1_pref_funeral_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Preface: Marriage",
+            "atomId": 29507,
+            "atomCode": "elw_hc1_pref_marriage_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Holy",
+            "atomId": 11050,
+            "atomCode": "elw_hc1_holy_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Christ",
+            "atomId": 11051,
+            "atomCode": "elw_hc1_christ_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Amen",
+            "atomId": 11052,
+            "atomCode": "elw_hc1_amen_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "Thanksgiving at the Table Form II (sung)",
+            "atomId": 251457,
+            "atomCode": "elw_wordinstB_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Lord's Prayer (sung)",
+            "atomId": 11053,
+            "atomCode": "elw_ldprayer_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Lamb",
+            "atomId": 11054,
+            "atomCode": "elw_hc1_lamb_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting One Now Lord",
+            "atomId": 11055,
+            "atomCode": "elw_hc1_nowlord_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ELW Setting Two",
+    "atomId": 7707,
+    "atomCode": "",
+    "typeName": "Node",
+    "hasChildren": true,
+    "isLeaf": false,
+    "children": [
+      {
+        "name": "ELW Holy Communion Setting Two",
+        "atomId": 11041,
+        "atomCode": "elw_hc2",
+        "typeName": "Holy Communion Setting",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Two Text Only",
+        "atomId": 33404,
+        "atomCode": "elw_hc2textOnly",
+        "typeName": "Liturgical Text (General)",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Two Meal Only",
+        "atomId": 11348,
+        "atomCode": "elw_hc2meal",
+        "typeName": "Subrite",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Two Liturgical Music",
+        "atomId": 7706,
+        "atomCode": "",
+        "typeName": "Node",
+        "hasChildren": true,
+        "isLeaf": false,
+        "children": [
+          {
+            "name": "ELW Setting Two Kyrie",
+            "atomId": 11056,
+            "atomCode": "elw_hc2_kyrie_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Glory",
+            "atomId": 11057,
+            "atomCode": "elw_hc2_glory_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Feast",
+            "atomId": 11058,
+            "atomCode": "elw_hc2_feast_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Standard Acclamation",
+            "atomId": 14154,
+            "atomCode": "elw_hc2_accltext_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Lenten Acclamation",
+            "atomId": 11060,
+            "atomCode": "elw_hc2_lentaccl_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Proper Acclamation",
+            "atomId": 14155,
+            "atomCode": "elw_hc2_accltone_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Dialogue",
+            "atomId": 11061,
+            "atomCode": "elw_hc2_dialogue_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Sundays",
+            "atomId": 13823,
+            "atomCode": "elw_hc2_pref_sundays_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Advent",
+            "atomId": 13795,
+            "atomCode": "elw_hc2_pref_advent_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Christmas",
+            "atomId": 13816,
+            "atomCode": "elw_hc2_pref_christmas_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Epiphany/Baptism of Our Lord",
+            "atomId": 13818,
+            "atomCode": "elw_hc2_pref_epiphany_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Transfiguration",
+            "atomId": 13824,
+            "atomCode": "elw_hc2_pref_transfig_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Lent",
+            "atomId": 13820,
+            "atomCode": "elw_hc2_pref_lent_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Holy Week",
+            "atomId": 13819,
+            "atomCode": "elw_hc2_pref_holyweek_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Easter",
+            "atomId": 13817,
+            "atomCode": "elw_hc2_pref_easter_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Ascension",
+            "atomId": 13815,
+            "atomCode": "elw_hc2_pref_ascension_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Pentecost",
+            "atomId": 13821,
+            "atomCode": "elw_hc2_pref_pentecost_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Holy Trinity",
+            "atomId": 13825,
+            "atomCode": "elw_hc2_pref_trinity_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Weekdays",
+            "atomId": 13826,
+            "atomCode": "elw_hc2_pref_weekdays_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Apostles",
+            "atomId": 13814,
+            "atomCode": "elw_hc2_pref_apostles_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Saints / All Saints",
+            "atomId": 13822,
+            "atomCode": "elw_hc2_pref_saints_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Healing",
+            "atomId": 29512,
+            "atomCode": "elw_hc2_pref_healing_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Funeral",
+            "atomId": 29514,
+            "atomCode": "elw_hc2_pref_funeral_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Preface: Marriage",
+            "atomId": 29513,
+            "atomCode": "elw_hc2_pref_marriage_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Holy",
+            "atomId": 11065,
+            "atomCode": "elw_hc2_holy_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Christ",
+            "atomId": 11066,
+            "atomCode": "elw_hc2_christ_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Amen",
+            "atomId": 11067,
+            "atomCode": "elw_hc2_amen_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "Thanksgiving at the Table Form II (sung)",
+            "atomId": 251457,
+            "atomCode": "elw_wordinstB_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Lord's Prayer (sung)",
+            "atomId": 11053,
+            "atomCode": "elw_ldprayer_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Lamb",
+            "atomId": 11068,
+            "atomCode": "elw_hc2_lamb_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Two Now Lord",
+            "atomId": 11070,
+            "atomCode": "elw_hc2_nowlord_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ELW Setting Three",
+    "atomId": 7705,
+    "atomCode": "",
+    "typeName": "Node",
+    "hasChildren": true,
+    "isLeaf": false,
+    "children": [
+      {
+        "name": "ELW Holy Communion Setting Three",
+        "atomId": 11071,
+        "atomCode": "elw_hc3",
+        "typeName": "Holy Communion Setting",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Three Text Only",
+        "atomId": 33405,
+        "atomCode": "elw_hc3textOnly",
+        "typeName": "Liturgical Text (General)",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Three Meal Only",
+        "atomId": 11349,
+        "atomCode": "elw_hc3meal",
+        "typeName": "Subrite",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Three Liturgical Music",
+        "atomId": 7704,
+        "atomCode": "",
+        "typeName": "Node",
+        "hasChildren": true,
+        "isLeaf": false,
+        "children": [
+          {
+            "name": "ELW Setting Three Kyrie",
+            "atomId": 11072,
+            "atomCode": "elw_hc3_kyrie_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Glory",
+            "atomId": 11073,
+            "atomCode": "elw_hc3_glory_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Feast",
+            "atomId": 11074,
+            "atomCode": "elw_hc3_feast_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Alleluia",
+            "atomId": 11075,
+            "atomCode": "elw_hc3_alleluia_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Lenten Acclamation",
+            "atomId": 11078,
+            "atomCode": "elw_hc3_lentaccl_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Dialogue",
+            "atomId": 11079,
+            "atomCode": "elw_hc3_dialogue_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Sundays",
+            "atomId": 13836,
+            "atomCode": "elw_hc3_pref_sundays_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Advent",
+            "atomId": 13796,
+            "atomCode": "elw_hc3_pref_advent_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Christmas",
+            "atomId": 13829,
+            "atomCode": "elw_hc3_pref_christmas_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Epiphany/Baptism of Our Lord",
+            "atomId": 13831,
+            "atomCode": "elw_hc3_pref_epiphany_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Transfiguration",
+            "atomId": 13837,
+            "atomCode": "elw_hc3_pref_transfig_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Lent",
+            "atomId": 13833,
+            "atomCode": "elw_hc3_pref_lent_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Holy Week",
+            "atomId": 13832,
+            "atomCode": "elw_hc3_pref_holyweek_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Easter",
+            "atomId": 13830,
+            "atomCode": "elw_hc3_pref_easter_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Ascension",
+            "atomId": 13828,
+            "atomCode": "elw_hc3_pref_ascension_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Pentecost",
+            "atomId": 13834,
+            "atomCode": "elw_hc3_pref_pentecost_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Holy Trinity",
+            "atomId": 13838,
+            "atomCode": "elw_hc3_pref_trinity_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Weekdays",
+            "atomId": 13839,
+            "atomCode": "elw_hc3_pref_weekdays_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Apostles",
+            "atomId": 13827,
+            "atomCode": "elw_hc3_pref_apostles_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Saints / All Saints",
+            "atomId": 13835,
+            "atomCode": "elw_hc3_pref_saints_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Healing",
+            "atomId": 29515,
+            "atomCode": "elw_hc3_pref_healing_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Funeral",
+            "atomId": 29517,
+            "atomCode": "elw_hc3_pref_funeral_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Preface: Marriage",
+            "atomId": 29516,
+            "atomCode": "elw_hc3_pref_marriage_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Holy",
+            "atomId": 11080,
+            "atomCode": "elw_hc3_holy_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Christ",
+            "atomId": 11081,
+            "atomCode": "elw_hc3_christ_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Amen",
+            "atomId": 11082,
+            "atomCode": "elw_hc3_amen_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "Thanksgiving at the Table Form II (sung)",
+            "atomId": 251457,
+            "atomCode": "elw_wordinstB_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Lord's Prayer (sung)",
+            "atomId": 11053,
+            "atomCode": "elw_ldprayer_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Three Lamb",
+            "atomId": 11083,
+            "atomCode": "elw_hc3_lamb_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ELW Setting Four",
+    "atomId": 7703,
+    "atomCode": "",
+    "typeName": "Node",
+    "hasChildren": true,
+    "isLeaf": false,
+    "children": [
+      {
+        "name": "ELW Holy Communion Setting Four",
+        "atomId": 11087,
+        "atomCode": "elw_hc4",
+        "typeName": "Holy Communion Setting",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Four Text Only",
+        "atomId": 33406,
+        "atomCode": "elw_hc4textOnly",
+        "typeName": "Liturgical Text (General)",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Four Meal Only",
+        "atomId": 11350,
+        "atomCode": "elw_hc4meal",
+        "typeName": "Subrite",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Four Liturgical Music",
+        "atomId": 7702,
+        "atomCode": "",
+        "typeName": "Node",
+        "hasChildren": true,
+        "isLeaf": false,
+        "children": [
+          {
+            "name": "ELW Setting Four Kyrie",
+            "atomId": 11088,
+            "atomCode": "elw_hc4_kyrie_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Glory",
+            "atomId": 11089,
+            "atomCode": "elw_hc4_glory_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Feast",
+            "atomId": 11090,
+            "atomCode": "elw_hc4_feast_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Alleluia",
+            "atomId": 11091,
+            "atomCode": "elw_hc4_alleluia_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Lenten Acclamation",
+            "atomId": 11092,
+            "atomCode": "elw_hc4_lentaccl_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Dialogue",
+            "atomId": 11093,
+            "atomCode": "elw_hc4_dialogue_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Sundays",
+            "atomId": 13849,
+            "atomCode": "elw_hc4_pref_sundays_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Advent",
+            "atomId": 13797,
+            "atomCode": "elw_hc4_pref_advent_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Christmas",
+            "atomId": 13842,
+            "atomCode": "elw_hc4_pref_christmas_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Epiphany/Baptism of Our Lord",
+            "atomId": 13844,
+            "atomCode": "elw_hc4_pref_epiphany_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Transfiguration",
+            "atomId": 13850,
+            "atomCode": "elw_hc4_pref_transfig_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Lent",
+            "atomId": 13846,
+            "atomCode": "elw_hc4_pref_lent_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Holy Week",
+            "atomId": 13845,
+            "atomCode": "elw_hc4_pref_holyweek_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Easter",
+            "atomId": 13843,
+            "atomCode": "elw_hc4_pref_easter_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Ascension",
+            "atomId": 13841,
+            "atomCode": "elw_hc4_pref_ascension_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Pentecost",
+            "atomId": 13847,
+            "atomCode": "elw_hc4_pref_pentecost_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Holy Trinity",
+            "atomId": 13851,
+            "atomCode": "elw_hc4_pref_trinity_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Weekdays",
+            "atomId": 13852,
+            "atomCode": "elw_hc4_pref_weekdays_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Apostles",
+            "atomId": 13840,
+            "atomCode": "elw_hc4_pref_apostles_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Saints / All Saints",
+            "atomId": 13848,
+            "atomCode": "elw_hc4_pref_saints_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Healing",
+            "atomId": 29509,
+            "atomCode": "elw_hc4_pref_healing_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Funeral",
+            "atomId": 29511,
+            "atomCode": "elw_hc4_pref_funeral_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Preface: Marriage",
+            "atomId": 29510,
+            "atomCode": "elw_hc4_pref_marriage_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Holy",
+            "atomId": 11094,
+            "atomCode": "elw_hc4_holy_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Christ",
+            "atomId": 11095,
+            "atomCode": "elw_hc4_christ_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Amen",
+            "atomId": 11096,
+            "atomCode": "elw_hc4_amen_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "Thanksgiving at the Table Form II (sung)",
+            "atomId": 251457,
+            "atomCode": "elw_wordinstB_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Lord's Prayer (sung)",
+            "atomId": 11053,
+            "atomCode": "elw_ldprayer_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Four Lamb",
+            "atomId": 11097,
+            "atomCode": "elw_hc4_lamb_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ELW Setting Five",
+    "atomId": 7700,
+    "atomCode": "",
+    "typeName": "Node",
+    "hasChildren": true,
+    "isLeaf": false,
+    "children": [
+      {
+        "name": "ELW Holy Communion Setting Five",
+        "atomId": 11098,
+        "atomCode": "elw_hc5",
+        "typeName": "Holy Communion Setting",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Five Text Only",
+        "atomId": 33407,
+        "atomCode": "elw_hc5textOnly",
+        "typeName": "Liturgical Text (General)",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Five Meal Only",
+        "atomId": 11351,
+        "atomCode": "elw_hc5meal",
+        "typeName": "Subrite",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Five Liturgical Music",
+        "atomId": 7701,
+        "atomCode": "",
+        "typeName": "Node",
+        "hasChildren": true,
+        "isLeaf": false,
+        "children": [
+          {
+            "name": "ELW Setting Five Kyrie",
+            "atomId": 11099,
+            "atomCode": "elw_hc5_kyrie_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Glory",
+            "atomId": 11100,
+            "atomCode": "elw_hc5_glory_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five All Glory",
+            "atomId": 11101,
+            "atomCode": "elw_hc5_allglory_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Proper Acclamation",
+            "atomId": 14157,
+            "atomCode": "elw_hc5_accltone_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Standard Acclamation",
+            "atomId": 14156,
+            "atomCode": "elw_hc5_accltext_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Lenten Acclamation",
+            "atomId": 11104,
+            "atomCode": "elw_hc5_lentaccl_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Lenten Verse Tone",
+            "atomId": 11105,
+            "atomCode": "elw_hc5_versetone_h",
+            "typeName": "Liturgical Music Harmony",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Dialogue",
+            "atomId": 11106,
+            "atomCode": "elw_hc5_dialogue_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Sundays",
+            "atomId": 13862,
+            "atomCode": "elw_hc5_pref_sundays_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Advent",
+            "atomId": 13798,
+            "atomCode": "elw_hc5_pref_advent_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Christmas",
+            "atomId": 13855,
+            "atomCode": "elw_hc5_pref_christmas_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Epiphany/Baptism of Our Lord",
+            "atomId": 13857,
+            "atomCode": "elw_hc5_pref_epiphany_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Transfiguration",
+            "atomId": 13863,
+            "atomCode": "elw_hc5_pref_transfig_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Lent",
+            "atomId": 13859,
+            "atomCode": "elw_hc5_pref_lent_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Holy Week",
+            "atomId": 13858,
+            "atomCode": "elw_hc5_pref_holyweek_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Easter",
+            "atomId": 13856,
+            "atomCode": "elw_hc5_pref_easter_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Ascension",
+            "atomId": 13854,
+            "atomCode": "elw_hc5_pref_ascension_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Pentecost",
+            "atomId": 13860,
+            "atomCode": "elw_hc5_pref_pentecost_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Holy Trinity",
+            "atomId": 13864,
+            "atomCode": "elw_hc5_pref_trinity_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Weekdays",
+            "atomId": 13865,
+            "atomCode": "elw_hc5_pref_weekdays_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Apostles",
+            "atomId": 13853,
+            "atomCode": "elw_hc5_pref_apostles_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Saints / All Saints",
+            "atomId": 13861,
+            "atomCode": "elw_hc5_pref_saints_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Healing",
+            "atomId": 29518,
+            "atomCode": "elw_hc5_pref_healing_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Funeral",
+            "atomId": 29520,
+            "atomCode": "elw_hc5_pref_funeral_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Preface: Marriage",
+            "atomId": 29519,
+            "atomCode": "elw_hc5_pref_marriage_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Holy",
+            "atomId": 11107,
+            "atomCode": "elw_hc5_holy_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Christ",
+            "atomId": 11108,
+            "atomCode": "elw_hc5_christ_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Amen",
+            "atomId": 11109,
+            "atomCode": "elw_hc5_amen_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "Thanksgiving at the Table Form II (sung)",
+            "atomId": 251457,
+            "atomCode": "elw_wordinstB_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Lord's Prayer Introduction 1 (sung)",
+            "atomId": 25729,
+            "atomCode": "elw_ldprayer_intro1_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Lord's Prayer Introduction 2 (sung)",
+            "atomId": 25730,
+            "atomCode": "elw_ldprayer_intro2_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Lord's Prayer (sung)",
+            "atomId": 11053,
+            "atomCode": "elw_ldprayer_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Five Lamb",
+            "atomId": 11110,
+            "atomCode": "elw_hc5_lamb_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ELW Setting Six",
+    "atomId": 7699,
+    "atomCode": "",
+    "typeName": "Node",
+    "hasChildren": true,
+    "isLeaf": false,
+    "children": [
+      {
+        "name": "ELW Holy Communion Setting Six",
+        "atomId": 11114,
+        "atomCode": "elw_hc6",
+        "typeName": "Holy Communion Setting",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Six Text Only",
+        "atomId": 33408,
+        "atomCode": "elw_hc6textOnly",
+        "typeName": "Liturgical Text (General)",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Six Meal Only",
+        "atomId": 11352,
+        "atomCode": "elw_hc6meal",
+        "typeName": "Subrite",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Six Liturgical Music",
+        "atomId": 7698,
+        "atomCode": "",
+        "typeName": "Node",
+        "hasChildren": true,
+        "isLeaf": false,
+        "children": [
+          {
+            "name": "ELW Setting Six Kyrie",
+            "atomId": 11115,
+            "atomCode": "elw_hc6_kyrie_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Six Glory",
+            "atomId": 11116,
+            "atomCode": "elw_hc6_glory_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Six Feast",
+            "atomId": 11117,
+            "atomCode": "elw_hc6_feast_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Six Alleluia",
+            "atomId": 11118,
+            "atomCode": "elw_hc6_alleluia_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Six Lenten Acclamation",
+            "atomId": 11122,
+            "atomCode": "elw_hc6_lentaccl_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Six Holy",
+            "atomId": 11123,
+            "atomCode": "elw_hc6_holy_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Six Lamb",
+            "atomId": 11124,
+            "atomCode": "elw_hc6_lamb_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ELW Setting Seven / Liturgia Siete",
+    "atomId": 338161,
+    "atomCode": "",
+    "typeName": "Node",
+    "hasChildren": true,
+    "isLeaf": false,
+    "children": [
+      {
+        "name": "ELW Setting Seven / Liturgia Siete",
+        "atomId": 261471,
+        "atomCode": "elw_hc7_en_es",
+        "typeName": "Holy Communion Setting",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Seven Text Only / Liturgia Siete Texto Solamente",
+        "atomId": 338163,
+        "atomCode": "elw_hc7textOnly_en_es",
+        "typeName": "Liturgical Text (General)",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting 7 Meal Only / Liturgia 7 Cena Solamente",
+        "atomId": 338164,
+        "atomCode": "elw_hc7meal_en_es",
+        "typeName": "Subrite",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Seven Liturgical Music",
+        "atomId": 7696,
+        "atomCode": "",
+        "typeName": "Node",
+        "hasChildren": true,
+        "isLeaf": false,
+        "children": [
+          {
+            "name": "ELW Setting Seven Kyrie",
+            "atomId": 11151,
+            "atomCode": "elw_hc7_kyrie_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Glory",
+            "atomId": 11152,
+            "atomCode": "elw_hc7_glory_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Feast",
+            "atomId": 11153,
+            "atomCode": "elw_hc7_feast_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Alleluia",
+            "atomId": 11154,
+            "atomCode": "elw_hc7_alleluia_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Lenten Acclamation",
+            "atomId": 11155,
+            "atomCode": "elw_hc7_lentaccl_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Holy",
+            "atomId": 11156,
+            "atomCode": "elw_hc7_holy_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Lamb",
+            "atomId": 11157,
+            "atomCode": "elw_hc7_lamb_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ELW Setting Seven",
+    "atomId": 7697,
+    "atomCode": "",
+    "typeName": "Node",
+    "hasChildren": true,
+    "isLeaf": false,
+    "children": [
+      {
+        "name": "ELW Holy Communion Setting Seven",
+        "atomId": 11150,
+        "atomCode": "elw_hc7_en",
+        "typeName": "Holy Communion Setting",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Seven Text Only",
+        "atomId": 33409,
+        "atomCode": "elw_hc7textOnly_en",
+        "typeName": "Liturgical Text (General)",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Seven Meal Only",
+        "atomId": 11353,
+        "atomCode": "elw_hc7meal_en",
+        "typeName": "Subrite",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Seven Liturgical Music",
+        "atomId": 7696,
+        "atomCode": "",
+        "typeName": "Node",
+        "hasChildren": true,
+        "isLeaf": false,
+        "children": [
+          {
+            "name": "ELW Setting Seven Kyrie",
+            "atomId": 11151,
+            "atomCode": "elw_hc7_kyrie_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Glory",
+            "atomId": 11152,
+            "atomCode": "elw_hc7_glory_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Feast",
+            "atomId": 11153,
+            "atomCode": "elw_hc7_feast_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Alleluia",
+            "atomId": 11154,
+            "atomCode": "elw_hc7_alleluia_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Lenten Acclamation",
+            "atomId": 11155,
+            "atomCode": "elw_hc7_lentaccl_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Holy",
+            "atomId": 11156,
+            "atomCode": "elw_hc7_holy_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Lamb",
+            "atomId": 11157,
+            "atomCode": "elw_hc7_lamb_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ELW Liturgia Siete",
+    "atomId": 261467,
+    "atomCode": "",
+    "typeName": "Node",
+    "hasChildren": true,
+    "isLeaf": false,
+    "children": [
+      {
+        "name": "ELW Santa Comuni\u00f3n Liturgia Siete",
+        "atomId": 338168,
+        "atomCode": "elw_hc7_es",
+        "typeName": "Holy Communion Setting",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Liturgia Siete Texto Solamente",
+        "atomId": 261469,
+        "atomCode": "elw_hc7textOnly_es",
+        "typeName": "Liturgical Text (General)",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Liturgia Siete Cena Solamente",
+        "atomId": 261468,
+        "atomCode": "elw_hc7meal_es",
+        "typeName": "Subrite",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Seven Liturgical Music",
+        "atomId": 7696,
+        "atomCode": "",
+        "typeName": "Node",
+        "hasChildren": true,
+        "isLeaf": false,
+        "children": [
+          {
+            "name": "ELW Setting Seven Kyrie",
+            "atomId": 11151,
+            "atomCode": "elw_hc7_kyrie_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Glory",
+            "atomId": 11152,
+            "atomCode": "elw_hc7_glory_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Feast",
+            "atomId": 11153,
+            "atomCode": "elw_hc7_feast_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Alleluia",
+            "atomId": 11154,
+            "atomCode": "elw_hc7_alleluia_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Lenten Acclamation",
+            "atomId": 11155,
+            "atomCode": "elw_hc7_lentaccl_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Holy",
+            "atomId": 11156,
+            "atomCode": "elw_hc7_holy_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Seven Lamb",
+            "atomId": 11157,
+            "atomCode": "elw_hc7_lamb_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ELW Setting Eight",
+    "atomId": 7695,
+    "atomCode": "",
+    "typeName": "Node",
+    "hasChildren": true,
+    "isLeaf": false,
+    "children": [
+      {
+        "name": "ELW Holy Communion Setting Eight",
+        "atomId": 11160,
+        "atomCode": "elw_hc8",
+        "typeName": "Holy Communion Setting",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Eight Text Only",
+        "atomId": 33410,
+        "atomCode": "elw_hc8textOnly",
+        "typeName": "Liturgical Text (General)",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Eight Meal Only",
+        "atomId": 11354,
+        "atomCode": "elw_hc8meal",
+        "typeName": "Subrite",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Eight Liturgical Music",
+        "atomId": 7694,
+        "atomCode": "",
+        "typeName": "Node",
+        "hasChildren": true,
+        "isLeaf": false,
+        "children": [
+          {
+            "name": "ELW Setting Eight Kyrie",
+            "atomId": 11161,
+            "atomCode": "elw_hc8_kyrie_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Eight Glory",
+            "atomId": 11162,
+            "atomCode": "elw_hc8_glory_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Eight Feast",
+            "atomId": 11163,
+            "atomCode": "elw_hc8_feast_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Eight Alleluia",
+            "atomId": 11164,
+            "atomCode": "elw_hc8_alleluia_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Eight Lenten Acclamation",
+            "atomId": 11165,
+            "atomCode": "elw_hc8_lentaccl_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Eight Holy",
+            "atomId": 11166,
+            "atomCode": "elw_hc8_holy_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Eight Lamb",
+            "atomId": 11167,
+            "atomCode": "elw_hc8_lamb_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ELW Setting Nine",
+    "atomId": 7693,
+    "atomCode": "",
+    "typeName": "Node",
+    "hasChildren": true,
+    "isLeaf": false,
+    "children": [
+      {
+        "name": "ELW Holy Communion Setting Nine",
+        "atomId": 11168,
+        "atomCode": "elw_hc9",
+        "typeName": "Holy Communion Setting",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Nine Text Only",
+        "atomId": 33411,
+        "atomCode": "elw_hc9textOnly",
+        "typeName": "Liturgical Text (General)",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Nine Meal Only",
+        "atomId": 11355,
+        "atomCode": "elw_hc9meal",
+        "typeName": "Subrite",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Nine Liturgical Music",
+        "atomId": 7692,
+        "atomCode": "",
+        "typeName": "Node",
+        "hasChildren": true,
+        "isLeaf": false,
+        "children": [
+          {
+            "name": "ELW Setting Nine Kyrie",
+            "atomId": 11169,
+            "atomCode": "elw_hc9_kyrie_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Glory",
+            "atomId": 11170,
+            "atomCode": "elw_hc9_glory_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Feast",
+            "atomId": 11171,
+            "atomCode": "elw_hc9_feast_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Standard Acclamation",
+            "atomId": 14158,
+            "atomCode": "elw_hc9_accltext_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Lenten Acclamation",
+            "atomId": 11174,
+            "atomCode": "elw_hc9_lentaccl_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Proper Acclamation",
+            "atomId": 14159,
+            "atomCode": "elw_hc9_accltone_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Dialogue",
+            "atomId": 11177,
+            "atomCode": "elw_hc9_dialogue_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Sundays",
+            "atomId": 13875,
+            "atomCode": "elw_hc9_pref_sundays_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Advent",
+            "atomId": 13799,
+            "atomCode": "elw_hc9_pref_advent_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Christmas",
+            "atomId": 13868,
+            "atomCode": "elw_hc9_pref_christmas_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Epiphany/Baptism of Our Lord",
+            "atomId": 13870,
+            "atomCode": "elw_hc9_pref_epiphany_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Transfiguration",
+            "atomId": 13876,
+            "atomCode": "elw_hc9_pref_transfig_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Lent",
+            "atomId": 13872,
+            "atomCode": "elw_hc9_pref_lent_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Holy Week",
+            "atomId": 13871,
+            "atomCode": "elw_hc9_pref_holyweek_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Easter",
+            "atomId": 13869,
+            "atomCode": "elw_hc9_pref_easter_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Ascension",
+            "atomId": 13867,
+            "atomCode": "elw_hc9_pref_ascension_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Pentecost",
+            "atomId": 13873,
+            "atomCode": "elw_hc9_pref_pentecost_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Holy Trinity",
+            "atomId": 13877,
+            "atomCode": "elw_hc9_pref_trinity_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Weekdays",
+            "atomId": 13878,
+            "atomCode": "elw_hc9_pref_weekdays_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Apostles",
+            "atomId": 13866,
+            "atomCode": "elw_hc9_pref_apostles_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Saints / All Saints",
+            "atomId": 13874,
+            "atomCode": "elw_hc9_pref_saints_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Healing",
+            "atomId": 29521,
+            "atomCode": "elw_hc9_pref_healing_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Funeral",
+            "atomId": 29523,
+            "atomCode": "elw_hc9_pref_funeral_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Preface: Marriage",
+            "atomId": 29522,
+            "atomCode": "elw_hc9_pref_marriage_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Holy",
+            "atomId": 11179,
+            "atomCode": "elw_hc9_holy_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Christ",
+            "atomId": 11180,
+            "atomCode": "elw_hc9_christ_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Amen",
+            "atomId": 11181,
+            "atomCode": "elw_hc9_amen_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "Thanksgiving at the Table Form II (sung)",
+            "atomId": 251457,
+            "atomCode": "elw_wordinstB_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Lord's Prayer (sung)",
+            "atomId": 11053,
+            "atomCode": "elw_ldprayer_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Nine Lamb",
+            "atomId": 11182,
+            "atomCode": "elw_hc9_lamb_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ELW Setting Ten",
+    "atomId": 7691,
+    "atomCode": "",
+    "typeName": "Node",
+    "hasChildren": true,
+    "isLeaf": false,
+    "children": [
+      {
+        "name": "ELW Holy Communion Setting Ten",
+        "atomId": 11185,
+        "atomCode": "elw_hc10",
+        "typeName": "Holy Communion Setting",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Ten Text Only",
+        "atomId": 33412,
+        "atomCode": "elw_hc10textOnly",
+        "typeName": "Liturgical Text (General)",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Ten Meal Only",
+        "atomId": 11356,
+        "atomCode": "elw_hc10meal",
+        "typeName": "Subrite",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "Setting Ten Liturgical Music",
+        "atomId": 7690,
+        "atomCode": "",
+        "typeName": "Node",
+        "hasChildren": true,
+        "isLeaf": false,
+        "children": [
+          {
+            "name": "ELW Setting Ten Kyrie",
+            "atomId": 11186,
+            "atomCode": "elw_hc10_kyrie_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Ten Glory",
+            "atomId": 11188,
+            "atomCode": "elw_hc10_glory_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Ten Come, Let Us",
+            "atomId": 11189,
+            "atomCode": "elw_hc10_comeletus_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Ten Alleluia",
+            "atomId": 11240,
+            "atomCode": "elw_hc10_alleluia_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Ten Lenten Acclamation",
+            "atomId": 11241,
+            "atomCode": "elw_hc10_lentaccl_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Ten Holy",
+            "atomId": 11242,
+            "atomCode": "elw_hc10_holy_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Ten Christ",
+            "atomId": 11243,
+            "atomCode": "elw_hc10_christ_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Ten Amen",
+            "atomId": 11244,
+            "atomCode": "elw_hc10_amen_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          },
+          {
+            "name": "ELW Setting Ten Lamb",
+            "atomId": 11245,
+            "atomCode": "elw_hc10_lamb_m",
+            "typeName": "Liturgical Music Melody",
+            "hasChildren": false,
+            "isLeaf": true,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ELW Service of the Word",
+    "atomId": 11265,
+    "atomCode": "elw_sow",
+    "typeName": "Holy Communion Setting",
+    "hasChildren": true,
+    "isLeaf": false,
+    "children": [
+      {
+        "name": "Introduction",
+        "atomId": 26682,
+        "atomCode": "elw_sowIntro",
+        "typeName": "Liturgical Text (General)",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "ELW Service of the Word Kyrie",
+        "atomId": 11266,
+        "atomCode": "elw_sow_kyrie_m",
+        "typeName": "Liturgical Music Melody",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "ELW Service of the Word Glory",
+        "atomId": 11270,
+        "atomCode": "elw_sow_glory_m",
+        "typeName": "Liturgical Music Melody",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "ELW Service of the Word Alleluia",
+        "atomId": 11271,
+        "atomCode": "elw_sow_alleluia_m",
+        "typeName": "Liturgical Music Melody",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "ELW Service of the Word Lenten Acclamation",
+        "atomId": 11272,
+        "atomCode": "elw_sow_lentaccl_m",
+        "typeName": "Liturgical Music Melody",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      },
+      {
+        "name": "ELW Service of the Word Canticle of Thanksgiving",
+        "atomId": 11273,
+        "atomCode": "elw_sow_cantthanks_m",
+        "typeName": "Liturgical Music Melody",
+        "hasChildren": false,
+        "isLeaf": true,
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Apostles\u2019 Creed (ELW)",
+    "atomId": 28328,
+    "atomCode": "elwApostlesCreed",
+    "typeName": "Liturgical Text (General)",
+    "hasChildren": false,
+    "isLeaf": true,
+    "children": []
+  },
+  {
+    "name": "Nicene Creed (ELW)",
+    "atomId": 28329,
+    "atomCode": "elwNiceneCreed",
+    "typeName": "Liturgical Text (General)",
+    "hasChildren": false,
+    "isLeaf": true,
+    "children": []
+  }
+]

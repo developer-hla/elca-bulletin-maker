@@ -14,5 +14,7 @@
 - `src/bulletin_maker/sns/` — Sundays & Seasons API client
 - `src/bulletin_maker/renderer/` — HTML/CSS + Playwright PDF generation
 - `src/bulletin_maker/exceptions.py` — Custom exception hierarchy
-- `scripts/` — Dev utilities (generate_test, visual_diff, test_sns_client)
+- `scripts/` — Dev utilities (generate_test, visual_diff, test_sns_client, explore_and_download)
+- `scripts/data/` — Exploration output (JSON dumps, API responses) — scripts should save here
+- `docs/` — API discovery notes and reference docs
 - `tests/` — Pytest test suite with fixtures in `tests/fixtures/`
