@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import pytest
 
+from bulletin_maker.renderer.text_utils import DialogRole
 from bulletin_maker.renderer.static_text import (
     AARONIC_BLESSING,
     AGNUS_DEI,
@@ -102,7 +103,8 @@ class TestGreatThanksgiving:
 
     def test_dialog_alternates_p_and_c(self):
         roles = [role for role, _ in GREAT_THANKSGIVING_DIALOG]
-        assert roles == ["P", "C", "P", "C", "P", "C"]
+        P, C = DialogRole.PASTOR, DialogRole.CONGREGATION
+        assert roles == [P, C, P, C, P, C]
 
     def test_preface_nonempty(self):
         assert len(GREAT_THANKSGIVING_PREFACE) > 50
@@ -132,17 +134,19 @@ class TestConfession:
     def test_has_entries(self):
         assert len(CONFESSION_AND_FORGIVENESS) >= 5
 
-    def test_entries_are_tuples(self):
+    def test_entries_are_2_tuples(self):
         for entry in CONFESSION_AND_FORGIVENESS:
             assert isinstance(entry, tuple)
-            assert len(entry) == 3
+            assert len(entry) == 2
 
-    def test_congregation_response_is_bold(self):
-        # The "C" (congregation) entry should be bold
-        c_entries = [e for e in CONFESSION_AND_FORGIVENESS if e[0] == "C"]
+    def test_has_congregation_entry(self):
+        c_entries = [e for e in CONFESSION_AND_FORGIVENESS
+                     if e[0] is DialogRole.CONGREGATION]
         assert len(c_entries) >= 1
-        for entry in c_entries:
-            assert entry[2] is True, "Congregation text should be bold"
+
+    def test_roles_are_dialog_role(self):
+        for role, _ in CONFESSION_AND_FORGIVENESS:
+            assert isinstance(role, DialogRole)
 
 
 class TestChurchInfo:

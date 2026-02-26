@@ -30,7 +30,7 @@ from bulletin_maker.renderer.text_utils import (
     clean_sns_html,
     extract_book_name,
     group_psalm_verses,
-    parse_confession_html,
+    parse_dialog_html,
     preprocess_html,
     strip_tags,
 )
@@ -54,6 +54,7 @@ from bulletin_maker.renderer.static_text import (
     COME_HOLY_SPIRIT,
     CONFESSION_AND_FORGIVENESS,
     DISMISSAL,
+    DISMISSAL_ENTRIES,
     EUCHARISTIC_PRAYER_CLOSING,
     EUCHARISTIC_PRAYER_EXTENDED,
     GREAT_THANKSGIVING_DIALOG,
@@ -287,7 +288,7 @@ def resolve_text_defaults(config: ServiceConfig, day: DayContent) -> None:
     # Confession
     if config.confession_entries is None:
         if day.confession_html:
-            parsed = parse_confession_html(day.confession_html)
+            parsed = parse_dialog_html(day.confession_html)
             if parsed:
                 config.confession_entries = parsed
         if config.confession_entries is None:
@@ -317,11 +318,13 @@ def resolve_text_defaults(config: ServiceConfig, day: DayContent) -> None:
             config.blessing_text = AARONIC_BLESSING
 
     # Dismissal
-    if config.dismissal_text is None:
+    if config.dismissal_entries is None:
         if day.dismissal_html:
-            config.dismissal_text = clean_sns_html(day.dismissal_html)
-        if not config.dismissal_text:
-            config.dismissal_text = DISMISSAL
+            parsed = parse_dialog_html(day.dismissal_html)
+            if parsed:
+                config.dismissal_entries = parsed
+        if config.dismissal_entries is None:
+            config.dismissal_entries = DISMISSAL_ENTRIES
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -463,7 +466,7 @@ def _build_large_print_context(
         "offering_prayer_text": config.offering_prayer_text or "",
         "prayer_after_communion_text": config.prayer_after_communion_text or "",
         "blessing_lines": (config.blessing_text or AARONIC_BLESSING).split("\n"),
-        "dismissal_lines": (config.dismissal_text or DISMISSAL).split("\n"),
+        "dismissal_entries": config.dismissal_entries or DISMISSAL_ENTRIES,
         "sending_hymn": config.sending_hymn,
     }
 
@@ -708,7 +711,7 @@ def _build_bulletin_context(
         "blessing_lines": (config.blessing_text or AARONIC_BLESSING).split("\n"),
 
         # Dismissal
-        "dismissal_lines": (config.dismissal_text or DISMISSAL).split("\n"),
+        "dismissal_entries": config.dismissal_entries or DISMISSAL_ENTRIES,
 
         # Sending hymn (title only)
         "sending_hymn_title": _hymn_title_str(config.sending_hymn),

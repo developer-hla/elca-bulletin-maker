@@ -84,11 +84,11 @@ class ServiceConfig:
     preface: Optional[PrefaceType] = None       # Preface type. None = seasonal default.
 
     # ── Liturgical texts (None = use S&S default from DayContent) ──
-    confession_entries: Optional[list] = None       # list of (role, text, bold) tuples
+    confession_entries: Optional[list] = None       # list of (DialogRole, text) tuples
     offering_prayer_text: Optional[str] = None      # plain text
     prayer_after_communion_text: Optional[str] = None
     blessing_text: Optional[str] = None             # newline-separated lines
-    dismissal_text: Optional[str] = None            # "leader line\nresponse line"
+    dismissal_entries: Optional[list] = None          # list of (DialogRole, text) tuples
 
     # ── Hymns ──
     gathering_hymn: Optional[HymnLyrics] = None

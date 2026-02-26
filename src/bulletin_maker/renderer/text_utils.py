@@ -10,7 +10,16 @@ from __future__ import annotations
 import html as html_module
 import re
 from dataclasses import dataclass, field
+from enum import Enum
 from html.parser import HTMLParser
+
+
+class DialogRole(Enum):
+    """Roles in call-and-response liturgical dialog."""
+    PASTOR = "P"
+    CONGREGATION = "C"
+    INSTRUCTION = "instruction"
+    NONE = ""
 
 
 # ── HTML utilities ────────────────────────────────────────────────────
@@ -40,18 +49,18 @@ def clean_sns_html(html: str) -> str:
     return text.strip()
 
 
-def parse_confession_html(html: str) -> list[tuple[str, str, bool]]:
-    """Parse S&S confession HTML into (role, text, bold) tuples.
+def parse_dialog_html(html: str) -> list[tuple[DialogRole, str]]:
+    """Parse S&S dialog HTML into (DialogRole, text) tuples.
 
-    The returned format matches what templates expect for confession_entries:
-      - role: "Pastor", "P", "C", "instruction", or ""
+    Used for confession and dismissal call-and-response texts.
+    The returned format matches what templates expect:
+      - role: DialogRole enum member
       - text: the paragraph text
-      - bold: True if congregation response (should be bold)
     """
     if not html:
         return []
 
-    entries: list[tuple[str, str, bool]] = []
+    entries: list[tuple[DialogRole, str]] = []
 
     # Split into paragraphs
     paragraphs = re.split(r"</?p[^>]*>", html)
@@ -60,9 +69,6 @@ def parse_confession_html(html: str) -> list[tuple[str, str, bool]]:
         para = para.strip()
         if not para:
             continue
-
-        # Check for bold wrapping (congregation response)
-        is_bold = bool(re.search(r"<strong>|<b>", para))
 
         # Strip all tags and decode entities
         text = re.sub(r"<[^>]+>", "", para)
@@ -73,20 +79,17 @@ def parse_confession_html(html: str) -> list[tuple[str, str, bool]]:
             continue
 
         # Detect role prefix
-        role = ""
+        role = DialogRole.NONE
         role_match = re.match(r"^(P|C|Pastor|Congregation)\s*:\s*", text)
         if role_match:
-            role = role_match.group(1)
-            # Normalize "Congregation" to "C"
-            if role == "Congregation":
-                role = "C"
+            raw_role = role_match.group(1)
+            if raw_role in ("C", "Congregation"):
+                role = DialogRole.CONGREGATION
+            elif raw_role in ("P", "Pastor"):
+                role = DialogRole.PASTOR
             text = text[role_match.end():].strip()
 
-        # Mark congregation lines as bold
-        if role == "C":
-            is_bold = True
-
-        entries.append((role, text, is_bold))
+        entries.append((role, text))
 
     return entries
 

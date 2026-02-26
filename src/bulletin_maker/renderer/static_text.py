@@ -11,6 +11,17 @@ Blessing, Dismissal.
 
 from __future__ import annotations
 
+from bulletin_maker.renderer.text_utils import DialogRole
+
+# ── Liturgical / typographic symbols ──────────────────────────────────
+CROSS = "\u2629"       # ✩  sign of the cross
+MIDDOT = "\u00b7"      # ·  address separator
+NBSP = "\u00a0"        #    non-breaking space
+APOSTROPHE = "\u2019"        # '  curly apostrophe / right single quote
+EMDASH = "\u2014"      # —  em dash
+LQUOTE = "\u201c"      # "  left double quote
+RQUOTE = "\u201d"      # "  right double quote
+
 NICENE_CREED = (
     "We believe in one God, \n"
     "the Father, the Almighty,\n"
@@ -70,7 +81,7 @@ APOSTLES_CREED = (
     "I believe in God, the Father almighty,\n"
     "creator of heaven and earth.\n"
     "\n"
-    "I believe in Jesus Christ, God\u2019s only Son, our Lord,\n"
+    f"I believe in Jesus Christ, God{APOSTROPHE}s only Son, our Lord,\n"
     "who was conceived by the Holy Spirit,\n"
     "born of the virgin Mary,\n"
     "suffered under Pontius Pilate,\n"
@@ -125,12 +136,12 @@ DEFAULT_PRAYERS_RESPONSE = "Your mercy is great."
 
 # Great Thanksgiving — spoken P:/C: dialog (not notation in Large Print)
 GREAT_THANKSGIVING_DIALOG = [
-    ("P", "The Lord be with you."),
-    ("C", "And also with you."),
-    ("P", "Lift up your hearts."),
-    ("C", "We lift them to the Lord."),
-    ("P", "Let us give thanks to the Lord our God."),
-    ("C", "It is right to give our thanks and praise."),
+    (DialogRole.PASTOR, "The Lord be with you."),
+    (DialogRole.CONGREGATION, "And also with you."),
+    (DialogRole.PASTOR, "Lift up your hearts."),
+    (DialogRole.CONGREGATION, "We lift them to the Lord."),
+    (DialogRole.PASTOR, "Let us give thanks to the Lord our God."),
+    (DialogRole.CONGREGATION, "It is right to give our thanks and praise."),
 ]
 
 GREAT_THANKSGIVING_PREFACE = (
@@ -228,7 +239,7 @@ NUNC_DIMITTIS = (
     "Now, Lord, you let your servant go in peace:\n"
     "your word has been fulfilled.\n"
     "My own eyes have seen the salvation\n"
-    "which you have prepared in the sight of ev\u2019ry people:\n"
+    f"which you have prepared in the sight of ev{APOSTROPHE}ry people:\n"
     "a light to reveal you to the nations\n"
     "and the glory of your people Israel.\n"
     "Glory to the Father, and to the Son,\n"
@@ -240,8 +251,8 @@ NUNC_DIMITTIS = (
 # Aaronic Blessing (from LP reference para 243-245)
 AARONIC_BLESSING = (
     "The Lord bless you and keep you.\n"
-    "The Lord\u2019s face shine on you with grace and mercy.\n"
-    "The Lord look upon you with favor and \u2629 give you peace."
+    f"The Lord{APOSTROPHE}s face shine on you with grace and mercy.\n"
+    f"The Lord look upon you with favor and {CROSS} give you peace."
 )
 
 # Offertory Hymn — "Oh, come, Lord Jesus" (always the same)
@@ -275,38 +286,32 @@ WELCOME_MESSAGE = (
 )
 
 STANDING_INSTRUCTIONS = (
-    "\u201c * \u201d\u00a0Indicates when the congregation stands. \n"
+    f"{LQUOTE} * {RQUOTE}{NBSP}Indicates when the congregation stands. \n"
     "Bold lettering indicates the congregation reads aloud in UNISON."
 )
 
 # Church info for cover
 CHURCH_NAME = "Ascension Lutheran Church"
-CHURCH_ADDRESS = "6481 Old Canton Road Jackson \u00b7 Mississippi \u00b7 39211\n601.956.4263\nwww.ascensionlutheran.com"
+CHURCH_ADDRESS = f"6481 Old Canton Road Jackson {MIDDOT} Mississippi {MIDDOT} 39211\n601.956.4263\nwww.ascensionlutheran.com"
 
 # ── Standard ELW Confession and Forgiveness (Form A) ──────────────
 # Used consistently at Ascension regardless of season.
-# Structure: list of (role, text, bold) tuples.
-#   role: "Pastor" / "P" / "C" / "instruction" / ""
-#   text: the paragraph text
-#   bold: whether the text (not the label) should be bold
+# Structure: list of (DialogRole, text) tuples.
 CONFESSION_AND_FORGIVENESS = [
-    ("instruction",
-     "All may make the sign of the cross \u2629, "
-     "the sign marked at our baptism, as Pastor begins.",
-     False),
-    ("Pastor",
-     "In the name of the Father, and of the \u2629 Son, "
-     "and of the Holy Spirit. Amen.",
-     False),
-    ("",
+    (DialogRole.INSTRUCTION,
+     f"All may make the sign of the cross {CROSS}, "
+     "the sign marked at our baptism, as Pastor begins."),
+    (DialogRole.PASTOR,
+     f"In the name of the Father, and of the {CROSS} Son, "
+     "and of the Holy Spirit. Amen."),
+    (DialogRole.NONE,
      "God of all mercy and consolation, come to the help of your people, "
      "turning us away from our sin to live for you alone. "
      "Give us the power of your Holy Spirit that we may confess our sin, "
      "receive your forgiveness, and grow into the fullness "
-     "of Jesus Christ, our Savior and Lord. Amen.",
-     False),
-    ("P", "Most merciful God,", False),
-    ("C",
+     "of Jesus Christ, our Savior and Lord. Amen."),
+    (DialogRole.PASTOR, "Most merciful God,"),
+    (DialogRole.CONGREGATION,
      "we confess that we are captive to sin and cannot free ourselves. "
      "We have sinned against you in thought, word, and deed, "
      "by what we have done and by what we have left undone. "
@@ -316,17 +321,15 @@ CONFESSION_AND_FORGIVENESS = [
      "Forgive us, renew us, and lead us, "
      "so that we may delight in your will "
      "and walk in your ways, "
-     "to the glory of your holy name. Amen.",
-     True),
-    ("P",
+     "to the glory of your holy name. Amen."),
+    (DialogRole.PASTOR,
      "In the mercy of almighty God, Jesus Christ was given to die for us, "
      "and for his sake God forgives us all our sins. "
      "As a called and ordained minister of the church of Christ, "
      "and by his authority, I therefore declare to you "
      "the entire forgiveness of all your sins, "
-     "in the name of the Father, and of the \u2629 Son, "
-     "and of the Holy Spirit. Amen.",
-     False),
+     f"in the name of the Father, and of the {CROSS} Son, "
+     "and of the Holy Spirit. Amen."),
 ]
 
 
@@ -336,24 +339,31 @@ DISMISSAL = (
     "Thanks be to God."
 )
 
+# Structured dismissal for call-and-response rendering.
+# Same format as CONFESSION_AND_FORGIVENESS: (DialogRole, text).
+DISMISSAL_ENTRIES = [
+    (DialogRole.PASTOR, "Go in peace to love and serve the Lord."),
+    (DialogRole.CONGREGATION, "Thanks be to God."),
+]
+
 # Invitation to Lent (same every year — not provided by S&S)
 INVITATION_TO_LENT = (
     "Friends in Christ, today with the whole church we enter the time "
-    "of remembering Jesus\u2019 passover from death to life, and our life "
+    f"of remembering Jesus{APOSTROPHE} passover from death to life, and our life "
     "in Christ is renewed.\n"
     "\n"
     "We begin this holy season by acknowledging our need for repentance "
-    "and for God\u2019s mercy. We are created to experience joy in communion "
+    f"and for God{APOSTROPHE}s mercy. We are created to experience joy in communion "
     "with God, to love one another, and to live in harmony with creation. "
     "But our sinful rebellion separates us from God, our neighbors, and "
     "creation, so that we do not enjoy the life our creator intended.\n"
     "\n"
     "As disciples of Jesus, we are called to a discipline that struggles "
     "against evil and resists whatever leads us away from love of God and "
-    "neighbor. I invite you, therefore, to the discipline of Lent\u2014"
+    f"neighbor. I invite you, therefore, to the discipline of Lent{EMDASH}"
     "self-examination and repentance, prayer and fasting, sacrificial giving "
-    "and works of love\u2014strengthened by the gifts of word and sacrament.\n"
+    f"and works of love{EMDASH}strengthened by the gifts of word and sacrament.\n"
     "\n"
     "Let us continue our journey through these forty days to the great "
-    "Three Days of Jesus\u2019 death and resurrection."
+    f"Three Days of Jesus{APOSTROPHE} death and resurrection."
 )

@@ -61,15 +61,15 @@
 {# ── Confession and Forgiveness ── #}
 {% if show_confession %}
 <div class="section-heading"><span>*CONFESSION AND FORGIVENESS</span></div>
-{% for role, text, bold in confession_entries %}
-{% if role == "instruction" %}
+{% for role, text in confession_entries %}
+{% if role.value == "instruction" %}
 <p class="instruction mb-2">{{ text }}</p>
-{% elif role == "Pastor" or role == "P" %}
-<p><span class="role-label">{{ role }}: </span>{% if bold %}<strong>{{ text }}</strong>{% else %}{{ text }}{% endif %}</p>
-{% elif role == "C" %}
-<p>{% if bold %}<strong>{{ text }}</strong>{% else %}{{ text }}{% endif %}</p>
+{% elif role.value == "P" %}
+<p><span class="role-label">P: </span>{{ text }}</p>
+{% elif role.value == "C" %}
+<p><strong>{{ text }}</strong></p>
 {% else %}
-<p>{% if bold %}<strong>{{ text }}</strong>{% else %}{{ text }}{% endif %}</p>
+<p>{{ text }}</p>
 {% endif %}
 {% endfor %}
 {% endif %}
@@ -461,8 +461,12 @@
     <span>SENDING</span>
     <span class="heading-role">Pastor</span>
 </div>
-{% for line in dismissal_lines %}
-<p{% if loop.last %}><strong>{{ line }}</strong>{% else %}>{{ line }}{% endif %}</p>
+{% for role, text in dismissal_entries %}
+{% if role.value == "C" %}
+<p><strong>{{ text }}</strong></p>
+{% else %}
+<p>{{ text }}</p>
+{% endif %}
 {% endfor %}
 
 {% if postlude_title %}

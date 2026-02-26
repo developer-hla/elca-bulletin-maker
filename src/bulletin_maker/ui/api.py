@@ -18,7 +18,7 @@ from typing import Optional
 import webview
 
 from bulletin_maker.exceptions import AuthError, BulletinError
-from bulletin_maker.renderer.text_utils import clean_sns_html, parse_confession_html
+from bulletin_maker.renderer.text_utils import DialogRole, clean_sns_html, parse_dialog_html
 from bulletin_maker.sns.client import SundaysClient
 from bulletin_maker.sns.models import DayContent, HymnLyrics, ServiceConfig
 from bulletin_maker.renderer.season import (
@@ -189,7 +189,7 @@ class BulletinAPI:
         from bulletin_maker.renderer.static_text import (
             AARONIC_BLESSING,
             CONFESSION_AND_FORGIVENESS,
-            DISMISSAL,
+            DISMISSAL_ENTRIES,
         )
 
         try:
@@ -198,24 +198,25 @@ class BulletinAPI:
 
             day = self._day
 
-            # Parse S&S versions
+            def _entries_to_dicts(entries):
+                return [{"role": r.value, "text": t} for r, t in entries]
+
+            # Parse S&S structured versions
             sns_confession = []
             if day.confession_html:
-                parsed = parse_confession_html(day.confession_html)
-                sns_confession = [
-                    {"role": r, "text": t, "bold": b} for r, t, b in parsed
-                ]
+                parsed = parse_dialog_html(day.confession_html)
+                sns_confession = _entries_to_dicts(parsed)
 
-            std_confession = [
-                {"role": r, "text": t, "bold": b}
-                for r, t, b in CONFESSION_AND_FORGIVENESS
-            ]
+            sns_dismissal = []
+            if day.dismissal_html:
+                parsed = parse_dialog_html(day.dismissal_html)
+                sns_dismissal = _entries_to_dicts(parsed)
 
             texts = {
                 "confession": {
                     "label": "Confession and Forgiveness",
                     "sns": sns_confession,
-                    "standard": std_confession,
+                    "standard": _entries_to_dicts(CONFESSION_AND_FORGIVENESS),
                     "has_sns": bool(sns_confession),
                     "type": "structured",
                 },
@@ -242,10 +243,10 @@ class BulletinAPI:
                 },
                 "dismissal": {
                     "label": "Dismissal",
-                    "sns": clean_sns_html(day.dismissal_html),
-                    "standard": DISMISSAL,
-                    "has_sns": bool(day.dismissal_html),
-                    "type": "text",
+                    "sns": sns_dismissal,
+                    "standard": _entries_to_dicts(DISMISSAL_ENTRIES),
+                    "has_sns": bool(sns_dismissal),
+                    "type": "structured",
                 },
             }
 
@@ -398,11 +399,11 @@ class BulletinAPI:
             return None
 
     @staticmethod
-    def _parse_confession_entries(raw: list | None) -> list | None:
-        """Convert JSON confession dicts back to (role, text, bold) tuples."""
+    def _parse_dialog_entries(raw: list | None) -> list | None:
+        """Convert JSON dialog dicts back to (DialogRole, text) tuples."""
         if not raw:
             return None
-        return [(e.get("role", ""), e.get("text", ""), e.get("bold", False))
+        return [(DialogRole(e.get("role", "")), e.get("text", ""))
                 for e in raw]
 
     def _build_service_config(self, form_data: dict) -> ServiceConfig:
@@ -416,13 +417,15 @@ class BulletinAPI:
             eucharistic_form=form_data.get("eucharistic_form"),
             include_memorial_acclamation=form_data.get("include_memorial_acclamation"),
             preface=self._parse_preface(form_data.get("preface")),
-            confession_entries=self._parse_confession_entries(
+            confession_entries=self._parse_dialog_entries(
                 form_data.get("confession_entries")
             ),
             offering_prayer_text=form_data.get("offering_prayer_text") or None,
             prayer_after_communion_text=form_data.get("prayer_after_communion_text") or None,
             blessing_text=form_data.get("blessing_text") or None,
-            dismissal_text=form_data.get("dismissal_text") or None,
+            dismissal_entries=self._parse_dialog_entries(
+                form_data.get("dismissal_entries")
+            ),
             gathering_hymn=self._build_hymn(form_data, "gathering_hymn"),
             sermon_hymn=self._build_hymn(form_data, "sermon_hymn"),
             communion_hymn=self._build_hymn(form_data, "communion_hymn"),

@@ -5,11 +5,12 @@ from __future__ import annotations
 import pytest
 
 from bulletin_maker.renderer.text_utils import (
+    DialogRole,
     clean_sns_html,
     strip_tags,
     preprocess_html,
     html_to_runs,
-    parse_confession_html,
+    parse_dialog_html,
     split_runs_by_paragraph,
     parse_psalm_verses,
     extract_book_name,
@@ -173,46 +174,41 @@ class TestCleanSnsHtml:
         assert result == "Bold and italic"
 
 
-class TestParseConfessionHtml:
+class TestParseDialogHtml:
 
     def test_basic_confession(self):
         html = (
             "<p>P: Most merciful God,</p>"
             "<p><strong>C: we confess that we are captive to sin.</strong></p>"
         )
-        entries = parse_confession_html(html)
+        entries = parse_dialog_html(html)
         assert len(entries) == 2
-        assert entries[0] == ("P", "Most merciful God,", False)
-        assert entries[1] == ("C", "we confess that we are captive to sin.", True)
+        assert entries[0] == (DialogRole.PASTOR, "Most merciful God,")
+        assert entries[1] == (DialogRole.CONGREGATION, "we confess that we are captive to sin.")
 
-    def test_congregation_always_bold(self):
+    def test_congregation_role(self):
         html = "<p>C: Amen.</p>"
-        entries = parse_confession_html(html)
+        entries = parse_dialog_html(html)
         assert len(entries) == 1
-        assert entries[0][2] is True  # bold
+        assert entries[0][0] is DialogRole.CONGREGATION
 
     def test_unlabeled_paragraph(self):
         html = "<p>God of all mercy and consolation.</p>"
-        entries = parse_confession_html(html)
+        entries = parse_dialog_html(html)
         assert len(entries) == 1
-        assert entries[0][0] == ""  # no role
+        assert entries[0][0] is DialogRole.NONE
         assert entries[0][1] == "God of all mercy and consolation."
 
     def test_empty_input(self):
-        assert parse_confession_html("") == []
-        assert parse_confession_html(None) == []
+        assert parse_dialog_html("") == []
+        assert parse_dialog_html(None) == []
 
     def test_pastor_label(self):
         html = "<p>Pastor: In the name of the Father.</p>"
-        entries = parse_confession_html(html)
-        assert entries[0][0] == "Pastor"
-
-    def test_bold_detection(self):
-        html = "<p><strong>We confess our sin.</strong></p>"
-        entries = parse_confession_html(html)
-        assert entries[0][2] is True
+        entries = parse_dialog_html(html)
+        assert entries[0][0] is DialogRole.PASTOR
 
     def test_congregation_normalized(self):
         html = "<p>Congregation: Thanks be to God.</p>"
-        entries = parse_confession_html(html)
-        assert entries[0][0] == "C"
+        entries = parse_dialog_html(html)
+        assert entries[0][0] is DialogRole.CONGREGATION

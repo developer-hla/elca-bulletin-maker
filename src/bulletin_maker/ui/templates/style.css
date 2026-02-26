@@ -673,6 +673,77 @@ main {
     margin-bottom: 8px;
 }
 
+/* ── Structured Editor (Call & Response) ──────────────── */
+
+.structured-editor {
+    margin-top: 4px;
+}
+
+.entry-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.entry-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.entry-role {
+    width: 130px;
+    padding: 5px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+    background: white;
+    flex-shrink: 0;
+}
+
+.entry-role:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(44, 95, 138, 0.15);
+}
+
+.entry-text {
+    flex: 1;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+    background: white;
+    min-width: 0;
+}
+
+.entry-text:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(44, 95, 138, 0.15);
+}
+
+.entry-remove-btn {
+    flex-shrink: 0;
+    padding: 2px 7px;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--danger);
+    border-color: transparent;
+    background: none;
+}
+
+.entry-remove-btn:hover {
+    background: var(--danger-bg);
+    border-color: var(--danger);
+}
+
+.entry-add-btn {
+    margin-top: 8px;
+    padding: 5px 12px;
+    font-size: 12px;
+}
+
 /* ── Results ───────────────────────────────────────────── */
 
 .results-list {

@@ -613,13 +613,86 @@ function setupFilePickers() {
 
 // ── Liturgical Texts Review ──────────────────────────────────────────
 
-/** Serializes confession entries to readable text for the textarea. */
-function confessionToText(entries) {
-    if (!entries || !entries.length) return "";
-    return entries.map(function(e) {
-        var prefix = e.role ? e.role + ": " : "";
-        return prefix + e.text;
-    }).join("\n\n");
+/** Role options for structured (call-and-response) text entries. */
+var ROLE_OPTIONS = [
+    { value: "P", label: "P (Pastor)" },
+    { value: "C", label: "C (Congregation)" },
+    { value: "", label: "(none)" },
+    { value: "instruction", label: "Instruction" },
+];
+
+/** Builds a single structured-entry row element. */
+function buildEntryRow(entry) {
+    var row = document.createElement("div");
+    row.className = "entry-row";
+
+    var roleSelect = document.createElement("select");
+    roleSelect.className = "entry-role";
+    ROLE_OPTIONS.forEach(function(opt) {
+        var option = document.createElement("option");
+        option.value = opt.value;
+        option.textContent = opt.label;
+        if (opt.value === (entry.role || "")) option.selected = true;
+        roleSelect.appendChild(option);
+    });
+    row.appendChild(roleSelect);
+
+    var textInput = document.createElement("input");
+    textInput.type = "text";
+    textInput.className = "entry-text";
+    textInput.value = entry.text || "";
+    row.appendChild(textInput);
+
+    var removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "btn entry-remove-btn";
+    removeBtn.textContent = "\u00d7";
+    removeBtn.title = "Remove entry";
+    removeBtn.addEventListener("click", function() {
+        row.remove();
+    });
+    row.appendChild(removeBtn);
+
+    return row;
+}
+
+/** Builds a structured editor with entry rows and an Add button. */
+function buildStructuredEditor(key, entries) {
+    var wrapper = document.createElement("div");
+    wrapper.className = "structured-editor";
+    wrapper.dataset.key = key;
+
+    var rowsContainer = document.createElement("div");
+    rowsContainer.className = "entry-rows";
+    (entries || []).forEach(function(entry) {
+        rowsContainer.appendChild(buildEntryRow(entry));
+    });
+    wrapper.appendChild(rowsContainer);
+
+    var addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "btn secondary entry-add-btn";
+    addBtn.textContent = "+ Add entry";
+    addBtn.addEventListener("click", function() {
+        rowsContainer.appendChild(buildEntryRow({ role: "", text: "" }));
+    });
+    wrapper.appendChild(addBtn);
+
+    return wrapper;
+}
+
+/** Reads structured entries from a structured editor element. */
+function collectStructuredEntries(editorEl) {
+    var rows = editorEl.querySelectorAll(".entry-row");
+    var entries = [];
+    rows.forEach(function(row) {
+        var role = row.querySelector(".entry-role").value;
+        var text = row.querySelector(".entry-text").value.trim();
+        if (text) {
+            entries.push({ role: role, text: text });
+        }
+    });
+    return entries;
 }
 
 /** Loads liturgical texts from the API and builds the review panels. */
@@ -648,24 +721,20 @@ async function loadLiturgicalTexts() {
             var info = result.texts[key];
             if (!info) return;
 
-            // Determine initial text value
-            var snsText = info.type === "structured" ? confessionToText(info.sns) : (info.sns || "");
-            var stdText = info.type === "structured" ? confessionToText(info.standard) : (info.standard || "");
+            var isStructured = info.type === "structured";
             var defaultSource = info.has_sns ? "sns" : "standard";
-            var initialText = defaultSource === "sns" ? snsText : stdText;
+            var initialData = defaultSource === "sns" ? info.sns : info.standard;
 
             state.textChoices[key] = {
                 source: defaultSource,
                 isCustom: false,
-                value: initialText,
-                snsText: snsText,
-                stdText: stdText,
+                value: isStructured ? null : (initialData || ""),
                 snsData: info.sns,
                 stdData: info.standard,
                 type: info.type,
             };
 
-            // Build panel HTML
+            // Build panel
             var panel = document.createElement("div");
             panel.className = "text-panel";
             panel.dataset.key = key;
@@ -717,41 +786,63 @@ async function loadLiturgicalTexts() {
 
             body.appendChild(radios);
 
-            // Textarea
-            var textarea = document.createElement("textarea");
-            textarea.className = "text-textarea";
-            textarea.value = initialText;
-            textarea.dataset.key = key;
-            body.appendChild(textarea);
+            if (isStructured) {
+                // Structured editor for call-and-response texts
+                var editor = buildStructuredEditor(key, initialData);
+                body.appendChild(editor);
+
+                // Wire radio changes — rebuild editor with new data
+                [snsRadio, stdRadio].forEach(function(radio) {
+                    radio.addEventListener("change", function() {
+                        var choice = state.textChoices[key];
+                        choice.source = this.value;
+                        choice.isCustom = false;
+                        var newData = this.value === "sns" ? choice.snsData : choice.stdData;
+                        // Replace editor rows
+                        var rowsContainer = editor.querySelector(".entry-rows");
+                        rowsContainer.innerHTML = "";
+                        (newData || []).forEach(function(entry) {
+                            rowsContainer.appendChild(buildEntryRow(entry));
+                        });
+                        hide($("#custom-edit-warning"));
+                    });
+                });
+            } else {
+                // Plain textarea for simple texts
+                var textarea = document.createElement("textarea");
+                textarea.className = "text-textarea";
+                textarea.value = initialData || "";
+                textarea.dataset.key = key;
+                body.appendChild(textarea);
+
+                // Wire radio changes
+                [snsRadio, stdRadio].forEach(function(radio) {
+                    radio.addEventListener("change", function() {
+                        var choice = state.textChoices[key];
+                        choice.source = this.value;
+                        choice.isCustom = false;
+                        var newText = this.value === "sns" ? (choice.snsData || "") : (choice.stdData || "");
+                        choice.value = newText;
+                        textarea.value = newText;
+                        hide($("#custom-edit-warning"));
+                    });
+                });
+
+                // Wire textarea edits
+                textarea.addEventListener("input", function() {
+                    var choice = state.textChoices[key];
+                    choice.value = this.value;
+                    var matchesSns = this.value === (choice.snsData || "");
+                    var matchesStd = this.value === (choice.stdData || "");
+                    choice.isCustom = !matchesSns && !matchesStd;
+                    if (choice.isCustom) {
+                        show($("#custom-edit-warning"));
+                    }
+                });
+            }
 
             panel.appendChild(body);
             panelsEl.appendChild(panel);
-
-            // Wire radio changes
-            [snsRadio, stdRadio].forEach(function(radio) {
-                radio.addEventListener("change", function() {
-                    var choice = state.textChoices[key];
-                    choice.source = this.value;
-                    choice.isCustom = false;
-                    var newText = this.value === "sns" ? choice.snsText : choice.stdText;
-                    choice.value = newText;
-                    textarea.value = newText;
-                    hide($("#custom-edit-warning"));
-                });
-            });
-
-            // Wire textarea edits
-            textarea.addEventListener("input", function() {
-                var choice = state.textChoices[key];
-                choice.value = this.value;
-                // Detect custom edit (differs from both sources)
-                var matchesSns = this.value === choice.snsText;
-                var matchesStd = this.value === choice.stdText;
-                choice.isCustom = !matchesSns && !matchesStd;
-                if (choice.isCustom) {
-                    show($("#custom-edit-warning"));
-                }
-            });
         });
     } catch (err) {
         hide(spinner);
@@ -809,30 +900,22 @@ function collectFormData() {
 
     // Liturgical texts
     var tc = state.textChoices;
-    if (tc.confession) {
-        // For confession, send the structured data matching the chosen source
-        // If custom, parse the textarea back (not ideal, but we send the original data + custom flag)
-        if (tc.confession.isCustom) {
-            // Custom edit: send null so resolve_text_defaults uses S&S/static fallback
-            formData.confession_entries = null;
-        } else if (tc.confession.source === "sns" && tc.confession.snsData) {
-            formData.confession_entries = tc.confession.snsData;
-        } else if (tc.confession.source === "standard" && tc.confession.stdData) {
-            formData.confession_entries = tc.confession.stdData;
+
+    // Structured texts: collect entries from the editor rows
+    ["confession", "dismissal"].forEach(function(key) {
+        if (!tc[key]) return;
+        var editorEl = document.querySelector('.structured-editor[data-key="' + key + '"]');
+        if (editorEl) {
+            formData[key + "_entries"] = collectStructuredEntries(editorEl);
         }
-    }
-    if (tc.offering_prayer) {
-        formData.offering_prayer_text = tc.offering_prayer.value || "";
-    }
-    if (tc.prayer_after_communion) {
-        formData.prayer_after_communion_text = tc.prayer_after_communion.value || "";
-    }
-    if (tc.blessing) {
-        formData.blessing_text = tc.blessing.value || "";
-    }
-    if (tc.dismissal) {
-        formData.dismissal_text = tc.dismissal.value || "";
-    }
+    });
+
+    // Plain texts: collect from textarea value
+    ["offering_prayer", "prayer_after_communion", "blessing"].forEach(function(key) {
+        if (tc[key]) {
+            formData[key + "_text"] = tc[key].value || "";
+        }
+    });
 
     return formData;
 }
