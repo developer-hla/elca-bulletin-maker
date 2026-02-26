@@ -82,6 +82,10 @@
                     </div>
                 </div>
                 <div id="readings-list" class="readings-list"></div>
+                <div id="filename-preview" class="filename-preview" hidden>
+                    <span class="info-label">Files will be named</span>
+                    <span id="filename-prefix" class="info-value"></span>
+                </div>
             </div>
         </section>
 
@@ -265,7 +269,7 @@
                     </label>
                     <div id="baptism-names-group" hidden>
                         <label for="baptism-names">Candidate Name(s)</label>
-                        <input type="text" id="baptism-names" placeholder="e.g. John Smith, Jane Doe">
+                        <input type="text" id="baptism-names" placeholder="e.g. John Smith, Jane Doe" maxlength="200">
                     </div>
                 </div>
             </div>
@@ -281,23 +285,23 @@
             <div class="details-grid">
                 <div class="field">
                     <label for="prelude-title">Prelude Title</label>
-                    <input type="text" id="prelude-title" placeholder="e.g. Prelude on AZMON">
+                    <input type="text" id="prelude-title" placeholder="e.g. Prelude on AZMON" maxlength="100">
                 </div>
                 <div class="field">
                     <label for="prelude-performer">Prelude Performer</label>
-                    <input type="text" id="prelude-performer" placeholder="e.g. Jane Smith, organ">
+                    <input type="text" id="prelude-performer" placeholder="e.g. Jane Smith, organ" maxlength="100">
                 </div>
                 <div class="field">
                     <label for="postlude-title">Postlude Title</label>
-                    <input type="text" id="postlude-title">
+                    <input type="text" id="postlude-title" maxlength="100">
                 </div>
                 <div class="field">
                     <label for="postlude-performer">Postlude Performer</label>
-                    <input type="text" id="postlude-performer">
+                    <input type="text" id="postlude-performer" maxlength="100">
                 </div>
                 <div class="field">
                     <label for="choral-title">Choral Title</label>
-                    <input type="text" id="choral-title" placeholder="e.g. Create in Me a Clean Heart">
+                    <input type="text" id="choral-title" placeholder="e.g. Create in Me a Clean Heart" maxlength="100">
                 </div>
                 <div class="field">
                     <label>Cover Image</label>
@@ -360,7 +364,10 @@
                     <h4>Errors</h4>
                     <ul id="errors-list" class="errors-list"></ul>
                 </div>
-                <button id="open-folder-btn" class="btn primary">Open Output Folder</button>
+                <div class="results-actions">
+                    <button id="open-folder-btn" class="btn primary">Open Output Folder</button>
+                    <button id="generate-again-btn" class="btn secondary">Generate Again</button>
+                </div>
             </div>
         </section>
 

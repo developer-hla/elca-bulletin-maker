@@ -17,7 +17,7 @@ from typing import Optional
 
 import webview
 
-from bulletin_maker.exceptions import AuthError, BulletinError
+from bulletin_maker.exceptions import AuthError, BulletinError, NetworkError
 from bulletin_maker.renderer.text_utils import DialogRole, clean_sns_html, parse_dialog_html
 from bulletin_maker.sns.client import SundaysClient
 from bulletin_maker.sns.models import DayContent, HymnLyrics, ServiceConfig
@@ -44,6 +44,17 @@ class BulletinAPI:
     def set_window(self, window: webview.Window) -> None:
         self._window = window
 
+    @staticmethod
+    def _classify_error(error: Exception) -> str:
+        """Classify an exception for the UI error_type field."""
+        if isinstance(error, AuthError):
+            return "auth"
+        if isinstance(error, NetworkError):
+            return "network"
+        if isinstance(error, (ValueError, TypeError)):
+            return "validation"
+        return "internal"
+
     def _push_progress(self, step: str, detail: str, pct: int) -> None:
         """Push progress update to the JS frontend."""
         if self._window:
@@ -63,6 +74,17 @@ class BulletinAPI:
         day_label = re.sub(r',?\s*Year\s+[ABC]$', '', day_label).strip()
         day_label = day_label.upper() + (" Year " + year_letter if year_letter else "")
         return f"{date_dot} {day_label}"
+
+    def get_file_prefix(self) -> dict:
+        """Return the file-name prefix for the current date (for UI preview)."""
+        try:
+            if self._day is None or self._date_str is None:
+                return {"success": False, "error": "No content fetched yet.",
+                        "error_type": "validation"}
+            return {"success": True, "prefix": self._build_file_prefix()}
+        except Exception as e:
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     def _get_client(self) -> SundaysClient:
         """Get or create the S&S client."""
@@ -89,7 +111,7 @@ class BulletinAPI:
             client.login(username, password)
             return {"success": True, "username": username}
         except AuthError as e:
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e), "error_type": "auth"}
 
     def logout(self) -> dict:
         """Close client session and reset state."""
@@ -103,7 +125,8 @@ class BulletinAPI:
             return {"success": True}
         except Exception as e:
             logger.exception("Logout error")
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     # ── Preface Options ─────────────────────────────────────────────
 
@@ -114,7 +137,8 @@ class BulletinAPI:
             options = get_preface_options()
             return {"success": True, "prefaces": options}
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     # ── Content Fetching ──────────────────────────────────────────────
 
@@ -135,7 +159,8 @@ class BulletinAPI:
             try:
                 dt = datetime.strptime(date_str, "%Y-%m-%d")
             except ValueError:
-                return {"success": False, "error": f"Invalid date format: {date_str}"}
+                return {"success": False, "error": f"Invalid date format: {date_str}",
+                        "error_type": "validation"}
             api_date = f"{dt.year}-{dt.month}-{dt.day}"
 
             self._day = client.get_day_texts(api_date)
@@ -176,9 +201,11 @@ class BulletinAPI:
                 },
             }
         except AuthError as e:
-            return {"success": False, "error": str(e), "auth_error": True}
+            return {"success": False, "error": str(e), "auth_error": True,
+                    "error_type": "auth"}
         except BulletinError as e:
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     # ── Custom Reading ─────────────────────────────────────────────────
 
@@ -189,7 +216,8 @@ class BulletinAPI:
             html = client.search_passage(citation)
             return {"success": True, "text_html": html, "citation": citation}
         except BulletinError as e:
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     # ── Liturgical Texts ────────────────────────────────────────────────
 
@@ -207,7 +235,8 @@ class BulletinAPI:
 
         try:
             if self._day is None:
-                return {"success": False, "error": "No content fetched yet."}
+                return {"success": False, "error": "No content fetched yet.",
+                        "error_type": "validation"}
 
             day = self._day
 
@@ -266,7 +295,8 @@ class BulletinAPI:
             return {"success": True, "texts": texts}
         except Exception as e:
             logger.exception("Error getting liturgical texts")
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     # ── Hymns ─────────────────────────────────────────────────────────
 
@@ -280,7 +310,9 @@ class BulletinAPI:
             results = client.search_hymn(number, collection)
 
             if not results:
-                return {"success": False, "error": f"No results for {collection} {number}"}
+                return {"success": False,
+                        "error": f"No results for {collection} {number}",
+                        "error_type": "internal"}
 
             hymn = results[0]
             return {
@@ -291,7 +323,8 @@ class BulletinAPI:
                 "has_words": bool(hymn.words_atom_id),
             }
         except BulletinError as e:
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     def fetch_hymn_lyrics(self, number: str, date_str: str,
                           collection: str = "ELW") -> dict:
@@ -309,7 +342,8 @@ class BulletinAPI:
             try:
                 dt = datetime.strptime(date_str, "%Y-%m-%d")
             except ValueError:
-                return {"success": False, "error": f"Invalid date format: {date_str}"}
+                return {"success": False, "error": f"Invalid date format: {date_str}",
+                        "error_type": "validation"}
             use_date = f"{dt.month}/{dt.day}/{dt.year}"
 
             lyrics = client.fetch_hymn_lyrics(number, use_date, collection)
@@ -331,7 +365,8 @@ class BulletinAPI:
                 "has_refrain": bool(lyrics.refrain),
             }
         except BulletinError as e:
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     # ── File Pickers ──────────────────────────────────────────────────
 
@@ -339,7 +374,8 @@ class BulletinAPI:
         """Open native folder picker dialog."""
         try:
             if not self._window:
-                return {"success": False, "error": "Window not available"}
+                return {"success": False, "error": "Window not available",
+                        "error_type": "internal"}
 
             result = self._window.create_file_dialog(
                 webview.FOLDER_DIALOG,
@@ -347,16 +383,19 @@ class BulletinAPI:
             )
             if result and len(result) > 0:
                 return {"success": True, "path": result[0]}
-            return {"success": False, "error": "No folder selected"}
+            return {"success": False, "error": "No folder selected",
+                    "error_type": "validation"}
         except Exception as e:
             logger.exception("Error choosing output directory")
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     def choose_cover_image(self) -> dict:
         """Open native file picker for cover image."""
         try:
             if not self._window:
-                return {"success": False, "error": "Window not available"}
+                return {"success": False, "error": "Window not available",
+                        "error_type": "internal"}
 
             file_types = ("Image Files (*.jpg;*.jpeg;*.png;*.tif;*.tiff)",)
             result = self._window.create_file_dialog(
@@ -366,10 +405,12 @@ class BulletinAPI:
             )
             if result and len(result) > 0:
                 return {"success": True, "path": result[0]}
-            return {"success": False, "error": "No file selected"}
+            return {"success": False, "error": "No file selected",
+                    "error_type": "validation"}
         except Exception as e:
             logger.exception("Error choosing cover image")
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     # ── Generation helpers ─────────────────────────────────────────────
 
@@ -470,12 +511,15 @@ class BulletinAPI:
         """
         try:
             if self._day is None:
-                return {"success": False, "error": "No content fetched. Pick a date first."}
+                return {"success": False, "error": "No content fetched. Pick a date first.",
+                        "error_type": "validation"}
 
             date = form_data.get("date")
             date_display = form_data.get("date_display")
             if not date or not date_display:
-                return {"success": False, "error": "Missing required fields: date and date_display."}
+                return {"success": False,
+                        "error": "Missing required fields: date and date_display.",
+                        "error_type": "validation"}
 
             output_dir = Path(form_data.get("output_dir", "output"))
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -502,9 +546,13 @@ class BulletinAPI:
                 generate_pulpit_scripture,
             )
 
+            total = len(selected)
+            step = 0
+
             # 1. Bulletin (must be first — determines creed page)
             if "bulletin" in selected:
-                self._push_progress("bulletin", "Generating bulletin booklet...", 10)
+                step += 1
+                self._push_progress("bulletin", f"[{step}/{total}] Generating bulletin booklet...", 10)
                 try:
                     bulletin_path, creed_page = generate_bulletin(
                         self._day, config,
@@ -513,15 +561,16 @@ class BulletinAPI:
                         client=self._client,
                     )
                     results["bulletin"] = str(bulletin_path)
-                    self._push_progress("bulletin", f"Bulletin saved (creed p.{creed_page})", 30)
+                    self._push_progress("bulletin", f"[{step}/{total}] Bulletin saved (creed p.{creed_page})", 30)
                 except Exception as e:
                     logger.exception("Bulletin generation failed")
                     errors["bulletin"] = str(e)
-                    self._push_progress("bulletin", f"Bulletin failed: {e}", 30)
+                    self._push_progress("bulletin", f"[{step}/{total}] Bulletin failed: {e}", 30)
 
             # 2. Pulpit Prayers (needs creed page from bulletin)
             if "prayers" in selected:
-                self._push_progress("prayers", "Generating pulpit prayers...", 40)
+                step += 1
+                self._push_progress("prayers", f"[{step}/{total}] Generating pulpit prayers...", 40)
                 try:
                     creed_type = config.creed_type or "apostles"
                     prayers_label = "NICENE" if creed_type == "nicene" else "APOSTLES"
@@ -533,15 +582,16 @@ class BulletinAPI:
                         output_path=output_dir / f"{prefix} - Pulpit PRAYERS + {prayers_label} 8.5 x 11.pdf",
                     )
                     results["prayers"] = str(prayers_path)
-                    self._push_progress("prayers", "Pulpit prayers saved", 55)
+                    self._push_progress("prayers", f"[{step}/{total}] Pulpit prayers saved", 55)
                 except Exception as e:
                     logger.exception("Pulpit prayers generation failed")
                     errors["prayers"] = str(e)
-                    self._push_progress("prayers", f"Prayers failed: {e}", 55)
+                    self._push_progress("prayers", f"[{step}/{total}] Prayers failed: {e}", 55)
 
             # 3. Pulpit Scripture
             if "scripture" in selected:
-                self._push_progress("scripture", "Generating pulpit scripture...", 60)
+                step += 1
+                self._push_progress("scripture", f"[{step}/{total}] Generating pulpit scripture...", 60)
                 try:
                     scripture_path = generate_pulpit_scripture(
                         self._day,
@@ -550,15 +600,16 @@ class BulletinAPI:
                         config=config,
                     )
                     results["scripture"] = str(scripture_path)
-                    self._push_progress("scripture", "Pulpit scripture saved", 75)
+                    self._push_progress("scripture", f"[{step}/{total}] Pulpit scripture saved", 75)
                 except Exception as e:
                     logger.exception("Pulpit scripture generation failed")
                     errors["scripture"] = str(e)
-                    self._push_progress("scripture", f"Scripture failed: {e}", 75)
+                    self._push_progress("scripture", f"[{step}/{total}] Scripture failed: {e}", 75)
 
             # 4. Large Print
             if "large_print" in selected:
-                self._push_progress("large_print", "Generating large print...", 75)
+                step += 1
+                self._push_progress("large_print", f"[{step}/{total}] Generating large print...", 75)
                 try:
                     lp_path = generate_large_print(
                         self._day, config,
@@ -566,15 +617,16 @@ class BulletinAPI:
                         season=season,
                     )
                     results["large_print"] = str(lp_path)
-                    self._push_progress("large_print", "Large print saved", 85)
+                    self._push_progress("large_print", f"[{step}/{total}] Large print saved", 85)
                 except Exception as e:
                     logger.exception("Large print generation failed")
                     errors["large_print"] = str(e)
-                    self._push_progress("large_print", f"Large print failed: {e}", 85)
+                    self._push_progress("large_print", f"[{step}/{total}] Large print failed: {e}", 85)
 
             # 5. Leader Guide
             if "leader_guide" in selected:
-                self._push_progress("leader_guide", "Generating leader guide...", 87)
+                step += 1
+                self._push_progress("leader_guide", f"[{step}/{total}] Generating leader guide...", 87)
                 try:
                     lg_path = generate_leader_guide(
                         self._day, config,
@@ -582,11 +634,11 @@ class BulletinAPI:
                         season=season,
                     )
                     results["leader_guide"] = str(lg_path)
-                    self._push_progress("leader_guide", "Leader guide saved", 95)
+                    self._push_progress("leader_guide", f"[{step}/{total}] Leader guide saved", 95)
                 except Exception as e:
                     logger.exception("Leader guide generation failed")
                     errors["leader_guide"] = str(e)
-                    self._push_progress("leader_guide", f"Leader guide failed: {e}", 95)
+                    self._push_progress("leader_guide", f"[{step}/{total}] Leader guide failed: {e}", 95)
 
             self._push_progress("done", "Generation complete!", 100)
 
@@ -598,10 +650,12 @@ class BulletinAPI:
             }
         except AuthError as e:
             logger.exception("Auth error during generation")
-            return {"success": False, "error": str(e), "auth_error": True}
+            return {"success": False, "error": str(e), "auth_error": True,
+                    "error_type": "auth"}
         except Exception as e:
             logger.exception("Generation error")
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     def check_existing_files(self, output_dir: str, selected_docs: list) -> dict:
         """Check if any target PDFs already exist in the output directory."""
@@ -647,7 +701,8 @@ class BulletinAPI:
         try:
             folder = Path(path)
             if not folder.exists():
-                return {"success": False, "error": f"Folder not found: {path}"}
+                return {"success": False, "error": f"Folder not found: {path}",
+                        "error_type": "validation"}
 
             system = platform.system()
             if system == "Darwin":
@@ -660,7 +715,8 @@ class BulletinAPI:
             return {"success": True}
         except Exception as e:
             logger.exception("Error opening folder")
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     def cleanup(self) -> None:
         """Close the S&S client session."""

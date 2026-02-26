@@ -237,12 +237,28 @@ function setupLogout() {
     });
 }
 
+/** Resets hymn slot UI and service detail fields (shared by resetAll and date re-fetch). */
+function resetFormUI() {
+    $$(".hymn-number").forEach(function(el) { el.value = ""; });
+    $$(".hymn-info").forEach(function(el) { hide(el); el.textContent = ""; });
+    $$(".hymn-error").forEach(function(el) { hide(el); });
+    $$(".hymn-clear-btn").forEach(function(el) { hide(el); });
+    $("#prelude-title").value = "";
+    $("#prelude-performer").value = "";
+    $("#postlude-title").value = "";
+    $("#postlude-performer").value = "";
+    $("#choral-title").value = "";
+    $("#cover-image-path").textContent = "None selected";
+    hide($("#cover-image-clear"));
+}
+
 /** Resets all wizard state and UI to initial values. */
 function resetAll() {
     Object.assign(state, initialState());
 
     // Reset UI
     hide($("#day-info"));
+    hide($("#filename-preview"));
     hideError($("#date-error"));
     hideWarning($("#date-warning"));
     $("#date-input").value = "";
@@ -257,20 +273,7 @@ function resetAll() {
     hide($("#custom-edit-warning"));
     hideError($("#texts-error"));
 
-    // Reset hymn slots
-    $$(".hymn-number").forEach(function(el) { el.value = ""; });
-    $$(".hymn-info").forEach(function(el) { hide(el); el.textContent = ""; });
-    $$(".hymn-error").forEach(function(el) { hide(el); });
-    $$(".hymn-clear-btn").forEach(function(el) { hide(el); });
-
-    // Reset details
-    $("#prelude-title").value = "";
-    $("#prelude-performer").value = "";
-    $("#postlude-title").value = "";
-    $("#postlude-performer").value = "";
-    $("#choral-title").value = "";
-    $("#cover-image-path").textContent = "None selected";
-    hide($("#cover-image-clear"));
+    resetFormUI();
     $("#output-dir-path").textContent = "./output";
 
     // Reset generate section
@@ -332,17 +335,7 @@ function setupDateFetch() {
         // Reset hymns and service details for the new date
         state.hymns = { gathering: null, sermon: null, communion: null, sending: null };
         state.coverImage = "";
-        $$(".hymn-number").forEach(function(el) { el.value = ""; });
-        $$(".hymn-info").forEach(function(el) { hide(el); el.textContent = ""; });
-        $$(".hymn-error").forEach(function(el) { hide(el); });
-        $$(".hymn-clear-btn").forEach(function(el) { hide(el); });
-        $("#prelude-title").value = "";
-        $("#prelude-performer").value = "";
-        $("#postlude-title").value = "";
-        $("#postlude-performer").value = "";
-        $("#choral-title").value = "";
-        $("#cover-image-path").textContent = "None selected";
-        hide($("#cover-image-clear"));
+        resetFormUI();
 
         // Display day info
         $("#day-name").textContent = result.day_name;
@@ -440,6 +433,19 @@ function setupDateFetch() {
         });
 
         show($("#day-info"));
+
+        // Show filename preview
+        try {
+            var prefixResult = await window.pywebview.api.get_file_prefix();
+            if (prefixResult.success) {
+                $("#filename-prefix").textContent = prefixResult.prefix + " - [Document].pdf";
+                show($("#filename-preview"));
+            } else {
+                hide($("#filename-preview"));
+            }
+        } catch (_) {
+            hide($("#filename-preview"));
+        }
 
         // Enable all sections
         enableSection("section-hymns");
@@ -1033,95 +1039,142 @@ function collectFormData() {
     return formData;
 }
 
-function setupGenerate() {
-    $("#generate-btn").addEventListener("click", async function() {
-        const errorEl = $("#generate-error");
-        hideError(errorEl);
-        hide($("#results-area"));
+/** Runs the document generation flow. Extracted for reuse by single-doc regen. */
+async function runGeneration() {
+    const generateBtn = $("#generate-btn");
+    const errorEl = $("#generate-error");
+    hideError(errorEl);
+    hide($("#results-area"));
 
-        // Validate required state
-        if (!state.dateStr || !state.dateDisplay) {
-            showError(errorEl, "Please fetch content for a date first.");
-            return;
-        }
+    // Validate required state
+    if (!state.dateStr || !state.dateDisplay) {
+        showError(errorEl, "Please fetch content for a date first.");
+        return;
+    }
 
-        var selectedDocs = $$('input[name="doc_select"]:checked');
-        if (selectedDocs.length === 0) {
-            showError(errorEl, "Select at least one document to generate.");
-            return;
-        }
+    // Validate output directory
+    if (!state.outputDir) {
+        showError(errorEl, "Please choose an output directory first.");
+        return;
+    }
 
-        const formData = collectFormData();
+    var selectedDocs = $$('input[name="doc_select"]:checked');
+    if (selectedDocs.length === 0) {
+        showError(errorEl, "Select at least one document to generate.");
+        return;
+    }
 
-        // Check for existing files before generating
-        var checkResult = await window.pywebview.api.check_existing_files(
-            formData.output_dir, formData.selected_docs
+    const formData = collectFormData();
+
+    // Check for existing files before generating
+    var checkResult = await window.pywebview.api.check_existing_files(
+        formData.output_dir, formData.selected_docs
+    );
+    if (checkResult.existing && checkResult.existing.length > 0) {
+        var ok = confirm(
+            "The following files will be overwritten:\n\n" +
+            checkResult.existing.join("\n") +
+            "\n\nContinue?"
         );
-        if (checkResult.existing && checkResult.existing.length > 0) {
-            var ok = confirm(
-                "The following files will be overwritten:\n\n" +
-                checkResult.existing.join("\n") +
-                "\n\nContinue?"
-            );
-            if (!ok) return;
-        }
+        if (!ok) return;
+    }
 
-        this.disabled = true;
-        show($("#progress-area"));
-        $("#progress-fill").style.width = "0%";
-        $("#progress-status").textContent = "Starting generation...";
-        const bar = document.querySelector(".progress-bar");
-        if (bar) bar.setAttribute("aria-valuenow", 0);
+    generateBtn.disabled = true;
+    show($("#progress-area"));
+    $("#progress-fill").style.width = "0%";
+    $("#progress-status").textContent = "Starting generation...";
+    const bar = document.querySelector(".progress-bar");
+    if (bar) bar.setAttribute("aria-valuenow", 0);
 
-        const result = await window.pywebview.api.generate_all(formData);
+    const result = await window.pywebview.api.generate_all(formData);
 
-        this.disabled = false;
+    generateBtn.disabled = false;
 
-        if (result.error && !result.results) {
-            hide($("#progress-area"));
-            if (handleAuthError(result)) return;
-            showError(errorEl, result.error);
-            return;
-        }
-
-        // Show results
-        const resultsList = $("#results-list");
-        resultsList.innerHTML = "";
-
-        if (result.results) {
-            Object.keys(result.results).forEach(function(key) {
-                const li = document.createElement("li");
-                const path = result.results[key];
-                const name = path.split("/").pop().split("\\").pop();
-                li.textContent = (DOC_LABELS[key] || key) + " \u2014 " + name;
-                resultsList.appendChild(li);
-            });
-        }
-
-        // Show errors if any
-        const errorsArea = $("#results-errors");
-        const errorsList = $("#errors-list");
-        errorsList.innerHTML = "";
-
-        if (result.errors && Object.keys(result.errors).length > 0) {
-            Object.keys(result.errors).forEach(function(key) {
-                const li = document.createElement("li");
-                li.textContent = (DOC_LABELS[key] || key) + ": " + result.errors[key];
-                errorsList.appendChild(li);
-            });
-            show(errorsArea);
-        } else {
-            hide(errorsArea);
-        }
-
+    if (result.error && !result.results) {
         hide($("#progress-area"));
+        if (handleAuthError(result)) return;
+        showError(errorEl, result.error);
+        return;
+    }
 
-        // Store output dir for open folder button
-        if (result.output_dir) {
-            $("#open-folder-btn").dataset.path = result.output_dir;
-        }
+    // Show results
+    const resultsList = $("#results-list");
+    resultsList.innerHTML = "";
 
-        show($("#results-area"));
+    if (result.results) {
+        Object.keys(result.results).forEach(function(key) {
+            const li = document.createElement("li");
+            const path = result.results[key];
+            const name = path.split("/").pop().split("\\").pop();
+
+            var textSpan = document.createElement("span");
+            textSpan.textContent = (DOC_LABELS[key] || key) + " \u2014 " + name;
+            li.appendChild(textSpan);
+
+            // Single-doc regenerate link
+            var regenLink = document.createElement("button");
+            regenLink.type = "button";
+            regenLink.className = "btn-link regen-single-btn";
+            regenLink.textContent = "Regenerate";
+            regenLink.addEventListener("click", function() {
+                regenerateSingleDoc(key);
+            });
+            li.appendChild(regenLink);
+
+            resultsList.appendChild(li);
+        });
+    }
+
+    // Show errors if any
+    const errorsArea = $("#results-errors");
+    const errorsList = $("#errors-list");
+    errorsList.innerHTML = "";
+
+    if (result.errors && Object.keys(result.errors).length > 0) {
+        Object.keys(result.errors).forEach(function(key) {
+            const li = document.createElement("li");
+            li.textContent = (DOC_LABELS[key] || key) + ": " + result.errors[key];
+            errorsList.appendChild(li);
+        });
+        show(errorsArea);
+    } else {
+        hide(errorsArea);
+    }
+
+    hide($("#progress-area"));
+
+    // Store output dir for open folder button
+    if (result.output_dir) {
+        $("#open-folder-btn").dataset.path = result.output_dir;
+    }
+
+    show($("#results-area"));
+}
+
+/** Regenerate a single document by key, then restore all checkboxes. */
+async function regenerateSingleDoc(docKey) {
+    var checkboxes = $$('input[name="doc_select"]');
+    var savedState = Array.from(checkboxes).map(function(el) { return el.checked; });
+
+    // Uncheck all, check only the target
+    checkboxes.forEach(function(el) { el.checked = (el.value === docKey); });
+
+    await runGeneration();
+
+    // Restore checkbox state
+    checkboxes.forEach(function(el, i) { el.checked = savedState[i]; });
+}
+
+function setupGenerate() {
+    $("#generate-btn").addEventListener("click", function() {
+        runGeneration();
+    });
+
+    // Generate Again button
+    $("#generate-again-btn").addEventListener("click", function() {
+        hide($("#results-area"));
+        $$('input[name="doc_select"]').forEach(function(el) { el.checked = true; });
+        $("#section-generate").scrollIntoView({ behavior: "smooth" });
     });
 
     // Open folder button
