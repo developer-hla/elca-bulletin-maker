@@ -27,8 +27,10 @@ from bulletin_maker.renderer.image_manager import (
     get_setting_image,
 )
 from bulletin_maker.renderer.text_utils import (
+    clean_sns_html,
     extract_book_name,
     group_psalm_verses,
+    parse_confession_html,
     preprocess_html,
     strip_tags,
 )
@@ -51,6 +53,7 @@ from bulletin_maker.renderer.static_text import (
     CHURCH_NAME,
     COME_HOLY_SPIRIT,
     CONFESSION_AND_FORGIVENESS,
+    DISMISSAL,
     EUCHARISTIC_PRAYER_CLOSING,
     EUCHARISTIC_PRAYER_EXTENDED,
     GREAT_THANKSGIVING_DIALOG,
@@ -271,6 +274,56 @@ def _booklet_blanks(n: int) -> int:
     return (4 - n % 4) % 4
 
 
+# ── Liturgical text resolution ────────────────────────────────────────
+
+def resolve_text_defaults(config: ServiceConfig, day: DayContent) -> None:
+    """Populate None liturgical text fields on config from S&S, then static.
+
+    For each of the 5 text fields, the priority is:
+      1. User-provided value on config (already set) — keep it
+      2. S&S DayContent HTML (parsed to plain text) — use if available
+      3. Static fallback from static_text.py — last resort
+    """
+    # Confession
+    if config.confession_entries is None:
+        if day.confession_html:
+            parsed = parse_confession_html(day.confession_html)
+            if parsed:
+                config.confession_entries = parsed
+        if config.confession_entries is None:
+            config.confession_entries = CONFESSION_AND_FORGIVENESS
+
+    # Offering Prayer
+    if config.offering_prayer_text is None:
+        if day.offering_prayer_html:
+            config.offering_prayer_text = clean_sns_html(day.offering_prayer_html)
+        if not config.offering_prayer_text:
+            config.offering_prayer_text = ""
+
+    # Prayer After Communion
+    if config.prayer_after_communion_text is None:
+        if day.prayer_after_communion_html:
+            config.prayer_after_communion_text = clean_sns_html(
+                day.prayer_after_communion_html
+            )
+        if not config.prayer_after_communion_text:
+            config.prayer_after_communion_text = ""
+
+    # Blessing
+    if config.blessing_text is None:
+        if day.blessing_html:
+            config.blessing_text = clean_sns_html(day.blessing_html)
+        if not config.blessing_text:
+            config.blessing_text = AARONIC_BLESSING
+
+    # Dismissal
+    if config.dismissal_text is None:
+        if day.dismissal_html:
+            config.dismissal_text = clean_sns_html(day.dismissal_html)
+        if not config.dismissal_text:
+            config.dismissal_text = DISMISSAL
+
+
 # ══════════════════════════════════════════════════════════════════════
 # Context builders
 # ══════════════════════════════════════════════════════════════════════
@@ -342,7 +395,7 @@ def _build_large_print_context(
 
         # Gathering
         "choral_title": config.choral_title,
-        "confession_entries": CONFESSION_AND_FORGIVENESS,
+        "confession_entries": config.confession_entries,
         "gathering_hymn": config.gathering_hymn,
 
         # Season
@@ -407,7 +460,10 @@ def _build_large_print_context(
 
         # Closing
         "nunc_dimittis_lines": NUNC_DIMITTIS.split("\n"),
-        "aaronic_blessing_lines": AARONIC_BLESSING.split("\n"),
+        "offering_prayer_text": config.offering_prayer_text or "",
+        "prayer_after_communion_text": config.prayer_after_communion_text or "",
+        "blessing_lines": (config.blessing_text or AARONIC_BLESSING).split("\n"),
+        "dismissal_lines": (config.dismissal_text or DISMISSAL).split("\n"),
         "sending_hymn": config.sending_hymn,
     }
 
@@ -569,7 +625,7 @@ def _build_bulletin_context(
 
         # Confession
         "show_confession": season != LiturgicalSeason.CHRISTMAS_EVE,
-        "confession_entries": CONFESSION_AND_FORGIVENESS,
+        "confession_entries": config.confession_entries,
 
         # Notation images — setting pieces
         "kyrie_image_uri": kyrie_uri,
@@ -644,8 +700,15 @@ def _build_bulletin_context(
         # Nunc Dimittis
         "nunc_dimittis_image_uri": nunc_dimittis_uri,
 
+        # Offering Prayer / Prayer After Communion
+        "offering_prayer_text": config.offering_prayer_text or "",
+        "prayer_after_communion_text": config.prayer_after_communion_text or "",
+
         # Blessing
-        "aaronic_blessing_lines": AARONIC_BLESSING.split("\n"),
+        "blessing_lines": (config.blessing_text or AARONIC_BLESSING).split("\n"),
+
+        # Dismissal
+        "dismissal_lines": (config.dismissal_text or DISMISSAL).split("\n"),
 
         # Sending hymn (title only)
         "sending_hymn_title": _hymn_title_str(config.sending_hymn),
@@ -751,6 +814,7 @@ def generate_large_print(
     Returns:
         Path to the saved PDF file.
     """
+    resolve_text_defaults(config, day)
     ctx = _build_large_print_context(day, config, season)
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
@@ -802,6 +866,7 @@ def generate_leader_guide(
     Returns:
         Path to the saved PDF file.
     """
+    resolve_text_defaults(config, day)
     ctx = _build_leader_guide_context(day, config, season)
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
@@ -922,6 +987,8 @@ def generate_bulletin(
         Tuple of (path to booklet PDF, creed page number or None).
     """
     from bulletin_maker.renderer.image_manager import fetch_hymn_image
+
+    resolve_text_defaults(config, day)
 
     # Fetch communion hymn notation image if client provided
     communion_hymn_image_uri = ""

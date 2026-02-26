@@ -290,7 +290,11 @@
     <span>*OFFERING PRAYER</span>
     <span class="heading-role">Communion Assistant</span>
 </div>
+{% if offering_prayer_text %}
+<p>{{ offering_prayer_text | nl2br }}</p>
+{% else %}
 <p>Leader: Let us pray&hellip;<br><strong>CONGREGATION: Amen</strong></p>
+{% endif %}
 </div>
 
 
@@ -419,19 +423,24 @@
 {% endif %}
 
 
-{# ── Prayer After Communion + Blessing ── #}
+{# ── Prayer After Communion ── #}
 <div class="flow-group">
 <div class="section-heading red-heading">
     <span>*PRAYER AFTER COMMUNION</span>
     <span class="heading-role">Communion Assistant</span>
 </div>
+{% if prayer_after_communion_text %}
+<p>{{ prayer_after_communion_text | nl2br }}</p>
+{% else %}
 <div class="spacer"></div>
+{% endif %}
 
+{# ── Blessing ── #}
 <div class="section-heading red-heading">
     <span>*BLESSING</span>
     <span class="heading-role">Pastor</span>
 </div>
-{% for line in aaronic_blessing_lines %}
+{% for line in blessing_lines %}
 <p class="blessing-line">{{ line }}</p>
 {% endfor %}
 </div>
@@ -452,8 +461,9 @@
     <span>SENDING</span>
     <span class="heading-role">Pastor</span>
 </div>
-<p>Go in peace to love and serve the Lord.</p>
-<p><strong>Thanks be to God.</strong></p>
+{% for line in dismissal_lines %}
+<p{% if loop.last %}><strong>{{ line }}</strong>{% else %}>{{ line }}{% endif %}</p>
+{% endfor %}
 
 {% if postlude_title %}
 <div class="section-heading">

@@ -585,6 +585,94 @@ main {
     margin-top: 6px;
 }
 
+/* ── Liturgical Text Review ────────────────────────────── */
+
+.text-panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.text-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg);
+    cursor: pointer;
+    user-select: none;
+}
+
+.text-panel-header:hover {
+    background: #eaecef;
+}
+
+.text-panel-title {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.text-panel-toggle {
+    font-size: 12px;
+    color: var(--text-light);
+    transition: transform 0.2s;
+}
+
+.text-panel.open .text-panel-toggle {
+    transform: rotate(180deg);
+}
+
+.text-panel-body {
+    display: none;
+    padding: 12px 14px;
+    border-top: 1px solid var(--border);
+}
+
+.text-panel.open .text-panel-body {
+    display: block;
+}
+
+.text-source-radios {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+.text-source-radios label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.text-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    resize: vertical;
+    background: white;
+}
+
+.text-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(44, 95, 138, 0.15);
+}
+
+.text-no-sns {
+    font-size: 12px;
+    color: var(--text-light);
+    font-style: italic;
+    margin-bottom: 8px;
+}
+
 /* ── Results ───────────────────────────────────────────── */
 
 .results-list {

@@ -49,6 +49,8 @@ function initialState() {
         },
         coverImage: "",
         outputDir: "",
+        liturgicalTexts: null,  // raw texts from API
+        textChoices: {},        // {key: {source, isCustom, value}}
     };
 }
 
@@ -235,9 +237,14 @@ function resetAll() {
     $("#date-input").value = "";
     $("#preface-select").innerHTML = "";
 
-    ["section-hymns", "section-liturgy", "section-details", "section-generate"].forEach(function(id) {
+    ["section-hymns", "section-liturgy", "section-details", "section-texts", "section-generate"].forEach(function(id) {
         document.getElementById(id).classList.add("disabled-section");
     });
+
+    // Reset liturgical texts
+    $("#texts-panels").innerHTML = "";
+    hide($("#custom-edit-warning"));
+    hideError($("#texts-error"));
 
     // Reset hymn slots
     $$(".hymn-number").forEach(function(el) { el.value = ""; });
@@ -349,7 +356,11 @@ function setupDateFetch() {
         enableSection("section-hymns");
         enableSection("section-liturgy");
         enableSection("section-details");
+        enableSection("section-texts");
         enableSection("section-generate");
+
+        // Fetch liturgical texts for the review step
+        loadLiturgicalTexts();
 
         // Pre-fill liturgical settings
         applyDefaults(result.defaults);
@@ -600,6 +611,160 @@ function setupFilePickers() {
     });
 }
 
+// ── Liturgical Texts Review ──────────────────────────────────────────
+
+/** Serializes confession entries to readable text for the textarea. */
+function confessionToText(entries) {
+    if (!entries || !entries.length) return "";
+    return entries.map(function(e) {
+        var prefix = e.role ? e.role + ": " : "";
+        return prefix + e.text;
+    }).join("\n\n");
+}
+
+/** Loads liturgical texts from the API and builds the review panels. */
+async function loadLiturgicalTexts() {
+    var spinner = $("#texts-spinner");
+    var errorEl = $("#texts-error");
+    var panelsEl = $("#texts-panels");
+    hideError(errorEl);
+    panelsEl.innerHTML = "";
+    show(spinner);
+
+    try {
+        var result = await window.pywebview.api.get_liturgical_texts();
+        hide(spinner);
+
+        if (!result.success) {
+            showError(errorEl, result.error || "Failed to load liturgical texts.");
+            return;
+        }
+
+        state.liturgicalTexts = result.texts;
+        state.textChoices = {};
+
+        var textOrder = ["confession", "offering_prayer", "prayer_after_communion", "blessing", "dismissal"];
+        textOrder.forEach(function(key) {
+            var info = result.texts[key];
+            if (!info) return;
+
+            // Determine initial text value
+            var snsText = info.type === "structured" ? confessionToText(info.sns) : (info.sns || "");
+            var stdText = info.type === "structured" ? confessionToText(info.standard) : (info.standard || "");
+            var defaultSource = info.has_sns ? "sns" : "standard";
+            var initialText = defaultSource === "sns" ? snsText : stdText;
+
+            state.textChoices[key] = {
+                source: defaultSource,
+                isCustom: false,
+                value: initialText,
+                snsText: snsText,
+                stdText: stdText,
+                snsData: info.sns,
+                stdData: info.standard,
+                type: info.type,
+            };
+
+            // Build panel HTML
+            var panel = document.createElement("div");
+            panel.className = "text-panel";
+            panel.dataset.key = key;
+
+            var header = document.createElement("div");
+            header.className = "text-panel-header";
+            header.innerHTML = '<span class="text-panel-title">' + escapeHtml(info.label) + '</span>' +
+                '<span class="text-panel-toggle">&#9660;</span>';
+            header.addEventListener("click", function() {
+                panel.classList.toggle("open");
+            });
+            panel.appendChild(header);
+
+            var body = document.createElement("div");
+            body.className = "text-panel-body";
+
+            // No S&S notice
+            if (!info.has_sns) {
+                var notice = document.createElement("p");
+                notice.className = "text-no-sns";
+                notice.textContent = "No S&S text available for this week. Using standard text.";
+                body.appendChild(notice);
+            }
+
+            // Radio toggle
+            var radios = document.createElement("div");
+            radios.className = "text-source-radios";
+
+            var snsLabel = document.createElement("label");
+            var snsRadio = document.createElement("input");
+            snsRadio.type = "radio";
+            snsRadio.name = "text_source_" + key;
+            snsRadio.value = "sns";
+            if (defaultSource === "sns") snsRadio.checked = true;
+            if (!info.has_sns) snsRadio.disabled = true;
+            snsLabel.appendChild(snsRadio);
+            snsLabel.appendChild(document.createTextNode(" This Week's (S&S)"));
+            radios.appendChild(snsLabel);
+
+            var stdLabel = document.createElement("label");
+            var stdRadio = document.createElement("input");
+            stdRadio.type = "radio";
+            stdRadio.name = "text_source_" + key;
+            stdRadio.value = "standard";
+            if (defaultSource === "standard") stdRadio.checked = true;
+            stdLabel.appendChild(stdRadio);
+            stdLabel.appendChild(document.createTextNode(" Standard"));
+            radios.appendChild(stdLabel);
+
+            body.appendChild(radios);
+
+            // Textarea
+            var textarea = document.createElement("textarea");
+            textarea.className = "text-textarea";
+            textarea.value = initialText;
+            textarea.dataset.key = key;
+            body.appendChild(textarea);
+
+            panel.appendChild(body);
+            panelsEl.appendChild(panel);
+
+            // Wire radio changes
+            [snsRadio, stdRadio].forEach(function(radio) {
+                radio.addEventListener("change", function() {
+                    var choice = state.textChoices[key];
+                    choice.source = this.value;
+                    choice.isCustom = false;
+                    var newText = this.value === "sns" ? choice.snsText : choice.stdText;
+                    choice.value = newText;
+                    textarea.value = newText;
+                    hide($("#custom-edit-warning"));
+                });
+            });
+
+            // Wire textarea edits
+            textarea.addEventListener("input", function() {
+                var choice = state.textChoices[key];
+                choice.value = this.value;
+                // Detect custom edit (differs from both sources)
+                var matchesSns = this.value === choice.snsText;
+                var matchesStd = this.value === choice.stdText;
+                choice.isCustom = !matchesSns && !matchesStd;
+                if (choice.isCustom) {
+                    show($("#custom-edit-warning"));
+                }
+            });
+        });
+    } catch (err) {
+        hide(spinner);
+        showError(errorEl, "Failed to load texts: " + (err.message || "unknown error"));
+    }
+}
+
+function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
 // ── Generation ───────────────────────────────────────────────────────
 
 /** Collects all form data into a dict for the Python API. */
@@ -641,6 +806,33 @@ function collectFormData() {
             formData[slot + "_hymn"] = null;
         }
     });
+
+    // Liturgical texts
+    var tc = state.textChoices;
+    if (tc.confession) {
+        // For confession, send the structured data matching the chosen source
+        // If custom, parse the textarea back (not ideal, but we send the original data + custom flag)
+        if (tc.confession.isCustom) {
+            // Custom edit: send null so resolve_text_defaults uses S&S/static fallback
+            formData.confession_entries = null;
+        } else if (tc.confession.source === "sns" && tc.confession.snsData) {
+            formData.confession_entries = tc.confession.snsData;
+        } else if (tc.confession.source === "standard" && tc.confession.stdData) {
+            formData.confession_entries = tc.confession.stdData;
+        }
+    }
+    if (tc.offering_prayer) {
+        formData.offering_prayer_text = tc.offering_prayer.value || "";
+    }
+    if (tc.prayer_after_communion) {
+        formData.prayer_after_communion_text = tc.prayer_after_communion.value || "";
+    }
+    if (tc.blessing) {
+        formData.blessing_text = tc.blessing.value || "";
+    }
+    if (tc.dismissal) {
+        formData.dismissal_text = tc.dismissal.value || "";
+    }
 
     return formData;
 }

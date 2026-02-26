@@ -290,9 +290,22 @@
             </div>
         </section>
 
-        <!-- Section 5: Generate -->
+        <!-- Section 5: Review Liturgical Texts -->
+        <section id="section-texts" class="card disabled-section">
+            <h2>5. Review Liturgical Texts</h2>
+            <p class="section-hint">S&S texts are the default. Toggle to Standard for the hardcoded version, or edit directly.</p>
+            <div id="texts-spinner" class="spinner" hidden>
+                <div class="spinner-ring"></div>
+                <span>Loading liturgical texts...</span>
+            </div>
+            <div id="texts-error" class="error-msg" hidden></div>
+            <div id="texts-panels"></div>
+            <div id="custom-edit-warning" class="warning-msg" hidden>Custom edits are not saved and will not be available next week.</div>
+        </section>
+
+        <!-- Section 6: Generate -->
         <section id="section-generate" class="card disabled-section">
-            <h2>5. Generate Documents</h2>
+            <h2>6. Generate Documents</h2>
 
             <div class="doc-checkboxes">
                 <label class="checkbox-label"><input type="checkbox" name="doc_select" value="bulletin" checked> Bulletin for Congregation</label>

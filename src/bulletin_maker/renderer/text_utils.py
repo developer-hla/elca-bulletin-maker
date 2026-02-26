@@ -7,6 +7,7 @@ library dependencies — used by both the HTML renderer and tests.
 
 from __future__ import annotations
 
+import html as html_module
 import re
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
@@ -17,6 +18,77 @@ from html.parser import HTMLParser
 def strip_tags(html: str) -> str:
     """Remove all HTML tags from a string."""
     return re.sub(r"<[^>]+>", "", html).strip()
+
+
+def clean_sns_html(html: str) -> str:
+    """Strip S&S HTML to plain text for liturgical texts.
+
+    Removes tags, decodes HTML entities, and normalizes whitespace.
+    Used for offering prayer, prayer after communion, blessing, dismissal.
+    """
+    if not html:
+        return ""
+    # Replace <br> and </p><p> with newlines before stripping tags
+    text = re.sub(r"<br\s*/?>", "\n", html)
+    text = re.sub(r"</p>\s*<p[^>]*>", "\n", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = html_module.unescape(text)
+    # Normalize whitespace within lines but preserve newlines
+    lines = text.split("\n")
+    lines = [re.sub(r"[ \t]+", " ", line).strip() for line in lines]
+    text = "\n".join(line for line in lines if line)
+    return text.strip()
+
+
+def parse_confession_html(html: str) -> list[tuple[str, str, bool]]:
+    """Parse S&S confession HTML into (role, text, bold) tuples.
+
+    The returned format matches what templates expect for confession_entries:
+      - role: "Pastor", "P", "C", "instruction", or ""
+      - text: the paragraph text
+      - bold: True if congregation response (should be bold)
+    """
+    if not html:
+        return []
+
+    entries: list[tuple[str, str, bool]] = []
+
+    # Split into paragraphs
+    paragraphs = re.split(r"</?p[^>]*>", html)
+
+    for para in paragraphs:
+        para = para.strip()
+        if not para:
+            continue
+
+        # Check for bold wrapping (congregation response)
+        is_bold = bool(re.search(r"<strong>|<b>", para))
+
+        # Strip all tags and decode entities
+        text = re.sub(r"<[^>]+>", "", para)
+        text = html_module.unescape(text)
+        text = re.sub(r"\s+", " ", text).strip()
+
+        if not text:
+            continue
+
+        # Detect role prefix
+        role = ""
+        role_match = re.match(r"^(P|C|Pastor|Congregation)\s*:\s*", text)
+        if role_match:
+            role = role_match.group(1)
+            # Normalize "Congregation" to "C"
+            if role == "Congregation":
+                role = "C"
+            text = text[role_match.end():].strip()
+
+        # Mark congregation lines as bold
+        if role == "C":
+            is_bold = True
+
+        entries.append((role, text, is_bold))
+
+    return entries
 
 
 def preprocess_html(html: str) -> str:

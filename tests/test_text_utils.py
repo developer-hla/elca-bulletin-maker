@@ -5,9 +5,11 @@ from __future__ import annotations
 import pytest
 
 from bulletin_maker.renderer.text_utils import (
+    clean_sns_html,
     strip_tags,
     preprocess_html,
     html_to_runs,
+    parse_confession_html,
     split_runs_by_paragraph,
     parse_psalm_verses,
     extract_book_name,
@@ -137,3 +139,80 @@ class TestExtractBookName:
     ])
     def test_extracts_book(self, citation, expected):
         assert extract_book_name(citation) == expected
+
+
+class TestCleanSnsHtml:
+
+    def test_strips_tags(self):
+        result = clean_sns_html("<p>The Lord bless you.</p>")
+        assert result == "The Lord bless you."
+
+    def test_decodes_entities(self):
+        result = clean_sns_html("<p>God&rsquo;s peace &amp; mercy.</p>")
+        assert "\u2019" in result  # right single quote
+        assert "& mercy" in result
+
+    def test_preserves_line_breaks(self):
+        result = clean_sns_html("<p>Line one</p><p>Line two</p>")
+        assert "Line one\nLine two" == result
+
+    def test_br_becomes_newline(self):
+        result = clean_sns_html("First<br>Second<br/>Third")
+        assert "First\nSecond\nThird" == result
+
+    def test_empty_input(self):
+        assert clean_sns_html("") == ""
+        assert clean_sns_html(None) == ""
+
+    def test_normalizes_whitespace(self):
+        result = clean_sns_html("<p>  extra   spaces  </p>")
+        assert result == "extra spaces"
+
+    def test_nested_tags(self):
+        result = clean_sns_html("<p><strong>Bold</strong> and <em>italic</em></p>")
+        assert result == "Bold and italic"
+
+
+class TestParseConfessionHtml:
+
+    def test_basic_confession(self):
+        html = (
+            "<p>P: Most merciful God,</p>"
+            "<p><strong>C: we confess that we are captive to sin.</strong></p>"
+        )
+        entries = parse_confession_html(html)
+        assert len(entries) == 2
+        assert entries[0] == ("P", "Most merciful God,", False)
+        assert entries[1] == ("C", "we confess that we are captive to sin.", True)
+
+    def test_congregation_always_bold(self):
+        html = "<p>C: Amen.</p>"
+        entries = parse_confession_html(html)
+        assert len(entries) == 1
+        assert entries[0][2] is True  # bold
+
+    def test_unlabeled_paragraph(self):
+        html = "<p>God of all mercy and consolation.</p>"
+        entries = parse_confession_html(html)
+        assert len(entries) == 1
+        assert entries[0][0] == ""  # no role
+        assert entries[0][1] == "God of all mercy and consolation."
+
+    def test_empty_input(self):
+        assert parse_confession_html("") == []
+        assert parse_confession_html(None) == []
+
+    def test_pastor_label(self):
+        html = "<p>Pastor: In the name of the Father.</p>"
+        entries = parse_confession_html(html)
+        assert entries[0][0] == "Pastor"
+
+    def test_bold_detection(self):
+        html = "<p><strong>We confess our sin.</strong></p>"
+        entries = parse_confession_html(html)
+        assert entries[0][2] is True
+
+    def test_congregation_normalized(self):
+        html = "<p>Congregation: Thanks be to God.</p>"
+        entries = parse_confession_html(html)
+        assert entries[0][0] == "C"

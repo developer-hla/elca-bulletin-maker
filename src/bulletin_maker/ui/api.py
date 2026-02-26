@@ -18,6 +18,7 @@ from typing import Optional
 import webview
 
 from bulletin_maker.exceptions import AuthError, BulletinError
+from bulletin_maker.renderer.text_utils import clean_sns_html, parse_confession_html
 from bulletin_maker.sns.client import SundaysClient
 from bulletin_maker.sns.models import DayContent, HymnLyrics, ServiceConfig
 from bulletin_maker.renderer.season import (
@@ -177,6 +178,82 @@ class BulletinAPI:
         except BulletinError as e:
             return {"success": False, "error": str(e)}
 
+    # ── Liturgical Texts ────────────────────────────────────────────────
+
+    def get_liturgical_texts(self) -> dict:
+        """Return S&S and standard versions of the 5 variable liturgical texts.
+
+        Must be called after fetch_day_content() populates self._day.
+        Returns both options for each text so the UI can let the user choose.
+        """
+        from bulletin_maker.renderer.static_text import (
+            AARONIC_BLESSING,
+            CONFESSION_AND_FORGIVENESS,
+            DISMISSAL,
+        )
+
+        try:
+            if self._day is None:
+                return {"success": False, "error": "No content fetched yet."}
+
+            day = self._day
+
+            # Parse S&S versions
+            sns_confession = []
+            if day.confession_html:
+                parsed = parse_confession_html(day.confession_html)
+                sns_confession = [
+                    {"role": r, "text": t, "bold": b} for r, t, b in parsed
+                ]
+
+            std_confession = [
+                {"role": r, "text": t, "bold": b}
+                for r, t, b in CONFESSION_AND_FORGIVENESS
+            ]
+
+            texts = {
+                "confession": {
+                    "label": "Confession and Forgiveness",
+                    "sns": sns_confession,
+                    "standard": std_confession,
+                    "has_sns": bool(sns_confession),
+                    "type": "structured",
+                },
+                "offering_prayer": {
+                    "label": "Offering Prayer",
+                    "sns": clean_sns_html(day.offering_prayer_html),
+                    "standard": "",
+                    "has_sns": bool(day.offering_prayer_html),
+                    "type": "text",
+                },
+                "prayer_after_communion": {
+                    "label": "Prayer After Communion",
+                    "sns": clean_sns_html(day.prayer_after_communion_html),
+                    "standard": "",
+                    "has_sns": bool(day.prayer_after_communion_html),
+                    "type": "text",
+                },
+                "blessing": {
+                    "label": "Blessing",
+                    "sns": clean_sns_html(day.blessing_html),
+                    "standard": AARONIC_BLESSING,
+                    "has_sns": bool(day.blessing_html),
+                    "type": "text",
+                },
+                "dismissal": {
+                    "label": "Dismissal",
+                    "sns": clean_sns_html(day.dismissal_html),
+                    "standard": DISMISSAL,
+                    "has_sns": bool(day.dismissal_html),
+                    "type": "text",
+                },
+            }
+
+            return {"success": True, "texts": texts}
+        except Exception as e:
+            logger.exception("Error getting liturgical texts")
+            return {"success": False, "error": str(e)}
+
     # ── Hymns ─────────────────────────────────────────────────────────
 
     def search_hymn(self, number: str, collection: str = "ELW") -> dict:
@@ -320,6 +397,14 @@ class BulletinAPI:
             logger.warning("Invalid preface value from UI: %r", value)
             return None
 
+    @staticmethod
+    def _parse_confession_entries(raw: list | None) -> list | None:
+        """Convert JSON confession dicts back to (role, text, bold) tuples."""
+        if not raw:
+            return None
+        return [(e.get("role", ""), e.get("text", ""), e.get("bold", False))
+                for e in raw]
+
     def _build_service_config(self, form_data: dict) -> ServiceConfig:
         """Build a ServiceConfig from wizard form data."""
         return ServiceConfig(
@@ -331,6 +416,13 @@ class BulletinAPI:
             eucharistic_form=form_data.get("eucharistic_form"),
             include_memorial_acclamation=form_data.get("include_memorial_acclamation"),
             preface=self._parse_preface(form_data.get("preface")),
+            confession_entries=self._parse_confession_entries(
+                form_data.get("confession_entries")
+            ),
+            offering_prayer_text=form_data.get("offering_prayer_text") or None,
+            prayer_after_communion_text=form_data.get("prayer_after_communion_text") or None,
+            blessing_text=form_data.get("blessing_text") or None,
+            dismissal_text=form_data.get("dismissal_text") or None,
             gathering_hymn=self._build_hymn(form_data, "gathering_hymn"),
             sermon_hymn=self._build_hymn(form_data, "sermon_hymn"),
             communion_hymn=self._build_hymn(form_data, "communion_hymn"),
