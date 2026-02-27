@@ -416,11 +416,14 @@ class BulletinAPI:
             client = self._get_client()
 
             # Convert date for S&S use_date format (M/D/YYYY)
-            try:
-                dt = datetime.strptime(date_str, "%Y-%m-%d")
-            except ValueError:
-                return {"success": False, "error": f"Invalid date format: {date_str}",
-                        "error_type": "validation"}
+            # Fall back to today if no date provided (date is only for licensing)
+            if date_str:
+                try:
+                    dt = datetime.strptime(date_str, "%Y-%m-%d")
+                except ValueError:
+                    dt = datetime.now()
+            else:
+                dt = datetime.now()
             use_date = f"{dt.month}/{dt.day}/{dt.year}"
 
             lyrics = client.fetch_hymn_lyrics(number, use_date, collection)
