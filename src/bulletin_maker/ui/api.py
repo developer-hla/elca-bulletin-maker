@@ -794,11 +794,15 @@ class BulletinAPI:
                 step += 1
                 self._push_progress("bulletin", f"[{step}/{total}] Generating bulletin booklet...", 10)
                 try:
+                    def _bulletin_progress(detail: str) -> None:
+                        self._push_progress("bulletin", f"[{step}/{total}] Bulletin: {detail}", 10)
+
                     bulletin_path, creed_page = generate_bulletin(
                         self._day, config,
                         output_path=output_dir / self._build_filename("Bulletin for Congregation"),
                         season=season,
                         client=self._client,
+                        on_progress=_bulletin_progress,
                     )
                     results["bulletin"] = str(bulletin_path)
                     self._push_progress("bulletin", f"[{step}/{total}] Bulletin saved (creed p.{creed_page})", 30)

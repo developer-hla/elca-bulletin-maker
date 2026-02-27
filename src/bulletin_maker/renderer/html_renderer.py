@@ -16,7 +16,7 @@ import base64
 import io
 import logging
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from bulletin_maker.exceptions import BulletinError, ContentNotFoundError
@@ -463,11 +463,21 @@ def _auto_adjust_bulletin(
     html_string: str,
     seq_path: Path,
     bulletin_page_size: dict,
-) -> tuple[str, float]:
+    on_progress: object | None = None,
+) -> None:
     """Try CSS profiles to land the bulletin on a multiple-of-4 page count.
 
-    Returns (best_html, best_scale) for the final render.
+    Renders the baseline, tries profiles, and leaves the best result on
+    disk at seq_path.  The caller does not need to re-render.
+
+    Args:
+        on_progress: Optional callable(detail_str) for UI status updates.
     """
+    def _report(msg: str) -> None:
+        if on_progress is not None:
+            on_progress(msg)
+
+    _report("Rendering baseline layout...")
     render_to_pdf(
         html_string, seq_path,
         margins=MARGINS_BULLETIN, display_footer=True,
@@ -475,12 +485,17 @@ def _auto_adjust_bulletin(
     )
     pages = count_pages(seq_path)
     if not pages or pages % 4 == 0:
-        return html_string, 1.0
+        _report(f"Layout fits perfectly ({pages} pages)")
+        return
+
+    blanks = _booklet_blanks(pages)
+    _report(f"Baseline: {pages} pages ({blanks} blank) — adjusting...")
 
     best_html = html_string
     best_scale = 1.0
-    best_blanks = _booklet_blanks(pages)
+    best_blanks = blanks
     baseline_pages = pages
+    adjusted = False
 
     direction = _best_direction(pages)
     if direction == "tighten":
@@ -492,6 +507,7 @@ def _auto_adjust_bulletin(
 
     # Try primary direction
     for profile in primary:
+        _report(f"Trying {profile.name} ({direction})...")
         candidate = _inject_css(html_string, profile.css)
         render_to_pdf(
             candidate, seq_path,
@@ -506,6 +522,7 @@ def _auto_adjust_bulletin(
             best_html = candidate
             best_scale = profile.scale
             best_blanks = blanks
+            adjusted = True
             logger.info("Bulletin auto-adjust %s: %d pages, %d blanks",
                         profile.name, n, blanks)
         if best_blanks == 0:
@@ -523,7 +540,9 @@ def _auto_adjust_bulletin(
 
     # Try secondary direction if still not perfect
     if best_blanks > 0:
+        secondary_dir = "loosen" if direction == "tighten" else "tighten"
         for profile in secondary:
+            _report(f"Trying {profile.name} ({secondary_dir})...")
             candidate = _inject_css(html_string, profile.css)
             render_to_pdf(
                 candidate, seq_path,
@@ -538,6 +557,7 @@ def _auto_adjust_bulletin(
                 best_html = candidate
                 best_scale = profile.scale
                 best_blanks = blanks
+                adjusted = True
                 logger.info("Bulletin auto-adjust %s: %d pages, %d blanks",
                             profile.name, n, blanks)
             if best_blanks == 0:
@@ -547,7 +567,14 @@ def _auto_adjust_bulletin(
         logger.info("Bulletin auto-adjust: %d blanks -> %d blanks",
                     _booklet_blanks(baseline_pages), best_blanks)
 
-    return best_html, best_scale
+    # Re-render the best result so it's on disk for the caller
+    if adjusted:
+        _report("Finalizing best layout...")
+        render_to_pdf(
+            best_html, seq_path,
+            margins=MARGINS_BULLETIN, display_footer=True,
+            page_size=bulletin_page_size, scale=best_scale,
+        )
 
 
 # ── Liturgical text resolution ────────────────────────────────────────
@@ -1125,6 +1152,7 @@ def generate_bulletin(
     season: LiturgicalSeason,
     client: object | None = None,
     keep_intermediates: bool = False,
+    on_progress: object | None = None,
 ) -> tuple[Path, int | None]:
     """Generate the standard Bulletin for Congregation as a booklet PDF.
 
@@ -1139,6 +1167,7 @@ def generate_bulletin(
         client: Optional authenticated SundaysClient for fetching the
             communion hymn notation image dynamically.
         keep_intermediates: If True, save debug HTML and sequential PDF.
+        on_progress: Optional callable(detail_str) for UI status updates.
 
     Returns:
         Tuple of (path to booklet PDF, creed page number or None).
@@ -1182,16 +1211,11 @@ def generate_bulletin(
     seq_path = output_path.parent / f".{output_path.stem}_sequential.pdf"
     bulletin_page_size = {"width": "7in", "height": "8.5in"}
 
-    best_html, best_scale = _auto_adjust_bulletin(
-        html_string, seq_path, bulletin_page_size,
-    )
+    _auto_adjust_bulletin(html_string, seq_path, bulletin_page_size,
+                          on_progress=on_progress)
 
-    # Final render with the best profile
-    render_to_pdf(
-        best_html, seq_path,
-        margins=MARGINS_BULLETIN, display_footer=True,
-        page_size=bulletin_page_size, scale=best_scale,
-    )
+    if on_progress is not None:
+        on_progress("Assembling booklet...")
 
     # Find creed page in sequential PDF
     creed_page = _find_creed_page(seq_path)
