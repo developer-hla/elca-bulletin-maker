@@ -11,6 +11,9 @@
 <!-- Login overlay -->
 <div id="login-overlay" class="overlay">
     <div class="login-card">
+        <div class="login-rose" aria-hidden="true">
+            <img src="luther-rose.svg" alt="" width="80" height="80">
+        </div>
         <h1>Bulletin Maker</h1>
         <p class="subtitle">Ascension Lutheran Church</p>
         <form id="login-form">
@@ -38,9 +41,16 @@
         <button id="update-dismiss" class="update-dismiss" aria-label="Dismiss">&times;</button>
     </div>
 
+    <!-- Season bar (shown after date fetch, persists across steps) -->
+    <div id="season-bar" class="season-bar" hidden>
+        <span id="season-bar-label" class="season-bar-label"></span>
+        <span id="season-bar-day" class="season-bar-day"></span>
+    </div>
+
     <!-- Header -->
     <header>
         <div class="header-left">
+            <img class="header-rose" src="luther-rose.svg" alt="" width="26" height="26">
             <h1>Bulletin Maker</h1>
         </div>
         <div class="header-right">
@@ -99,10 +109,6 @@
                         <div class="info-item">
                             <span class="info-label">Day</span>
                             <span id="day-name" class="info-value"></span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Season</span>
-                            <span id="day-season" class="info-value season-badge"></span>
                         </div>
                     </div>
                     <div id="readings-list" class="readings-list"></div>
@@ -389,7 +395,7 @@
             <section class="card">
                 <h2>Service Order Review</h2>
                 <div id="readiness-summary" class="readiness-summary"></div>
-                <p class="section-hint">Click any item to jump back and edit.</p>
+                <p class="section-hint">Review the full service order before generating.</p>
                 <div id="review-outline" class="review-outline"></div>
             </section>
 

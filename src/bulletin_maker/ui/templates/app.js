@@ -15,6 +15,17 @@ const SEASON_LABELS = {
     christmas_eve: "Christmas Eve",
 };
 
+/** Liturgical season colors for the season bar. */
+const SEASON_COLORS = {
+    advent:       "#2B5EA0",
+    christmas:    "#B8860B",
+    epiphany:     "#2E7D32",
+    lent:         "#5B2882",
+    easter:       "#B8860B",
+    pentecost:    "#2E7D32",
+    christmas_eve:"#B8860B",
+};
+
 /** Canticle key to display label. */
 const CANTICLE_LABELS = {
     glory_to_god: "Glory to God",
@@ -92,6 +103,19 @@ function handleAuthError(result) {
     return true;
 }
 
+/** Replace button text with an inline spinner ring. */
+function showBtnSpinner(btn) {
+    btn._savedText = btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-ring" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;"></span>';
+}
+
+/** Restore button text after spinner. */
+function hideBtnSpinner(btn, text) {
+    btn.disabled = false;
+    btn.textContent = text || btn._savedText || "Fetch";
+}
+
 function showWarning(el, msg) {
     el.textContent = msg;
     show(el);
@@ -113,6 +137,26 @@ function formatDate(dateStr) {
 /** Returns the display label for a liturgical season key. */
 function seasonLabel(season) {
     return SEASON_LABELS[season] || season;
+}
+
+/** Apply liturgical season color to the season bar. */
+function applySeasonTheme(season) {
+    var color = SEASON_COLORS[season];
+    if (color) {
+        document.documentElement.style.setProperty("--season-accent", color);
+    }
+    var bar = $("#season-bar");
+    if (bar) {
+        $("#season-bar-label").textContent = seasonLabel(season);
+        show(bar);
+    }
+}
+
+/** Clear season bar and reset accent color. */
+function clearSeasonTheme() {
+    document.documentElement.style.removeProperty("--season-accent");
+    var bar = $("#season-bar");
+    if (bar) hide(bar);
 }
 
 /** Maps a reading label to an override slot key. */
@@ -736,8 +780,9 @@ function resetAll() {
     var placementEl = $("#baptism-placement");
     if (placementEl) placementEl.value = "after_welcome";
 
-    // Reset review outline
+    // Reset review outline + season theme
     $("#review-outline").innerHTML = "";
+    clearSeasonTheme();
 
     // Go back to step 1
     showStep(1);
@@ -797,9 +842,11 @@ function setupDateFetch() {
         state.coverImage = "";
         resetFormUI();
 
-        // Display day info
+        // Display day info + apply season theme
         $("#day-name").textContent = result.day_name;
-        $("#day-season").textContent = seasonLabel(result.season);
+        applySeasonTheme(result.season);
+        var seasonBar = $("#season-bar");
+        if (seasonBar) $("#season-bar-day").textContent = "\u2014 " + result.day_name;
 
         const readingsEl = $("#readings-list");
         readingsEl.innerHTML = "";
@@ -852,11 +899,9 @@ function setupDateFetch() {
                 fetchBtn.addEventListener("click", async function() {
                     var citation = input.value.trim();
                     if (!citation) return;
-                    fetchBtn.disabled = true;
-                    fetchBtn.textContent = "...";
+                    showBtnSpinner(fetchBtn);
                     var result = await window.pywebview.api.fetch_custom_reading(citation);
-                    fetchBtn.disabled = false;
-                    fetchBtn.textContent = "Fetch";
+                    hideBtnSpinner(fetchBtn, "Fetch");
                     var msg = area.querySelector(".reading-edit-msg");
                     if (!msg) {
                         msg = document.createElement("div");
@@ -915,13 +960,11 @@ function setupDateFetch() {
                     previewBtn.textContent = existing.hidden ? "Preview" : "Hide";
                     return;
                 }
-                previewBtn.textContent = "Loading...";
-                previewBtn.disabled = true;
+                showBtnSpinner(previewBtn);
                 try {
                     var res = await window.pywebview.api.get_reading_preview(slot);
-                    previewBtn.disabled = false;
+                    hideBtnSpinner(previewBtn, "Preview");
                     if (!res.success) {
-                        previewBtn.textContent = "Preview";
                         return;
                     }
                     var preview = document.createElement("div");
@@ -939,8 +982,7 @@ function setupDateFetch() {
                     div.appendChild(preview);
                     previewBtn.textContent = "Hide";
                 } catch (_) {
-                    previewBtn.disabled = false;
-                    previewBtn.textContent = "Preview";
+                    hideBtnSpinner(previewBtn, "Preview");
                 }
             });
             header.appendChild(previewBtn);
@@ -1106,8 +1148,7 @@ function setupFetchAllHymns() {
         });
         if (toFetch.length === 0) return;
 
-        this.disabled = true;
-        this.textContent = "Fetching...";
+        showBtnSpinner(this);
         for (var i = 0; i < toFetch.length; i++) {
             var btn = toFetch[i].querySelector(".hymn-fetch-btn");
             if (btn) btn.click();
@@ -1118,8 +1159,7 @@ function setupFetchAllHymns() {
                 }, 100);
             });
         }
-        this.disabled = false;
-        this.textContent = "Fetch All Hymns";
+        hideBtnSpinner(this, "Fetch All Hymns");
     });
 }
 
@@ -1154,24 +1194,21 @@ function setupHymnFetch() {
             var clearBtn = slot.querySelector(".hymn-clear-btn");
             if (clearBtn) hide(clearBtn);
             state.hymns[slotName] = null;
-            this.disabled = true;
-            this.textContent = "...";
+            showBtnSpinner(this);
 
             try {
                 // Search first
                 const searchResult = await window.pywebview.api.search_hymn(number, collection);
 
                 if (!searchResult.success) {
-                    this.disabled = false;
-                    this.textContent = "Fetch";
+                    hideBtnSpinner(this, "Fetch");
                     showError(errorEl, searchResult.error || "Hymn not found.");
                     return;
                 }
 
                 // Skip lyrics fetch if hymn has no words download
                 if (!searchResult.has_words) {
-                    this.disabled = false;
-                    this.textContent = "Fetch";
+                    hideBtnSpinner(this, "Fetch");
                     infoEl.textContent = searchResult.title + " (title only \u2014 no lyrics available)";
                     show(infoEl);
                     if (clearBtn) show(clearBtn);
@@ -1189,8 +1226,7 @@ function setupHymnFetch() {
                     number, state.dateStr, collection
                 );
 
-                this.disabled = false;
-                this.textContent = "Fetch";
+                hideBtnSpinner(this, "Fetch");
 
                 if (lyricsResult.success) {
                     infoEl.textContent = searchResult.title +
@@ -1218,8 +1254,7 @@ function setupHymnFetch() {
                     showError(errorEl, "Lyrics: " + (lyricsResult.error || "unavailable"));
                 }
             } catch (err) {
-                this.disabled = false;
-                this.textContent = "Fetch";
+                hideBtnSpinner(this, "Fetch");
                 showError(errorEl, "Failed to fetch hymn: " + (err.message || "unknown error"));
             }
         });

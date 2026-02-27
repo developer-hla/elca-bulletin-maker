@@ -76,6 +76,8 @@ exe = EXE(
     upx=True,
     console=False,
     disable_windowed_traceback=False,
+    icon="src/bulletin_maker/ui/icon.icns" if platform.system() == "Darwin"
+         else "src/bulletin_maker/ui/icon.ico",
 )
 
 coll = COLLECT(
@@ -93,10 +95,12 @@ if platform.system() == "Darwin":
     app = BUNDLE(
         coll,
         name="Bulletin Maker.app",
-        icon=None,
+        icon="src/bulletin_maker/ui/icon.icns",
         bundle_identifier="com.ascensionjackson.bulletinmaker",
         info_plist={
             "NSHighResolutionCapable": True,
             "CFBundleShortVersionString": VERSION,
+            "CFBundleName": "Bulletin Maker",
+            "CFBundleDisplayName": "Bulletin Maker",
         },
     )
