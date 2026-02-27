@@ -16,6 +16,7 @@ import base64
 import io
 import logging
 import re
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from bulletin_maker.exceptions import BulletinError, ContentNotFoundError
@@ -265,46 +266,150 @@ def _build_baptism_context(config: ServiceConfig) -> dict:
     }
 
 
-# ── Auto-adjust CSS levels ───────────────────────────────────────────
+# ── Auto-adjust profiles ─────────────────────────────────────────────
 
-# Tighten: progressively reduce spacing to fit fewer pages
-BULLETIN_TIGHTEN_CSS = [
-    (
+
+@dataclass
+class AdjustProfile:
+    """A set of CSS + scale overrides for bulletin auto-adjustment."""
+    name: str
+    css: str
+    scale: float = 1.0
+
+
+# Tighten: 3 tiers × 2 levels = 6 profiles (T1–T6)
+# Tier 1 (spacing only): imperceptible
+# Tier 2 (+ cover/break): subtle layout changes
+# Tier 3 (+ typography/scale/images): visible but acceptable
+BULLETIN_TIGHTEN_PROFILES = [
+    # T1 — spacing only
+    AdjustProfile(name="T1", css=(
         ".spacer { height: 4pt; } "
+        ".spacer-sm { height: 2pt; } "
         ".section-heading { margin-top: 5pt; } "
         ".ep-break { height: 3pt; }"
-    ),
-    (
+    )),
+    # T2 — tighter spacing + break-inside relaxed
+    AdjustProfile(name="T2", css=(
         ".spacer { height: 2pt; } "
+        ".spacer-sm { height: 1pt; } "
         ".section-heading { margin-top: 3pt; margin-bottom: 1pt; } "
         ".flow-group { break-inside: auto; } "
         ".ep-break { height: 2pt; }"
-    ),
-    (
+    )),
+    # T3 — zero spacing + smaller cover
+    AdjustProfile(name="T3", css=(
         ".spacer { height: 0pt; } "
+        ".spacer-sm { height: 0pt; } "
         ".section-heading { margin-top: 2pt; margin-bottom: 0pt; } "
         ".flow-group { break-inside: auto; } "
-        ".ep-break { height: 0pt; }"
-    ),
+        ".ep-break { height: 0pt; } "
+        ".cover { min-height: 7in; }"
+    )),
+    # T4 — add typography: smaller font, tighter line-height
+    AdjustProfile(name="T4", css=(
+        ".spacer { height: 0pt; } "
+        ".spacer-sm { height: 0pt; } "
+        ".section-heading { margin-top: 2pt; margin-bottom: 0pt; } "
+        ".flow-group { break-inside: auto; } "
+        ".ep-break { height: 0pt; } "
+        ".cover { min-height: 7in; } "
+        "body { font-size: 10.5pt; line-height: 1.3; } "
+        ".reading-intro { font-size: 8.5pt; } "
+        ".reading-text { line-height: 1.3; } "
+        ".psalm-verse { line-height: 1.25; }"
+    )),
+    # T5 — tighter typography + narrower columns + scale
+    AdjustProfile(name="T5", css=(
+        ".spacer { height: 0pt; } "
+        ".spacer-sm { height: 0pt; } "
+        ".section-heading { margin-top: 1pt; margin-bottom: 0pt; } "
+        ".flow-group { break-inside: auto; } "
+        ".ep-break { height: 0pt; } "
+        ".cover { min-height: 6.5in; } "
+        "body { font-size: 10.5pt; line-height: 1.25; orphans: 2; widows: 2; } "
+        ".reading-intro { font-size: 8pt; } "
+        ".reading-text { line-height: 1.25; } "
+        ".psalm-verse { line-height: 1.2; } "
+        ".two-col { column-gap: 0.2in; }"
+    ), scale=0.97),
+    # T6 — maximum tightening: smallest font, shortest cover, scaled
+    AdjustProfile(name="T6", css=(
+        ".spacer { height: 0pt; } "
+        ".spacer-sm { height: 0pt; } "
+        ".section-heading { margin-top: 1pt; margin-bottom: 0pt; } "
+        ".flow-group { break-inside: auto; } "
+        ".ep-break { height: 0pt; } "
+        ".cover { min-height: 6in; } "
+        "body { font-size: 10pt; line-height: 1.2; orphans: 2; widows: 2; } "
+        ".reading-intro { font-size: 8pt; } "
+        ".reading-text { line-height: 1.2; } "
+        ".psalm-verse { line-height: 1.15; } "
+        ".two-col { column-gap: 0.15in; } "
+        ".notation-image img { max-height: 6.5in; } "
+        ".ep-text { font-size: 9.5pt; }"
+    ), scale=0.95),
 ]
 
-# Loosen: progressively increase spacing to fill pages toward next multiple of 4
-BULLETIN_LOOSEN_CSS = [
-    (
+# Loosen: 3 tiers × 2 levels = 6 profiles (L1–L6)
+BULLETIN_LOOSEN_PROFILES = [
+    # L1 — spacing only
+    AdjustProfile(name="L1", css=(
         ".spacer { height: 12pt; } "
+        ".spacer-sm { height: 6pt; } "
         ".section-heading { margin-top: 12pt; } "
         ".ep-break { height: 10pt; }"
-    ),
-    (
+    )),
+    # L2 — more spacing
+    AdjustProfile(name="L2", css=(
         ".spacer { height: 18pt; } "
+        ".spacer-sm { height: 10pt; } "
         ".section-heading { margin-top: 16pt; } "
         ".ep-break { height: 14pt; }"
-    ),
-    (
+    )),
+    # L3 — max spacing + taller cover
+    AdjustProfile(name="L3", css=(
         ".spacer { height: 24pt; } "
+        ".spacer-sm { height: 14pt; } "
         ".section-heading { margin-top: 20pt; } "
-        ".ep-break { height: 18pt; }"
-    ),
+        ".ep-break { height: 18pt; } "
+        ".cover { min-height: 8in; }"
+    )),
+    # L4 — add typography: larger font, looser line-height
+    AdjustProfile(name="L4", css=(
+        ".spacer { height: 24pt; } "
+        ".spacer-sm { height: 14pt; } "
+        ".section-heading { margin-top: 20pt; } "
+        ".ep-break { height: 18pt; } "
+        ".cover { min-height: 8in; } "
+        "body { font-size: 11.5pt; line-height: 1.4; } "
+        ".reading-text { line-height: 1.4; } "
+        ".psalm-verse { line-height: 1.35; }"
+    )),
+    # L5 — looser typography + wider columns + scale
+    AdjustProfile(name="L5", css=(
+        ".spacer { height: 28pt; } "
+        ".spacer-sm { height: 16pt; } "
+        ".section-heading { margin-top: 22pt; } "
+        ".ep-break { height: 20pt; } "
+        ".cover { min-height: 8in; } "
+        "body { font-size: 11.5pt; line-height: 1.45; orphans: 4; widows: 4; } "
+        ".reading-text { line-height: 1.45; } "
+        ".psalm-verse { line-height: 1.4; } "
+        ".two-col { column-gap: 0.3in; }"
+    ), scale=1.03),
+    # L6 — maximum loosening: largest font, tallest cover, scaled
+    AdjustProfile(name="L6", css=(
+        ".spacer { height: 32pt; } "
+        ".spacer-sm { height: 18pt; } "
+        ".section-heading { margin-top: 24pt; } "
+        ".ep-break { height: 22pt; } "
+        ".cover { min-height: 8.2in; } "
+        "body { font-size: 12pt; line-height: 1.5; orphans: 4; widows: 4; } "
+        ".reading-text { line-height: 1.5; } "
+        ".psalm-verse { line-height: 1.45; } "
+        ".two-col { column-gap: 0.35in; }"
+    ), scale=1.05),
 ]
 
 LP_TIGHTEN_CSS = [
@@ -336,6 +441,113 @@ def _inject_css(html: str, extra_css: str) -> str:
 def _booklet_blanks(n: int) -> int:
     """Number of blank pages needed to pad n to a multiple of 4."""
     return (4 - n % 4) % 4
+
+
+def _best_direction(pages: int) -> str:
+    """Pick the closer direction to reach a multiple of 4.
+
+    Returns "tighten" if removing pages is closer (or tied),
+    "loosen" if adding pages is closer.
+    """
+    blanks = _booklet_blanks(pages)
+    if blanks == 0:
+        return "tighten"  # already perfect, doesn't matter
+    pages_to_remove = pages % 4  # distance down to lower multiple
+    pages_to_add = blanks         # distance up to upper multiple
+    if pages_to_add < pages_to_remove:
+        return "loosen"
+    return "tighten"
+
+
+def _auto_adjust_bulletin(
+    html_string: str,
+    seq_path: Path,
+    bulletin_page_size: dict,
+) -> tuple[str, float]:
+    """Try CSS profiles to land the bulletin on a multiple-of-4 page count.
+
+    Returns (best_html, best_scale) for the final render.
+    """
+    render_to_pdf(
+        html_string, seq_path,
+        margins=MARGINS_BULLETIN, display_footer=True,
+        page_size=bulletin_page_size,
+    )
+    pages = count_pages(seq_path)
+    if not pages or pages % 4 == 0:
+        return html_string, 1.0
+
+    best_html = html_string
+    best_scale = 1.0
+    best_blanks = _booklet_blanks(pages)
+    baseline_pages = pages
+
+    direction = _best_direction(pages)
+    if direction == "tighten":
+        primary = BULLETIN_TIGHTEN_PROFILES
+        secondary = BULLETIN_LOOSEN_PROFILES
+    else:
+        primary = BULLETIN_LOOSEN_PROFILES
+        secondary = BULLETIN_TIGHTEN_PROFILES
+
+    # Try primary direction
+    for profile in primary:
+        candidate = _inject_css(html_string, profile.css)
+        render_to_pdf(
+            candidate, seq_path,
+            margins=MARGINS_BULLETIN, display_footer=True,
+            page_size=bulletin_page_size, scale=profile.scale,
+        )
+        n = count_pages(seq_path)
+        if not n:
+            continue
+        blanks = _booklet_blanks(n)
+        if blanks < best_blanks:
+            best_html = candidate
+            best_scale = profile.scale
+            best_blanks = blanks
+            logger.info("Bulletin auto-adjust %s: %d pages, %d blanks",
+                        profile.name, n, blanks)
+        if best_blanks == 0:
+            break
+        # Overshoot detection: if we passed through a multiple of 4
+        # (e.g. tightened from 13 past 12 to 11), stop this direction
+        if direction == "tighten" and n < baseline_pages and n % 4 != 0:
+            lower = baseline_pages - (baseline_pages % 4)
+            if n < lower:
+                break
+        elif direction == "loosen" and n > baseline_pages and n % 4 != 0:
+            upper = baseline_pages + _booklet_blanks(baseline_pages)
+            if n > upper:
+                break
+
+    # Try secondary direction if still not perfect
+    if best_blanks > 0:
+        for profile in secondary:
+            candidate = _inject_css(html_string, profile.css)
+            render_to_pdf(
+                candidate, seq_path,
+                margins=MARGINS_BULLETIN, display_footer=True,
+                page_size=bulletin_page_size, scale=profile.scale,
+            )
+            n = count_pages(seq_path)
+            if not n:
+                continue
+            blanks = _booklet_blanks(n)
+            if blanks < best_blanks:
+                best_html = candidate
+                best_scale = profile.scale
+                best_blanks = blanks
+                logger.info("Bulletin auto-adjust %s: %d pages, %d blanks",
+                            profile.name, n, blanks)
+            if best_blanks == 0:
+                break
+
+    if best_blanks < _booklet_blanks(baseline_pages):
+        logger.info("Bulletin auto-adjust: %d blanks -> %d blanks",
+                    _booklet_blanks(baseline_pages), best_blanks)
+
+    return best_html, best_scale
 
 
 # ── Liturgical text resolution ────────────────────────────────────────
@@ -966,64 +1178,20 @@ def generate_bulletin(
         debug_dir.mkdir(exist_ok=True)
         (debug_dir / "bulletin.html").write_text(html_string)
 
-    # Render sequential half-pages (7" x 8.5")
+    # Render sequential half-pages (7" x 8.5") with auto-adjustment
     seq_path = output_path.parent / f".{output_path.stem}_sequential.pdf"
     bulletin_page_size = {"width": "7in", "height": "8.5in"}
 
-    render_to_pdf(
-        html_string, seq_path,
-        margins=MARGINS_BULLETIN, display_footer=True,
-        page_size=bulletin_page_size,
+    best_html, best_scale = _auto_adjust_bulletin(
+        html_string, seq_path, bulletin_page_size,
     )
 
-    # Auto-adjust: try CSS tweaks to minimize blank booklet pages.
-    # Strategy: try tightening (fewer pages) and loosening (more pages),
-    # pick whichever gives the fewest blanks (closest to a multiple of 4).
-    pages = count_pages(seq_path)
-    if pages and pages % 4 != 0:
-        best_html = html_string
-        best_blanks = _booklet_blanks(pages)
-
-        # Try tightening (reduce pages toward lower multiple of 4)
-        for level_css in BULLETIN_TIGHTEN_CSS:
-            candidate = _inject_css(html_string, level_css)
-            render_to_pdf(
-                candidate, seq_path,
-                margins=MARGINS_BULLETIN, display_footer=True,
-                page_size=bulletin_page_size,
-            )
-            n = count_pages(seq_path)
-            if n and _booklet_blanks(n) < best_blanks:
-                best_html = candidate
-                best_blanks = _booklet_blanks(n)
-                if best_blanks == 0:
-                    break
-
-        # Try loosening (add pages toward upper multiple of 4)
-        if best_blanks > 0:
-            for level_css in BULLETIN_LOOSEN_CSS:
-                candidate = _inject_css(html_string, level_css)
-                render_to_pdf(
-                    candidate, seq_path,
-                    margins=MARGINS_BULLETIN, display_footer=True,
-                    page_size=bulletin_page_size,
-                )
-                n = count_pages(seq_path)
-                if n and _booklet_blanks(n) < best_blanks:
-                    best_html = candidate
-                    best_blanks = _booklet_blanks(n)
-                    if best_blanks == 0:
-                        break
-
-        final_blanks = _booklet_blanks(pages)
-        if best_blanks < final_blanks:
-            logger.info("Bulletin auto-adjust: %d blanks -> %d blanks",
-                        final_blanks, best_blanks)
-        render_to_pdf(
-            best_html, seq_path,
-            margins=MARGINS_BULLETIN, display_footer=True,
-            page_size=bulletin_page_size,
-        )
+    # Final render with the best profile
+    render_to_pdf(
+        best_html, seq_path,
+        margins=MARGINS_BULLETIN, display_footer=True,
+        page_size=bulletin_page_size, scale=best_scale,
+    )
 
     # Find creed page in sequential PDF
     creed_page = _find_creed_page(seq_path)

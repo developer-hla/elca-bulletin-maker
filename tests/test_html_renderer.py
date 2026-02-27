@@ -15,10 +15,16 @@ from bulletin_maker.sns.models import (
     ServiceConfig,
 )
 from bulletin_maker.renderer.html_renderer import (
+    AdjustProfile,
+    BULLETIN_LOOSEN_PROFILES,
+    BULLETIN_TIGHTEN_PROFILES,
+    _best_direction,
+    _booklet_blanks,
     _build_baptism_context,
     _build_common_context,
     _get_reading,
     _get_reading_with_override,
+    _inject_css,
 )
 from bulletin_maker.renderer.season import LiturgicalSeason
 
@@ -225,3 +231,121 @@ class TestBuildCommonContext:
         assert ctx["first_reading"]["citation"] == "Genesis 2:15-17"
         assert ctx["gospel"] is not None
         assert ctx["gospel"]["citation"] == "Matthew 4:1-11"
+
+
+# ── Auto-adjust tests ────────────────────────────────────────────────
+
+
+class TestBookletBlanks:
+    @pytest.mark.parametrize("pages,expected", [
+        (4, 0), (8, 0), (12, 0), (16, 0),   # multiples of 4
+        (5, 3), (6, 2), (7, 1),              # need padding
+        (13, 3), (14, 2), (15, 1),
+        (1, 3), (2, 2), (3, 1),
+    ])
+    def test_known_values(self, pages, expected):
+        assert _booklet_blanks(pages) == expected
+
+
+class TestBestDirection:
+    def test_13_pages_tighten(self):
+        # 13 -> 12 (remove 1) vs 13 -> 16 (add 3) => tighten
+        assert _best_direction(13) == "tighten"
+
+    def test_14_pages_tighten_tie(self):
+        # 14 -> 12 (remove 2) vs 14 -> 16 (add 2) => tie = tighten
+        assert _best_direction(14) == "tighten"
+
+    def test_15_pages_loosen(self):
+        # 15 -> 12 (remove 3) vs 15 -> 16 (add 1) => loosen
+        assert _best_direction(15) == "loosen"
+
+    def test_multiple_of_4_returns_tighten(self):
+        # Already perfect — direction doesn't matter, defaults to tighten
+        assert _best_direction(16) == "tighten"
+
+    def test_9_pages_tighten(self):
+        # 9 -> 8 (remove 1) vs 9 -> 12 (add 3) => tighten
+        assert _best_direction(9) == "tighten"
+
+    def test_11_pages_loosen(self):
+        # 11 -> 8 (remove 3) vs 11 -> 12 (add 1) => loosen
+        assert _best_direction(11) == "loosen"
+
+
+class TestTightenProfiles:
+    def test_count(self):
+        assert len(BULLETIN_TIGHTEN_PROFILES) == 6
+
+    def test_names_ordered(self):
+        names = [p.name for p in BULLETIN_TIGHTEN_PROFILES]
+        assert names == ["T1", "T2", "T3", "T4", "T5", "T6"]
+
+    def test_scales_in_bounds(self):
+        for p in BULLETIN_TIGHTEN_PROFILES:
+            assert 0.80 <= p.scale <= 1.10, f"{p.name} scale {p.scale} out of bounds"
+
+    def test_scale_decreases_or_stays(self):
+        scales = [p.scale for p in BULLETIN_TIGHTEN_PROFILES]
+        for i in range(1, len(scales)):
+            assert scales[i] <= scales[i - 1], (
+                f"T{i+1} scale {scales[i]} > T{i} scale {scales[i-1]}"
+            )
+
+    def test_all_have_css(self):
+        for p in BULLETIN_TIGHTEN_PROFILES:
+            assert len(p.css) > 0, f"{p.name} has empty CSS"
+
+
+class TestLoosenProfiles:
+    def test_count(self):
+        assert len(BULLETIN_LOOSEN_PROFILES) == 6
+
+    def test_names_ordered(self):
+        names = [p.name for p in BULLETIN_LOOSEN_PROFILES]
+        assert names == ["L1", "L2", "L3", "L4", "L5", "L6"]
+
+    def test_scales_in_bounds(self):
+        for p in BULLETIN_LOOSEN_PROFILES:
+            assert 0.80 <= p.scale <= 1.10, f"{p.name} scale {p.scale} out of bounds"
+
+    def test_scale_increases_or_stays(self):
+        scales = [p.scale for p in BULLETIN_LOOSEN_PROFILES]
+        for i in range(1, len(scales)):
+            assert scales[i] >= scales[i - 1], (
+                f"L{i+1} scale {scales[i]} < L{i} scale {scales[i-1]}"
+            )
+
+    def test_all_have_css(self):
+        for p in BULLETIN_LOOSEN_PROFILES:
+            assert len(p.css) > 0, f"{p.name} has empty CSS"
+
+
+class TestInjectCss:
+    def test_injects_before_closing_style(self):
+        html = "<html><style>body { color: black; }</style><body></body></html>"
+        result = _inject_css(html, ".spacer { height: 0pt; }")
+        assert "/* auto-adjust */" in result
+        assert ".spacer { height: 0pt; }" in result
+        assert result.index(".spacer") < result.index("</style>")
+
+    def test_preserves_original_css(self):
+        html = "<html><style>body { color: black; }</style></html>"
+        result = _inject_css(html, ".spacer { height: 4pt; }")
+        assert "body { color: black; }" in result
+
+    def test_no_style_tag_unchanged(self):
+        html = "<html><body>Hello</body></html>"
+        result = _inject_css(html, ".spacer { height: 0pt; }")
+        # No </style> to replace, so html unchanged
+        assert result == html
+
+
+class TestAdjustProfileDataclass:
+    def test_default_scale(self):
+        p = AdjustProfile(name="test", css=".foo { bar: baz; }")
+        assert p.scale == 1.0
+
+    def test_custom_scale(self):
+        p = AdjustProfile(name="test", css=".foo { bar: baz; }", scale=0.95)
+        assert p.scale == 0.95
