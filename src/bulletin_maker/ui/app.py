@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -18,6 +19,11 @@ else:
     TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
 
+def is_debug() -> bool:
+    """Check if DEBUG is enabled via environment / .env."""
+    return os.environ.get("DEBUG", "").lower() in ("1", "true")
+
+
 def _on_closing(api: BulletinAPI) -> None:
     """Called when the window is about to close."""
     api.cleanup()
@@ -25,8 +31,14 @@ def _on_closing(api: BulletinAPI) -> None:
 
 def main() -> None:
     """Launch the Bulletin Maker desktop application."""
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
+    debug = is_debug()
+
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG if debug else logging.INFO,
         format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
     )
 
@@ -44,7 +56,7 @@ def main() -> None:
     api.set_window(window)
     window.events.closing += lambda: _on_closing(api)
 
-    webview.start(debug=False)
+    webview.start(debug=debug)
 
 
 if __name__ == "__main__":

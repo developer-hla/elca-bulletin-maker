@@ -2,7 +2,7 @@
 """PyInstaller spec for Bulletin Maker.
 
 Build with:
-    PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium
+    PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium --only-shell
     pyinstaller bulletin_maker.spec
 """
 
@@ -14,7 +14,9 @@ from PyInstaller.utils.hooks import collect_data_files
 
 block_cipher = None
 
-# Playwright data (browser driver + bundled Chromium)
+# Playwright data (browser driver + bundled headless shell)
+# Install with --only-shell to avoid the full Chrome .app bundle whose nested
+# .framework breaks PyInstaller codesigning (PyInstaller #7969).
 playwright_datas = collect_data_files("playwright")
 
 a = Analysis(

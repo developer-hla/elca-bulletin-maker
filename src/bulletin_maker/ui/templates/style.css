@@ -631,6 +631,10 @@ main {
     margin-left: 8px;
 }
 
+.fetch-all-hymns-btn {
+    margin-bottom: 14px;
+}
+
 .hymn-slot + .hymn-slot {
     margin-top: 6px;
     padding-top: 10px;

@@ -13,7 +13,7 @@
     <div class="login-card">
         <h1>Bulletin Maker</h1>
         <p class="subtitle">Ascension Lutheran Church</p>
-        <form id="login-form" onsubmit="return false;">
+        <form id="login-form">
             <label for="login-username">Sundays &amp; Seasons Username</label>
             <input type="text" id="login-username" autocomplete="username" required>
             <label for="login-password">Password</label>
@@ -115,7 +115,8 @@
 
             <section class="card">
                 <h2>Hymns</h2>
-                <p class="section-hint">All hymns are optional. Leave blank to omit.</p>
+                <p class="section-hint">All hymns are optional. Enter numbers and click Fetch All, or fetch individually.</p>
+                <button id="fetch-all-hymns-btn" class="btn secondary fetch-all-hymns-btn">Fetch All Hymns</button>
 
                 <div class="hymn-slot" data-slot="gathering">
                     <h3>Gathering Hymn</h3>

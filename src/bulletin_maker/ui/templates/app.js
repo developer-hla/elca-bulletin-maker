@@ -142,6 +142,16 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
+/** Returns the next Sunday's date as "YYYY-MM-DD". */
+function getNextSunday() {
+    var d = new Date();
+    d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7));
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+}
+
 // ── Wizard Navigation ────────────────────────────────────────────────
 
 /** Shows the given step (1-based) and updates step indicator. */
@@ -462,6 +472,15 @@ function setupUpdateBanner() {
 async function initLogin() {
     await waitForApi();
 
+    // Restore saved output directory
+    try {
+        var dirResult = await window.pywebview.api.get_saved_output_dir();
+        if (dirResult.success && dirResult.path) {
+            state.outputDir = dirResult.path;
+            $("#output-dir-path").textContent = dirResult.path;
+        }
+    } catch (_) {}
+
     // Try auto-login with saved credentials
     try {
         var saved = await window.pywebview.api.get_saved_credentials();
@@ -498,7 +517,8 @@ function setupLogin() {
     const errorEl = $("#login-error");
     const spinner = $("#login-spinner");
 
-    form.addEventListener("submit", async function() {
+    form.addEventListener("submit", async function(e) {
+        e.preventDefault();
         const username = $("#login-username").value.trim();
         const password = $("#login-password").value;
         if (!username || !password) return;
@@ -527,6 +547,9 @@ function setupLogin() {
 function setupNewBulletin() {
     $("#new-bulletin-link").addEventListener("click", function(e) {
         e.preventDefault();
+        if (state.dateStr || Object.values(state.hymns).some(function(h) { return h; })) {
+            if (!confirm("Start over? All current entries will be cleared.")) return;
+        }
         resetAll();
     });
 }
@@ -901,6 +924,33 @@ function clearHymnSlot(slot) {
     if (clearBtn) hide(clearBtn);
 }
 
+function setupFetchAllHymns() {
+    $("#fetch-all-hymns-btn").addEventListener("click", async function() {
+        var slots = $$(".hymn-slot");
+        var toFetch = [];
+        slots.forEach(function(slot) {
+            var number = slot.querySelector(".hymn-number").value.trim();
+            if (number) toFetch.push(slot);
+        });
+        if (toFetch.length === 0) return;
+
+        this.disabled = true;
+        this.textContent = "Fetching...";
+        for (var i = 0; i < toFetch.length; i++) {
+            var btn = toFetch[i].querySelector(".hymn-fetch-btn");
+            if (btn) btn.click();
+            // Wait for the fetch to complete (button re-enables when done)
+            await new Promise(function(resolve) {
+                var check = setInterval(function() {
+                    if (!btn.disabled) { clearInterval(check); resolve(); }
+                }, 100);
+            });
+        }
+        this.disabled = false;
+        this.textContent = "Fetch All Hymns";
+    });
+}
+
 function setupHymnFetch() {
     // Clear buttons
     $$(".hymn-clear-btn").forEach(function(btn) {
@@ -957,6 +1007,7 @@ function setupHymnFetch() {
                         number: number,
                         collection: collection,
                         title: searchResult.title,
+                        hasLyrics: false,
                     };
                     return;
                 }
@@ -979,6 +1030,7 @@ function setupHymnFetch() {
                         number: number,
                         collection: collection,
                         title: searchResult.title,
+                        hasLyrics: true,
                     };
                 } else {
                     // Lyrics failed but search succeeded — still usable (title only)
@@ -989,6 +1041,7 @@ function setupHymnFetch() {
                         number: number,
                         collection: collection,
                         title: searchResult.title,
+                        hasLyrics: false,
                     };
                     showError(errorEl, "Lyrics: " + (lyricsResult.error || "unavailable"));
                 }
@@ -1032,6 +1085,7 @@ function setupFilePickers() {
             if (result.success) {
                 state.outputDir = result.path;
                 $("#output-dir-path").textContent = result.path;
+                window.pywebview.api.save_output_dir(result.path);
             }
         } finally {
             this.disabled = false;
@@ -1381,6 +1435,27 @@ async function runGeneration() {
 
     const formData = collectFormData();
 
+    // Warn if any hymns lack lyrics (Large Print will show title only)
+    var missingLyrics = [];
+    ["gathering", "sermon", "communion", "sending"].forEach(function(slot) {
+        var hymn = state.hymns[slot];
+        if (!hymn || !hymn.number) return;
+        var cache_key = hymn.collection + "_" + hymn.number;
+        // The hymn was fetched but lyrics may not have loaded
+        if (hymn.title && !hymn.hasLyrics) {
+            var label = slot.charAt(0).toUpperCase() + slot.slice(1);
+            missingLyrics.push(label + " (" + hymn.collection + " " + hymn.number + ")");
+        }
+    });
+    if (missingLyrics.length > 0) {
+        var proceed = confirm(
+            "The following hymns have no lyrics text — Large Print will show title only:\n\n" +
+            missingLyrics.join("\n") +
+            "\n\nContinue anyway?"
+        );
+        if (!proceed) return;
+    }
+
     // Check for existing files before generating
     var checkResult = await window.pywebview.api.check_existing_files(
         formData.output_dir, formData.selected_docs
@@ -1514,6 +1589,9 @@ function setupBaptismToggle() {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
+    // Pre-fill date with next Sunday
+    $("#date-input").value = getNextSunday();
+
     setupLogin();
     setupLogout();
     setupNewBulletin();
@@ -1521,6 +1599,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setupDateFetch();
     setupResetDefaults();
     setupHymnFetch();
+    setupFetchAllHymns();
     setupFilePickers();
     setupGenerate();
     setupBaptismToggle();

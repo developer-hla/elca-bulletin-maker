@@ -46,6 +46,24 @@ class SundaysClient:
 
     # -- HTTP helpers -------------------------------------------------------
 
+    @staticmethod
+    def _extract_error_detail(resp: httpx.Response) -> str:
+        """Try to extract a meaningful message from an S&S error page."""
+        text = resp.text
+        # Look for <title>...</title>
+        title_match = re.search(r'<title>([^<]+)</title>', text)
+        if title_match:
+            title = title_match.group(1).strip()
+            if title and title.lower() not in ("error", "error - sundays and seasons"):
+                return title
+        # Look for a heading with an error message
+        h_match = re.search(r'<h[12][^>]*>([^<]+)</h[12]>', text)
+        if h_match:
+            heading = h_match.group(1).strip()
+            if heading and "error" not in heading.lower():
+                return heading
+        return ""
+
     def _request(self, method: str, url: str, **kwargs) -> httpx.Response:
         """Execute an HTTP request with one retry for transient failures."""
         last_exc: Exception | None = None
@@ -58,6 +76,8 @@ class SundaysClient:
                 return resp
             except httpx.HTTPStatusError as exc:
                 status = exc.response.status_code
+                logger.debug("HTTP %d response body:\n%s",
+                             status, exc.response.text[:2000])
                 if status in (401, 403):
                     self._logged_in = False
                     raise AuthError(
@@ -68,9 +88,12 @@ class SundaysClient:
                     last_exc = exc
                     time.sleep(2)
                     continue
-                raise BulletinError(
-                    f"S&S returned HTTP {status} for {method} request"
-                ) from exc
+                detail = self._extract_error_detail(exc.response)
+                path = url.replace(BASE, "")
+                msg = f"S&S returned HTTP {status} for {method} {path}"
+                if detail:
+                    msg += f": {detail}"
+                raise BulletinError(msg) from exc
             except httpx.TimeoutException as exc:
                 if attempt == 0:
                     last_exc = exc
@@ -265,7 +288,7 @@ class SundaysClient:
         resp = self._request(
             "POST",
             f"{BASE}/Bible/PassageSearch",
-            data={"searchText": citation},
+            data={"PassageSearch.SearchValue": citation},
         )
 
         # Extract the passage content from the response HTML
@@ -486,10 +509,26 @@ class SundaysClient:
             },
         )
 
+        content_type = resp.headers.get("content-type", "").lower()
+        logger.debug(
+            "File/Download response: content-type=%s, %d bytes",
+            content_type, len(resp.content),
+        )
+
+        # S&S sometimes returns raw RTF instead of a ZIP
+        if "text/rtf" in content_type or "application/rtf" in content_type:
+            logger.debug("Raw RTF response for atomId=%s", atom_id)
+            return resp.content.decode("utf-8", errors="replace")
+
         try:
             zf = zipfile.ZipFile(io.BytesIO(resp.content))
         except zipfile.BadZipFile:
-            preview = resp.content[:200].decode("utf-8", errors="replace")
+            # Last resort: if content looks like RTF, treat it as such
+            text = resp.content.decode("utf-8", errors="replace")
+            if text.lstrip().startswith(r"{\rtf"):
+                logger.debug("Detected RTF content despite non-RTF content-type")
+                return text
+            preview = text[:200]
             raise ParseError(
                 f"S&S returned non-ZIP response for atomId={atom_id}. "
                 f"Session may have expired. Response preview: {preview}"

@@ -62,7 +62,12 @@ class BulletinAPI:
             self._window.evaluate_js(f"updateProgress({payload})")
 
     def _build_file_prefix(self) -> str:
-        """Build file prefix like '2026.02.22 FIRST SUNDAY IN LENT A'."""
+        """Build file prefix like '2026.02.22 FIRST SUNDAY IN LENT A'.
+
+        If the selected date is not a Sunday, the S&S liturgical title
+        (which always names the nearest Sunday) is replaced with just the
+        weekday name so the filename doesn't misleadingly say "Sunday".
+        """
         dt = datetime.strptime(self._date_str, "%Y-%m-%d")
         date_dot = dt.strftime("%Y.%m.%d")
         day_label = self._day.title
@@ -72,6 +77,12 @@ class BulletinAPI:
         year_match = re.search(r',?\s*Year\s+([ABC])$', day_label)
         year_letter = year_match.group(1) if year_match else ""
         day_label = re.sub(r',?\s*Year\s+[ABC]$', '', day_label).strip()
+
+        # If the date isn't a Sunday, prepend the weekday to clarify
+        if dt.weekday() != 6:  # 6 = Sunday in Python
+            weekday = dt.strftime("%A")
+            day_label = f"{weekday} - {day_label}"
+
         day_label = day_label.upper() + (" Year " + year_letter if year_letter else "")
         return f"{date_dot} {day_label}"
 
@@ -108,48 +119,63 @@ class BulletinAPI:
     def _config_path() -> Path:
         return Path.home() / ".bulletin-maker" / "config.json"
 
-    def _save_credentials(self, username: str, password: str) -> None:
-        """Save credentials to ~/.bulletin-maker/config.json."""
+    def _read_config(self) -> dict:
+        """Read config.json, returning empty dict on error."""
+        try:
+            path = self._config_path()
+            if path.exists():
+                return json.loads(path.read_text())
+        except Exception:
+            logger.debug("Could not read config", exc_info=True)
+        return {}
+
+    def _write_config(self, data: dict) -> None:
+        """Write config.json with 0600 permissions."""
         try:
             path = self._config_path()
             path.parent.mkdir(parents=True, exist_ok=True)
-            data = {}
-            if path.exists():
-                data = json.loads(path.read_text())
-            data["username"] = username
-            data["password"] = password
             path.write_text(json.dumps(data, indent=2))
             path.chmod(0o600)
         except Exception:
-            logger.debug("Could not save credentials", exc_info=True)
+            logger.debug("Could not write config", exc_info=True)
+
+    def _save_credentials(self, username: str, password: str) -> None:
+        """Save credentials to ~/.bulletin-maker/config.json."""
+        data = self._read_config()
+        data["username"] = username
+        data["password"] = password
+        self._write_config(data)
 
     def _clear_credentials(self) -> None:
         """Remove saved credentials from config.json."""
-        try:
-            path = self._config_path()
-            if not path.exists():
-                return
-            data = json.loads(path.read_text())
-            data.pop("username", None)
-            data.pop("password", None)
-            path.write_text(json.dumps(data, indent=2))
-        except Exception:
-            logger.debug("Could not clear credentials", exc_info=True)
+        data = self._read_config()
+        data.pop("username", None)
+        data.pop("password", None)
+        self._write_config(data)
 
     def get_saved_credentials(self) -> dict:
         """Return saved credentials if they exist."""
-        try:
-            path = self._config_path()
-            if not path.exists():
-                return {"success": False}
-            data = json.loads(path.read_text())
-            username = data.get("username", "")
-            password = data.get("password", "")
-            if username and password:
-                return {"success": True, "username": username, "password": password}
-            return {"success": False}
-        except Exception:
-            return {"success": False}
+        data = self._read_config()
+        username = data.get("username", "")
+        password = data.get("password", "")
+        if username and password:
+            return {"success": True, "username": username, "password": password}
+        return {"success": False}
+
+    def save_output_dir(self, path: str) -> dict:
+        """Persist output directory preference."""
+        data = self._read_config()
+        data["output_dir"] = path
+        self._write_config(data)
+        return {"success": True}
+
+    def get_saved_output_dir(self) -> dict:
+        """Return saved output directory if set."""
+        data = self._read_config()
+        output_dir = data.get("output_dir", "")
+        if output_dir and Path(output_dir).is_dir():
+            return {"success": True, "path": output_dir}
+        return {"success": False}
 
     # ── Credentials ───────────────────────────────────────────────────
 
