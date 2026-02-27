@@ -264,13 +264,13 @@
                     <div class="setting-group">
                         <label class="setting-label">Kyrie</label>
                         <label class="checkbox-label">
-                            <input type="checkbox" id="include-kyrie"> Include Kyrie
+                            <input type="checkbox" id="include-kyrie"> Include Kyrie ("Lord, have mercy")
                         </label>
                         <span class="default-hint" id="hint-kyrie"></span>
                     </div>
 
                     <div class="setting-group">
-                        <label class="setting-label">Canticle</label>
+                        <label class="setting-label" title="Song of praise sung after the greeting">Canticle</label>
                         <div class="radio-group">
                             <label><input type="radio" name="canticle" value="glory_to_god"> Glory to God</label>
                             <label><input type="radio" name="canticle" value="this_is_the_feast"> This Is the Feast</label>
@@ -280,7 +280,7 @@
                     </div>
 
                     <div class="setting-group">
-                        <label class="setting-label">Eucharistic Prayer</label>
+                        <label class="setting-label" title="Communion prayer form">Eucharistic Prayer</label>
                         <div class="radio-group">
                             <label><input type="radio" name="eucharistic_form" value="short"> Short</label>
                             <label><input type="radio" name="eucharistic_form" value="poetic"> Poetic</label>
@@ -292,13 +292,13 @@
                     <div class="setting-group">
                         <label class="setting-label">Memorial Acclamation</label>
                         <label class="checkbox-label">
-                            <input type="checkbox" id="include-memorial"> Include Memorial Acclamation
+                            <input type="checkbox" id="include-memorial"> Include Memorial Acclamation ("Christ has died...")
                         </label>
                         <span class="default-hint" id="hint-memorial"></span>
                     </div>
 
                     <div class="setting-group">
-                        <label class="setting-label">Preface</label>
+                        <label class="setting-label" title="Seasonal introduction before 'Holy, Holy, Holy'">Preface</label>
                         <select id="preface-select">
                             <!-- populated by JS from API -->
                         </select>
@@ -314,9 +314,9 @@
                     </div>
 
                     <div class="setting-group">
-                        <label class="setting-label">Nunc Dimittis</label>
+                        <label class="setting-label">Song of Simeon</label>
                         <label class="checkbox-label">
-                            <input type="checkbox" id="show-nunc-dimittis"> Include Nunc Dimittis
+                            <input type="checkbox" id="show-nunc-dimittis"> Include Song of Simeon (Nunc Dimittis)
                         </label>
                         <span class="default-hint" id="hint-nunc-dimittis"></span>
                     </div>
@@ -388,6 +388,7 @@
 
             <section class="card">
                 <h2>Service Order Review</h2>
+                <div id="readiness-summary" class="readiness-summary"></div>
                 <p class="section-hint">Click any item to jump back and edit.</p>
                 <div id="review-outline" class="review-outline"></div>
             </section>
@@ -436,6 +437,7 @@
                 <div id="generate-error" class="error-msg" hidden></div>
 
                 <div id="results-area" hidden>
+                    <div id="success-banner" class="success-banner" hidden>All documents generated successfully!</div>
                     <h3>Generated Documents</h3>
                     <ul id="results-list" class="results-list"></ul>
                     <div id="results-errors" hidden>

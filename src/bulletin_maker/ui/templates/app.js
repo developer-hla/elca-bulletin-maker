@@ -175,9 +175,15 @@ function showStep(n) {
         }
     });
     if (n === 4) {
+        buildReadinessSummary();
         buildReviewOutline();
     }
     window.scrollTo(0, 0);
+}
+
+/** Returns true if any extras (baptism, etc.) are enabled. */
+function hasExtras() {
+    return $("#include-baptism").checked;
 }
 
 /** Validates whether the user can leave the given step. */
@@ -202,7 +208,12 @@ function setupWizardNav() {
                 return;
             }
             if (currentIdx < STEP_IDS.length - 1) {
-                showStep(currentIdx + 2);
+                var nextStep = currentIdx + 2;
+                // Auto-skip Extras step when nothing is enabled
+                if (currentIdx === 1 && !hasExtras()) {
+                    nextStep = 4;
+                }
+                showStep(nextStep);
             }
         });
     });
@@ -226,6 +237,45 @@ function setupWizardNav() {
                 showStep(targetStep);
             }
         });
+    });
+}
+
+// ── Readiness Summary ────────────────────────────────────────────────
+
+/** Builds a readiness checklist at the top of Step 4 review. */
+function buildReadinessSummary() {
+    var el = $("#readiness-summary");
+    el.innerHTML = "";
+
+    var hymnCount = ["gathering", "sermon", "communion", "sending"].filter(function(s) {
+        return state.hymns[s] && state.hymns[s].number;
+    }).length;
+
+    var docCount = $$('input[name="doc_select"]:checked').length;
+
+    var items = [
+        { label: "Date", ok: !!state.dateStr, detail: state.dateStr ? state.dateDisplay : "Not set" },
+        { label: "Hymns", ok: hymnCount > 0, detail: hymnCount + " of 4 set" },
+        { label: "Output", ok: !!state.outputDir, detail: state.outputDir ? state.outputDir.split("/").pop().split("\\").pop() : "Not set" },
+        { label: "Docs", ok: docCount > 0, detail: docCount + " selected" },
+    ];
+
+    items.forEach(function(item) {
+        var row = document.createElement("div");
+        row.className = "readiness-item " + (item.ok ? "ok" : "missing");
+        var icon = document.createElement("span");
+        icon.className = "readiness-icon";
+        icon.textContent = item.ok ? "\u2713" : "!";
+        row.appendChild(icon);
+        var label = document.createElement("span");
+        label.className = "readiness-label";
+        label.textContent = item.label;
+        row.appendChild(label);
+        var detail = document.createElement("span");
+        detail.className = "readiness-detail";
+        detail.textContent = item.detail;
+        row.appendChild(detail);
+        el.appendChild(row);
     });
 }
 
@@ -1533,6 +1583,14 @@ async function runGeneration() {
 
     hide($("#progress-area"));
 
+    // Show/hide success banner
+    var banner = $("#success-banner");
+    if (Object.keys(result.errors || {}).length === 0 && Object.keys(result.results || {}).length > 0) {
+        show(banner);
+    } else {
+        hide(banner);
+    }
+
     // Store output dir for open folder button
     if (result.output_dir) {
         $("#open-folder-btn").dataset.path = result.output_dir;
@@ -1563,6 +1621,7 @@ function setupGenerate() {
     // Generate Again button
     $("#generate-again-btn").addEventListener("click", function() {
         hide($("#results-area"));
+        hide($("#success-banner"));
         $$('input[name="doc_select"]').forEach(function(el) { el.checked = true; });
     });
 
