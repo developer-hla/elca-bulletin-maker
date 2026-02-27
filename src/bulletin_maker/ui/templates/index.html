@@ -52,324 +52,407 @@
 
     <main>
 
-        <!-- Section 1: Date & Season -->
-        <section id="section-date" class="card">
-            <h2>1. Date &amp; Season</h2>
-            <div class="form-row">
-                <div class="field">
-                    <label for="date-input">Service Date</label>
-                    <input type="date" id="date-input">
-                </div>
-                <div class="field field-btn">
-                    <button id="fetch-btn" class="btn primary">Fetch Content</button>
-                </div>
-            </div>
-            <div id="date-warning" class="warning-msg" hidden></div>
-            <div id="date-error" class="error-msg" hidden></div>
-            <div id="date-spinner" class="spinner" hidden>
-                <div class="spinner-ring"></div>
-                <span>Fetching from Sundays &amp; Seasons...</span>
-            </div>
-            <div id="day-info" hidden>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">Day</span>
-                        <span id="day-name" class="info-value"></span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Season</span>
-                        <span id="day-season" class="info-value season-badge"></span>
-                    </div>
-                </div>
-                <div id="readings-list" class="readings-list"></div>
-                <div id="filename-preview" class="filename-preview" hidden>
-                    <span class="info-label">Files will be named</span>
-                    <span id="filename-prefix" class="info-value"></span>
-                </div>
-            </div>
-        </section>
+        <!-- Wizard Step Indicator -->
+        <nav class="wizard-nav">
+            <ol class="wizard-steps">
+                <li class="wizard-step active" data-step="1">
+                    <span class="wizard-step-number">1</span>
+                    <span class="wizard-step-label">Date &amp; Music</span>
+                </li>
+                <li class="wizard-step" data-step="2">
+                    <span class="wizard-step-number">2</span>
+                    <span class="wizard-step-label">Liturgy &amp; Texts</span>
+                </li>
+                <li class="wizard-step" data-step="3">
+                    <span class="wizard-step-number">3</span>
+                    <span class="wizard-step-label">Extras</span>
+                </li>
+                <li class="wizard-step" data-step="4">
+                    <span class="wizard-step-number">4</span>
+                    <span class="wizard-step-label">Review &amp; Generate</span>
+                </li>
+            </ol>
+        </nav>
 
-        <!-- Section 2: Hymns -->
-        <section id="section-hymns" class="card disabled-section">
-            <h2>2. Hymns</h2>
-            <p class="section-hint">All hymns are optional. Leave blank to omit.</p>
+        <!-- Step 1: Date + Music -->
+        <div id="step-date-music" class="wizard-panel active">
 
-            <div class="hymn-slot" data-slot="gathering">
-                <h3>Gathering Hymn</h3>
+            <section class="card">
+                <h2>Date &amp; Season</h2>
                 <div class="form-row">
-                    <div class="field field-sm">
-                        <label>Number</label>
-                        <input type="text" class="hymn-number" placeholder="e.g. 335">
-                    </div>
-                    <div class="field field-xs">
-                        <label>Collection</label>
-                        <select class="hymn-collection">
-                            <option value="ELW" selected>ELW</option>
-                            <option value="ACS">ACS</option>
-                        </select>
+                    <div class="field">
+                        <label for="date-input">Service Date</label>
+                        <input type="date" id="date-input">
                     </div>
                     <div class="field field-btn">
-                        <button class="btn hymn-fetch-btn">Fetch</button>
+                        <button id="fetch-btn" class="btn primary">Fetch Content</button>
                     </div>
                 </div>
-                <div class="hymn-error error-msg" hidden></div>
-                <div class="hymn-info" hidden></div>
-                <button class="hymn-clear-btn btn-link" hidden>Clear</button>
-            </div>
-
-            <div class="hymn-slot" data-slot="sermon">
-                <h3>Sermon Hymn</h3>
-                <div class="form-row">
-                    <div class="field field-sm">
-                        <label>Number</label>
-                        <input type="text" class="hymn-number" placeholder="e.g. 319">
+                <div id="date-warning" class="warning-msg" hidden></div>
+                <div id="date-error" class="error-msg" hidden></div>
+                <div id="date-spinner" class="spinner" hidden>
+                    <div class="spinner-ring"></div>
+                    <span>Fetching from Sundays &amp; Seasons...</span>
+                </div>
+                <div id="day-info" hidden>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Day</span>
+                            <span id="day-name" class="info-value"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Season</span>
+                            <span id="day-season" class="info-value season-badge"></span>
+                        </div>
                     </div>
-                    <div class="field field-xs">
-                        <label>Collection</label>
-                        <select class="hymn-collection">
-                            <option value="ELW" selected>ELW</option>
-                            <option value="ACS">ACS</option>
+                    <div id="readings-list" class="readings-list"></div>
+                    <div id="filename-preview" class="filename-preview" hidden>
+                        <span class="info-label">Files will be named</span>
+                        <span id="filename-prefix" class="info-value"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Hymns</h2>
+                <p class="section-hint">All hymns are optional. Leave blank to omit.</p>
+
+                <div class="hymn-slot" data-slot="gathering">
+                    <h3>Gathering Hymn</h3>
+                    <div class="form-row">
+                        <div class="field field-sm">
+                            <label>Number</label>
+                            <input type="text" class="hymn-number" placeholder="e.g. 335">
+                        </div>
+                        <div class="field field-xs">
+                            <label>Collection</label>
+                            <select class="hymn-collection">
+                                <option value="ELW" selected>ELW</option>
+                                <option value="ACS">ACS</option>
+                            </select>
+                        </div>
+                        <div class="field field-btn">
+                            <button class="btn hymn-fetch-btn">Fetch</button>
+                        </div>
+                    </div>
+                    <div class="hymn-error error-msg" hidden></div>
+                    <div class="hymn-info" hidden></div>
+                    <button class="hymn-clear-btn btn-link" hidden>Clear</button>
+                </div>
+
+                <div class="hymn-slot" data-slot="sermon">
+                    <h3>Sermon Hymn</h3>
+                    <div class="form-row">
+                        <div class="field field-sm">
+                            <label>Number</label>
+                            <input type="text" class="hymn-number" placeholder="e.g. 319">
+                        </div>
+                        <div class="field field-xs">
+                            <label>Collection</label>
+                            <select class="hymn-collection">
+                                <option value="ELW" selected>ELW</option>
+                                <option value="ACS">ACS</option>
+                            </select>
+                        </div>
+                        <div class="field field-btn">
+                            <button class="btn hymn-fetch-btn">Fetch</button>
+                        </div>
+                    </div>
+                    <div class="hymn-error error-msg" hidden></div>
+                    <div class="hymn-info" hidden></div>
+                    <button class="hymn-clear-btn btn-link" hidden>Clear</button>
+                </div>
+
+                <div class="hymn-slot" data-slot="communion">
+                    <h3>Communion Hymn</h3>
+                    <div class="form-row">
+                        <div class="field field-sm">
+                            <label>Number</label>
+                            <input type="text" class="hymn-number" placeholder="e.g. 512">
+                        </div>
+                        <div class="field field-xs">
+                            <label>Collection</label>
+                            <select class="hymn-collection">
+                                <option value="ELW" selected>ELW</option>
+                                <option value="ACS">ACS</option>
+                            </select>
+                        </div>
+                        <div class="field field-btn">
+                            <button class="btn hymn-fetch-btn">Fetch</button>
+                        </div>
+                    </div>
+                    <div class="hymn-error error-msg" hidden></div>
+                    <div class="hymn-info" hidden></div>
+                    <button class="hymn-clear-btn btn-link" hidden>Clear</button>
+                </div>
+
+                <div class="hymn-slot" data-slot="sending">
+                    <h3>Sending Hymn</h3>
+                    <div class="form-row">
+                        <div class="field field-sm">
+                            <label>Number</label>
+                            <input type="text" class="hymn-number" placeholder="e.g. 333">
+                        </div>
+                        <div class="field field-xs">
+                            <label>Collection</label>
+                            <select class="hymn-collection">
+                                <option value="ELW" selected>ELW</option>
+                                <option value="ACS">ACS</option>
+                            </select>
+                        </div>
+                        <div class="field field-btn">
+                            <button class="btn hymn-fetch-btn">Fetch</button>
+                        </div>
+                    </div>
+                    <div class="hymn-error error-msg" hidden></div>
+                    <div class="hymn-info" hidden></div>
+                    <button class="hymn-clear-btn btn-link" hidden>Clear</button>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Service Music</h2>
+                <p class="section-hint">All fields are optional.</p>
+                <div class="details-grid">
+                    <div class="field">
+                        <label for="prelude-title">Prelude Title</label>
+                        <input type="text" id="prelude-title" placeholder="e.g. Prelude on AZMON" maxlength="100">
+                    </div>
+                    <div class="field">
+                        <label for="prelude-performer">Prelude Performer</label>
+                        <input type="text" id="prelude-performer" placeholder="e.g. Jane Smith, organ" maxlength="100">
+                    </div>
+                    <div class="field">
+                        <label for="postlude-title">Postlude Title</label>
+                        <input type="text" id="postlude-title" maxlength="100">
+                    </div>
+                    <div class="field">
+                        <label for="postlude-performer">Postlude Performer</label>
+                        <input type="text" id="postlude-performer" maxlength="100">
+                    </div>
+                    <div class="field">
+                        <label for="choral-title">Choral Title</label>
+                        <input type="text" id="choral-title" placeholder="e.g. Create in Me a Clean Heart" maxlength="100">
+                    </div>
+                </div>
+            </section>
+
+            <div class="wizard-buttons">
+                <span></span>
+                <button type="button" class="btn primary wizard-next-btn">Next</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Liturgical Settings + Text Review -->
+        <div id="step-liturgy-texts" class="wizard-panel">
+
+            <section class="card">
+                <h2>Liturgical Settings</h2>
+                <p class="section-hint">Pre-filled from the season. Adjust as needed.</p>
+
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <label class="setting-label">Creed</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="creed_type" value="apostles"> Apostles' Creed</label>
+                            <label><input type="radio" name="creed_type" value="nicene"> Nicene Creed</label>
+                        </div>
+                        <span class="default-hint" id="hint-creed"></span>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Kyrie</label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="include-kyrie"> Include Kyrie
+                        </label>
+                        <span class="default-hint" id="hint-kyrie"></span>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Canticle</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="canticle" value="glory_to_god"> Glory to God</label>
+                            <label><input type="radio" name="canticle" value="this_is_the_feast"> This Is the Feast</label>
+                            <label><input type="radio" name="canticle" value="none"> None</label>
+                        </div>
+                        <span class="default-hint" id="hint-canticle"></span>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Eucharistic Prayer</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="eucharistic_form" value="short"> Short</label>
+                            <label><input type="radio" name="eucharistic_form" value="poetic"> Poetic</label>
+                            <label><input type="radio" name="eucharistic_form" value="extended"> Extended</label>
+                        </div>
+                        <span class="default-hint" id="hint-eucharistic"></span>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Memorial Acclamation</label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="include-memorial"> Include Memorial Acclamation
+                        </label>
+                        <span class="default-hint" id="hint-memorial"></span>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Preface</label>
+                        <select id="preface-select">
+                            <!-- populated by JS from API -->
                         </select>
+                        <span class="default-hint" id="hint-preface"></span>
                     </div>
-                    <div class="field field-btn">
-                        <button class="btn hymn-fetch-btn">Fetch</button>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Confession</label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-confession"> Include Confession and Forgiveness
+                        </label>
+                        <span class="default-hint" id="hint-confession"></span>
+                    </div>
+
+                    <div class="setting-group">
+                        <label class="setting-label">Nunc Dimittis</label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-nunc-dimittis"> Include Nunc Dimittis
+                        </label>
+                        <span class="default-hint" id="hint-nunc-dimittis"></span>
                     </div>
                 </div>
-                <div class="hymn-error error-msg" hidden></div>
-                <div class="hymn-info" hidden></div>
-                <button class="hymn-clear-btn btn-link" hidden>Clear</button>
+
+                <button id="reset-defaults-btn" class="btn secondary">Reset to Seasonal Defaults</button>
+            </section>
+
+            <section class="card">
+                <h2>Review Liturgical Texts</h2>
+                <p class="section-hint">S&amp;S texts are the default. Toggle to Standard for the hardcoded version, or edit directly.</p>
+                <div id="texts-spinner" class="spinner" hidden>
+                    <div class="spinner-ring"></div>
+                    <span>Loading liturgical texts...</span>
+                </div>
+                <div id="texts-error" class="error-msg" hidden></div>
+                <div id="texts-panels"></div>
+                <div id="custom-edit-warning" class="warning-msg" hidden>Custom edits are not saved and will not be available next week.</div>
+            </section>
+
+            <div class="wizard-buttons">
+                <button type="button" class="btn wizard-back-btn">Back</button>
+                <button type="button" class="btn primary wizard-next-btn">Next</button>
             </div>
+        </div>
 
-            <div class="hymn-slot" data-slot="communion">
-                <h3>Communion Hymn</h3>
-                <div class="form-row">
-                    <div class="field field-sm">
-                        <label>Number</label>
-                        <input type="text" class="hymn-number" placeholder="e.g. 512">
-                    </div>
-                    <div class="field field-xs">
-                        <label>Collection</label>
-                        <select class="hymn-collection">
-                            <option value="ELW" selected>ELW</option>
-                            <option value="ACS">ACS</option>
-                        </select>
-                    </div>
-                    <div class="field field-btn">
-                        <button class="btn hymn-fetch-btn">Fetch</button>
-                    </div>
-                </div>
-                <div class="hymn-error error-msg" hidden></div>
-                <div class="hymn-info" hidden></div>
-                <button class="hymn-clear-btn btn-link" hidden>Clear</button>
-            </div>
+        <!-- Step 3: Extras -->
+        <div id="step-extras" class="wizard-panel">
 
-            <div class="hymn-slot" data-slot="sending">
-                <h3>Sending Hymn</h3>
-                <div class="form-row">
-                    <div class="field field-sm">
-                        <label>Number</label>
-                        <input type="text" class="hymn-number" placeholder="e.g. 333">
-                    </div>
-                    <div class="field field-xs">
-                        <label>Collection</label>
-                        <select class="hymn-collection">
-                            <option value="ELW" selected>ELW</option>
-                            <option value="ACS">ACS</option>
-                        </select>
-                    </div>
-                    <div class="field field-btn">
-                        <button class="btn hymn-fetch-btn">Fetch</button>
-                    </div>
-                </div>
-                <div class="hymn-error error-msg" hidden></div>
-                <div class="hymn-info" hidden></div>
-                <button class="hymn-clear-btn btn-link" hidden>Clear</button>
-            </div>
-        </section>
-
-        <!-- Section 3: Liturgical Settings -->
-        <section id="section-liturgy" class="card disabled-section">
-            <h2>3. Liturgical Settings</h2>
-            <p class="section-hint">Pre-filled from the season. Adjust as needed.</p>
-
-            <div class="settings-grid">
-                <div class="setting-group">
-                    <label class="setting-label">Creed</label>
-                    <div class="radio-group">
-                        <label><input type="radio" name="creed_type" value="apostles"> Apostles' Creed</label>
-                        <label><input type="radio" name="creed_type" value="nicene"> Nicene Creed</label>
-                    </div>
-                    <span class="default-hint" id="hint-creed"></span>
-                </div>
+            <section class="card">
+                <h2>Extras</h2>
+                <p class="section-hint">Special rites and additions. Skip if none apply this week.</p>
 
                 <div class="setting-group">
-                    <label class="setting-label">Kyrie</label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="include-kyrie"> Include Kyrie
-                    </label>
-                    <span class="default-hint" id="hint-kyrie"></span>
-                </div>
-
-                <div class="setting-group">
-                    <label class="setting-label">Canticle</label>
-                    <div class="radio-group">
-                        <label><input type="radio" name="canticle" value="glory_to_god"> Glory to God</label>
-                        <label><input type="radio" name="canticle" value="this_is_the_feast"> This Is the Feast</label>
-                        <label><input type="radio" name="canticle" value="none"> None</label>
-                    </div>
-                    <span class="default-hint" id="hint-canticle"></span>
-                </div>
-
-                <div class="setting-group">
-                    <label class="setting-label">Eucharistic Prayer</label>
-                    <div class="radio-group">
-                        <label><input type="radio" name="eucharistic_form" value="short"> Short</label>
-                        <label><input type="radio" name="eucharistic_form" value="poetic"> Poetic</label>
-                        <label><input type="radio" name="eucharistic_form" value="extended"> Extended</label>
-                    </div>
-                    <span class="default-hint" id="hint-eucharistic"></span>
-                </div>
-
-                <div class="setting-group">
-                    <label class="setting-label">Memorial Acclamation</label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="include-memorial"> Include Memorial Acclamation
-                    </label>
-                    <span class="default-hint" id="hint-memorial"></span>
-                </div>
-
-                <div class="setting-group">
-                    <label class="setting-label">Preface</label>
-                    <select id="preface-select">
-                        <!-- populated by JS from API -->
-                    </select>
-                    <span class="default-hint" id="hint-preface"></span>
-                </div>
-
-                <div class="setting-group">
-                    <label class="setting-label">Confession</label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="show-confession"> Include Confession and Forgiveness
-                    </label>
-                    <span class="default-hint" id="hint-confession"></span>
-                </div>
-
-                <div class="setting-group">
-                    <label class="setting-label">Nunc Dimittis</label>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="show-nunc-dimittis"> Include Nunc Dimittis
-                    </label>
-                    <span class="default-hint" id="hint-nunc-dimittis"></span>
-                </div>
-
-                <div class="setting-group">
-                    <label class="setting-label">Baptism</label>
+                    <label class="setting-label">Holy Baptism</label>
                     <label class="checkbox-label">
                         <input type="checkbox" id="include-baptism"> Include Holy Baptism
                     </label>
-                    <div id="baptism-names-group" hidden>
+                </div>
+                <div id="baptism-details" hidden>
+                    <div class="field" style="margin-top: 10px; max-width: 400px;">
                         <label for="baptism-names">Candidate Name(s)</label>
                         <input type="text" id="baptism-names" placeholder="e.g. John Smith, Jane Doe" maxlength="200">
                     </div>
-                </div>
-            </div>
-
-            <button id="reset-defaults-btn" class="btn secondary">Reset to Seasonal Defaults</button>
-        </section>
-
-        <!-- Section 4: Service Details -->
-        <section id="section-details" class="card disabled-section">
-            <h2>4. Service Details</h2>
-            <p class="section-hint">All fields are optional.</p>
-
-            <div class="details-grid">
-                <div class="field">
-                    <label for="prelude-title">Prelude Title</label>
-                    <input type="text" id="prelude-title" placeholder="e.g. Prelude on AZMON" maxlength="100">
-                </div>
-                <div class="field">
-                    <label for="prelude-performer">Prelude Performer</label>
-                    <input type="text" id="prelude-performer" placeholder="e.g. Jane Smith, organ" maxlength="100">
-                </div>
-                <div class="field">
-                    <label for="postlude-title">Postlude Title</label>
-                    <input type="text" id="postlude-title" maxlength="100">
-                </div>
-                <div class="field">
-                    <label for="postlude-performer">Postlude Performer</label>
-                    <input type="text" id="postlude-performer" maxlength="100">
-                </div>
-                <div class="field">
-                    <label for="choral-title">Choral Title</label>
-                    <input type="text" id="choral-title" placeholder="e.g. Create in Me a Clean Heart" maxlength="100">
-                </div>
-                <div class="field">
-                    <label>Cover Image</label>
-                    <div class="file-picker">
-                        <button id="cover-image-btn" class="btn secondary">Choose Image...</button>
-                        <span id="cover-image-path" class="file-path">None selected</span>
-                        <button id="cover-image-clear" class="btn-link" hidden>Clear</button>
+                    <div class="field" style="margin-top: 10px; max-width: 300px;">
+                        <label for="baptism-placement">Placement in Service</label>
+                        <select id="baptism-placement">
+                            <option value="after_welcome" selected>After Welcome (before Confession)</option>
+                            <option value="replace_creed">Replaces Creed</option>
+                            <option value="after_sermon">After Sermon (before Creed)</option>
+                            <option value="after_prayers">After Prayers</option>
+                        </select>
                     </div>
                 </div>
-                <div class="field">
-                    <label>Output Directory</label>
-                    <div class="file-picker">
-                        <button id="output-dir-btn" class="btn secondary">Choose Folder...</button>
-                        <span id="output-dir-path" class="file-path">./output</span>
+
+                <div style="margin-top: 24px;">
+                    <p class="section-hint">Future extras (Confirmation, Reception of Members) will appear here.</p>
+                </div>
+            </section>
+
+            <div class="wizard-buttons">
+                <button type="button" class="btn wizard-back-btn">Back</button>
+                <button type="button" class="btn primary wizard-next-btn">Next</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Review + Generate -->
+        <div id="step-review-generate" class="wizard-panel">
+
+            <section class="card">
+                <h2>Service Order Review</h2>
+                <p class="section-hint">Click any item to jump back and edit.</p>
+                <div id="review-outline" class="review-outline"></div>
+            </section>
+
+            <section class="card">
+                <h2>Output Settings</h2>
+                <div class="details-grid">
+                    <div class="field">
+                        <label>Output Directory</label>
+                        <div class="file-picker">
+                            <button id="output-dir-btn" class="btn secondary">Choose Folder...</button>
+                            <span id="output-dir-path" class="file-path">./output</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Cover Image</label>
+                        <div class="file-picker">
+                            <button id="cover-image-btn" class="btn secondary">Choose Image...</button>
+                            <span id="cover-image-path" class="file-path">None selected</span>
+                            <button id="cover-image-clear" class="btn-link" hidden>Clear</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Section 5: Review Liturgical Texts -->
-        <section id="section-texts" class="card disabled-section">
-            <h2>5. Review Liturgical Texts</h2>
-            <p class="section-hint">S&S texts are the default. Toggle to Standard for the hardcoded version, or edit directly.</p>
-            <div id="texts-spinner" class="spinner" hidden>
-                <div class="spinner-ring"></div>
-                <span>Loading liturgical texts...</span>
-            </div>
-            <div id="texts-error" class="error-msg" hidden></div>
-            <div id="texts-panels"></div>
-            <div id="custom-edit-warning" class="warning-msg" hidden>Custom edits are not saved and will not be available next week.</div>
-        </section>
+            <section class="card">
+                <h2>Generate Documents</h2>
 
-        <!-- Section 6: Generate -->
-        <section id="section-generate" class="card disabled-section">
-            <h2>6. Generate Documents</h2>
-
-            <div class="doc-checkboxes">
-                <label class="checkbox-label"><input type="checkbox" name="doc_select" value="bulletin" checked> Bulletin for Congregation</label>
-                <label class="checkbox-label"><input type="checkbox" name="doc_select" value="prayers" checked> Pulpit Prayers</label>
-                <label class="checkbox-label"><input type="checkbox" name="doc_select" value="scripture" checked> Pulpit Scripture</label>
-                <label class="checkbox-label"><input type="checkbox" name="doc_select" value="large_print" checked> Large Print</label>
-                <label class="checkbox-label"><input type="checkbox" name="doc_select" value="leader_guide" checked> Leader Guide</label>
-            </div>
-
-            <button id="generate-btn" class="btn primary generate-btn">Generate Selected Documents</button>
-
-            <div id="progress-area" hidden>
-                <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Document generation progress">
-                    <div id="progress-fill" class="progress-fill"></div>
+                <div class="doc-checkboxes">
+                    <label class="checkbox-label"><input type="checkbox" name="doc_select" value="bulletin" checked> Bulletin for Congregation</label>
+                    <label class="checkbox-label"><input type="checkbox" name="doc_select" value="prayers" checked> Pulpit Prayers</label>
+                    <label class="checkbox-label"><input type="checkbox" name="doc_select" value="scripture" checked> Pulpit Scripture</label>
+                    <label class="checkbox-label"><input type="checkbox" name="doc_select" value="large_print" checked> Large Print</label>
+                    <label class="checkbox-label"><input type="checkbox" name="doc_select" value="leader_guide" checked> Leader Guide</label>
                 </div>
-                <p id="progress-status" class="progress-status">Starting...</p>
-            </div>
 
-            <div id="generate-error" class="error-msg" hidden></div>
+                <button id="generate-btn" class="btn primary generate-btn">Generate Selected Documents</button>
 
-            <div id="results-area" hidden>
-                <h3>Generated Documents</h3>
-                <ul id="results-list" class="results-list"></ul>
-                <div id="results-errors" hidden>
-                    <h4>Errors</h4>
-                    <ul id="errors-list" class="errors-list"></ul>
+                <div id="progress-area" hidden>
+                    <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Document generation progress">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <p id="progress-status" class="progress-status">Starting...</p>
                 </div>
-                <div class="results-actions">
-                    <button id="open-folder-btn" class="btn primary">Open Output Folder</button>
-                    <button id="generate-again-btn" class="btn secondary">Generate Again</button>
+
+                <div id="generate-error" class="error-msg" hidden></div>
+
+                <div id="results-area" hidden>
+                    <h3>Generated Documents</h3>
+                    <ul id="results-list" class="results-list"></ul>
+                    <div id="results-errors" hidden>
+                        <h4>Errors</h4>
+                        <ul id="errors-list" class="errors-list"></ul>
+                    </div>
+                    <div class="results-actions">
+                        <button id="open-folder-btn" class="btn primary">Open Output Folder</button>
+                        <button id="generate-again-btn" class="btn secondary">Generate Again</button>
+                    </div>
                 </div>
+            </section>
+
+            <div class="wizard-buttons">
+                <button type="button" class="btn wizard-back-btn">Back</button>
+                <span></span>
             </div>
-        </section>
+        </div>
 
     </main>
 </div>

@@ -6,6 +6,10 @@
     padding: 0;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 :root {
     --primary: #2c5f8a;
     --primary-dark: #1e4468;
@@ -237,9 +241,111 @@ main {
     margin-bottom: 12px;
 }
 
-.disabled-section {
-    opacity: 0.5;
-    pointer-events: none;
+/* ── Wizard Navigation ────────────────────────────────────── */
+
+.wizard-nav {
+    margin-bottom: 20px;
+}
+
+.wizard-steps {
+    display: flex;
+    list-style: none;
+    justify-content: center;
+    position: relative;
+    padding: 0 20px;
+}
+
+.wizard-steps::before {
+    content: "";
+    position: absolute;
+    top: 16px;
+    left: 15%;
+    right: 15%;
+    height: 2px;
+    background: var(--border);
+    z-index: 0;
+}
+
+.wizard-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+}
+
+.wizard-step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-light);
+    transition: all 0.2s;
+    position: relative;
+}
+
+.wizard-step-label {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-light);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.wizard-step.active .wizard-step-number {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.wizard-step.active .wizard-step-label {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.wizard-step.completed .wizard-step-number {
+    background: var(--success);
+    border-color: var(--success);
+    color: transparent;
+}
+
+.wizard-step.completed .wizard-step-number::after {
+    content: "\2713";
+    position: absolute;
+    color: white;
+    font-size: 16px;
+}
+
+.wizard-step.completed .wizard-step-label {
+    color: var(--success);
+}
+
+/* ── Wizard Panels ────────────────────────────────────────── */
+
+.wizard-panel {
+    display: none;
+}
+
+.wizard-panel.active {
+    display: block;
+}
+
+/* ── Wizard Buttons ───────────────────────────────────────── */
+
+.wizard-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 16px;
 }
 
 /* ── Buttons ───────────────────────────────────────────── */
@@ -508,6 +614,10 @@ main {
 
 .btn-link:hover {
     text-decoration: underline;
+}
+
+.reading-edit-btn {
+    margin-left: 8px;
 }
 
 .hymn-slot + .hymn-slot {
@@ -813,4 +923,75 @@ main {
 .filename-preview .info-value {
     font-family: monospace;
     word-break: break-all;
+}
+
+/* ── Review Outline ───────────────────────────────────────── */
+
+.review-outline {
+    font-family: inherit;
+}
+
+.outline-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--primary);
+    margin-bottom: 4px;
+}
+
+.outline-divider {
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 12px;
+}
+
+.outline-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.outline-item {
+    display: flex;
+    align-items: baseline;
+    padding: 5px 8px;
+    border-radius: 4px;
+    transition: background 0.1s;
+}
+
+.outline-item:hover {
+    background: var(--primary-light);
+}
+
+.outline-label {
+    width: 160px;
+    flex-shrink: 0;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text);
+}
+
+.outline-value {
+    font-size: 13px;
+    color: var(--text-light);
+}
+
+.outline-item.outline-empty {
+    opacity: 0.5;
+}
+
+.outline-item.outline-empty .outline-value {
+    font-style: italic;
+}
+
+.outline-item.outline-extra {
+    background: #fef9e7;
+    border: 1px solid #f0e6c8;
+}
+
+.outline-item.outline-extra:hover {
+    background: #fdf3d0;
+}
+
+.outline-item.outline-extra .outline-label {
+    color: #7d6608;
+    font-weight: 700;
 }

@@ -115,6 +115,7 @@ class ServiceConfig:
     # ── Baptism ──
     include_baptism: bool = False
     baptism_candidate_names: str = ""           # Comma-separated names
+    baptism_placement: str = "after_welcome"     # "after_welcome", "replace_creed", "after_sermon", "after_prayers"
 
     # ── Other service details ──
     prelude_title: str = ""
