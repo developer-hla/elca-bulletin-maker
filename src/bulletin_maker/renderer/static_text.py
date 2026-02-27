@@ -304,7 +304,7 @@ CONFESSION_AND_FORGIVENESS = [
     (DialogRole.PASTOR,
      f"In the name of the Father, and of the {CROSS} Son, "
      "and of the Holy Spirit. Amen."),
-    (DialogRole.NONE,
+    (DialogRole.PASTOR,
      "God of all mercy and consolation, come to the help of your people, "
      "turning us away from our sin to live for you alone. "
      "Give us the power of your Holy Spirit that we may confess our sin, "

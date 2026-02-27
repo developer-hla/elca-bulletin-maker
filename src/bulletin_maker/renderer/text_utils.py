@@ -49,6 +49,72 @@ def clean_sns_html(html: str) -> str:
     return text.strip()
 
 
+def _clean_line(html_fragment: str) -> str:
+    """Strip tags, decode entities, and normalise whitespace."""
+    text = re.sub(r"<[^>]+>", "", html_fragment)
+    text = html_module.unescape(text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _detect_role_prefix(text: str) -> tuple[DialogRole | None, str]:
+    """Check for an explicit P:/C:/Pastor:/Congregation: prefix.
+
+    Returns (role, remaining_text) if found, else (None, original_text).
+    """
+    m = re.match(r"^(P|C|Pastor|Congregation)\s*:\s*", text)
+    if not m:
+        return None, text
+    raw = m.group(1)
+    if raw in ("C", "Congregation"):
+        return DialogRole.CONGREGATION, text[m.end():].strip()
+    return DialogRole.PASTOR, text[m.end():].strip()
+
+
+def _classify_line(line_html: str) -> DialogRole:
+    """Classify a single inner-div/line by its HTML formatting.
+
+    - Entirely wrapped in <strong>/<b> → Congregation
+    - Entirely wrapped in <em>/<i> → Instruction
+    - Otherwise → Pastor
+    """
+    s = line_html.strip()
+    # Bold-only line
+    if re.match(r"^<(?:strong|b)\b[^>]*>(.*)</(?:strong|b)>\s*$", s, re.DOTALL):
+        return DialogRole.CONGREGATION
+    # Italic-only line
+    if re.match(r"^<(?:em|i)\b[^>]*>(.*)</(?:em|i)>\s*$", s, re.DOTALL):
+        return DialogRole.INSTRUCTION
+    return DialogRole.PASTOR
+
+
+def _process_body_lines(lines: list[str]) -> list[tuple[DialogRole, str]]:
+    """Group consecutive same-role lines from a body block into entries."""
+    entries: list[tuple[DialogRole, str]] = []
+    cur_role: DialogRole | None = None
+    cur_parts: list[str] = []
+
+    for raw_line in lines:
+        text = _clean_line(raw_line)
+        if not text:
+            continue
+        role, text = _detect_role_prefix(text) or (None, text)
+        if role is None:
+            role = _classify_line(raw_line)
+
+        if role == cur_role:
+            cur_parts.append(text)
+        else:
+            if cur_role is not None and cur_parts:
+                entries.append((cur_role, " ".join(cur_parts)))
+            cur_role = role
+            cur_parts = [text]
+
+    if cur_role is not None and cur_parts:
+        entries.append((cur_role, " ".join(cur_parts)))
+
+    return entries
+
+
 def parse_dialog_html(html: str) -> list[tuple[DialogRole, str]]:
     """Parse S&S dialog HTML into (DialogRole, text) tuples.
 
@@ -56,13 +122,91 @@ def parse_dialog_html(html: str) -> list[tuple[DialogRole, str]]:
     The returned format matches what templates expect:
       - role: DialogRole enum member
       - text: the paragraph text
+
+    S&S uses ``<div class="rubric">`` for instructions and
+    ``<div class="body">`` for spoken content, with ``<strong>``
+    marking congregation responses.  When those classes are absent
+    the parser falls back to bold/italic heuristics and explicit
+    ``P:`` / ``C:`` prefixes.
     """
     if not html:
         return []
 
+    # S&S wraps content in class="rubric" and class="body" divs.
+    # We iterate over top-level blocks and classify each one.
+    has_sns_classes = 'class="rubric"' in html or 'class="body"' in html
+
+    if has_sns_classes:
+        return _parse_sns_dialog(html)
+
+    # Fallback: split on <p> tags and use heuristics
+    return _parse_generic_dialog(html)
+
+
+def _extract_sns_blocks(html: str) -> list[tuple[str, str]]:
+    """Extract (class, inner_html) for rubric/body div blocks.
+
+    Handles nested ``<div>`` tags by tracking depth.
+    """
+    blocks: list[tuple[str, str]] = []
+    opener = re.compile(r'<div\s+class="(rubric|body)"[^>]*>')
+
+    pos = 0
+    while pos < len(html):
+        m = opener.search(html, pos)
+        if not m:
+            break
+        block_class = m.group(1)
+        start = m.end()
+        depth = 1
+        i = start
+        while i < len(html) and depth > 0:
+            open_m = re.search(r"<div[\s>]", html[i:])
+            close_m = re.search(r"</div>", html[i:])
+            if close_m is None:
+                break
+            if open_m and open_m.start() < close_m.start():
+                depth += 1
+                i += open_m.start() + 4
+            else:
+                depth -= 1
+                if depth == 0:
+                    blocks.append((block_class, html[start:i + close_m.start()].strip()))
+                i += close_m.end()
+        pos = i
+
+    return blocks
+
+
+def _parse_sns_dialog(html: str) -> list[tuple[DialogRole, str]]:
+    """Parse S&S-structured dialog with rubric/body class divs."""
     entries: list[tuple[DialogRole, str]] = []
 
-    # Split into paragraphs
+    for block_class, inner in _extract_sns_blocks(html):
+        if block_class == "rubric":
+            text = _clean_line(inner)
+            if text:
+                entries.append((DialogRole.INSTRUCTION, text))
+        else:
+            # Body block — split into inner <div> lines
+            lines = re.findall(r"<div>(.*?)</div>", inner, re.DOTALL)
+            if not lines:
+                # No inner divs — treat whole block as one chunk
+                text = _clean_line(inner)
+                if text:
+                    role, text = _detect_role_prefix(text)
+                    if role is None:
+                        role = _classify_line(inner)
+                    entries.append((role, text))
+            else:
+                entries.extend(_process_body_lines(lines))
+
+    return entries
+
+
+def _parse_generic_dialog(html: str) -> list[tuple[DialogRole, str]]:
+    """Fallback parser: split on <p> tags, detect roles by formatting."""
+    entries: list[tuple[DialogRole, str]] = []
     paragraphs = re.split(r"</?p[^>]*>", html)
 
     for para in paragraphs:
@@ -70,24 +214,13 @@ def parse_dialog_html(html: str) -> list[tuple[DialogRole, str]]:
         if not para:
             continue
 
-        # Strip all tags and decode entities
-        text = re.sub(r"<[^>]+>", "", para)
-        text = html_module.unescape(text)
-        text = re.sub(r"\s+", " ", text).strip()
-
+        text = _clean_line(para)
         if not text:
             continue
 
-        # Detect role prefix
-        role = DialogRole.NONE
-        role_match = re.match(r"^(P|C|Pastor|Congregation)\s*:\s*", text)
-        if role_match:
-            raw_role = role_match.group(1)
-            if raw_role in ("C", "Congregation"):
-                role = DialogRole.CONGREGATION
-            elif raw_role in ("P", "Pastor"):
-                role = DialogRole.PASTOR
-            text = text[role_match.end():].strip()
+        role, text = _detect_role_prefix(text)
+        if role is None:
+            role = _classify_line(para)
 
         entries.append((role, text))
 

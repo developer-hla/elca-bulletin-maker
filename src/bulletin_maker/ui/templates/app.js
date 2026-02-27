@@ -295,7 +295,8 @@ function getTextSourceLabel(key) {
     var tc = state.textChoices[key];
     if (!tc) return "S&S";
     if (tc.isCustom) return "Custom edit";
-    return tc.source === "sns" ? "S&S (this week\u2019s)" : "Standard";
+    var opt = (tc.options || []).find(function(o) { return o.key === tc.source; });
+    return opt ? opt.label : tc.source;
 }
 
 /** Returns the gospel acclamation label for the current season. */
@@ -1160,7 +1161,6 @@ function setupFilePickers() {
 var ROLE_OPTIONS = [
     { value: "P", label: "P (Pastor)" },
     { value: "C", label: "C (Congregation)" },
-    { value: "", label: "(none)" },
     { value: "instruction", label: "Instruction" },
 ];
 
@@ -1180,10 +1180,10 @@ function buildEntryRow(entry) {
     });
     row.appendChild(roleSelect);
 
-    var textInput = document.createElement("input");
-    textInput.type = "text";
+    var textInput = document.createElement("textarea");
     textInput.className = "entry-text";
-    textInput.value = entry.text || "";
+    textInput.textContent = entry.text || "";
+    textInput.rows = 2;
     row.appendChild(textInput);
 
     var removeBtn = document.createElement("button");
@@ -1238,6 +1238,14 @@ function collectStructuredEntries(editorEl) {
     return entries;
 }
 
+/** Find the data for a given option key within an options list. */
+function findOptionData(options, key) {
+    for (var i = 0; i < options.length; i++) {
+        if (options[i].key === key) return options[i].data;
+    }
+    return null;
+}
+
 /** Loads liturgical texts from the API and builds the review panels. */
 async function loadLiturgicalTexts() {
     var spinner = $("#texts-spinner");
@@ -1265,15 +1273,22 @@ async function loadLiturgicalTexts() {
             if (!info) return;
 
             var isStructured = info.type === "structured";
-            var defaultSource = info.has_sns ? "sns" : "standard";
-            var initialData = defaultSource === "sns" ? info.sns : info.standard;
+            var options = info.options || [];
+
+            // Resolve the default — fall back to first enabled option
+            var defaultKey = info.default || (options[0] && options[0].key) || "";
+            var defaultOpt = options.find(function(o) { return o.key === defaultKey && !o.disabled; });
+            if (!defaultOpt) {
+                defaultOpt = options.find(function(o) { return !o.disabled; }) || options[0];
+            }
+            var activeKey = defaultOpt ? defaultOpt.key : "";
+            var initialData = defaultOpt ? defaultOpt.data : (isStructured ? [] : "");
 
             state.textChoices[key] = {
-                source: defaultSource,
+                source: activeKey,
                 isCustom: false,
                 value: isStructured ? null : (initialData || ""),
-                snsData: info.sns,
-                stdData: info.standard,
+                options: options,
                 type: info.type,
             };
 
@@ -1294,57 +1309,44 @@ async function loadLiturgicalTexts() {
             var body = document.createElement("div");
             body.className = "text-panel-body";
 
-            // No S&S notice
-            if (!info.has_sns) {
-                var notice = document.createElement("p");
-                notice.className = "text-no-sns";
-                notice.textContent = "No S&S text available for this week. Using standard text.";
-                body.appendChild(notice);
+            // Build radio buttons from options (only if >1 option)
+            var radioEls = [];
+            if (options.length > 1) {
+                var radios = document.createElement("div");
+                radios.className = "text-source-radios";
+
+                options.forEach(function(opt) {
+                    var label = document.createElement("label");
+                    var radio = document.createElement("input");
+                    radio.type = "radio";
+                    radio.name = "text_source_" + key;
+                    radio.value = opt.key;
+                    if (opt.key === activeKey) radio.checked = true;
+                    if (opt.disabled) radio.disabled = true;
+                    label.appendChild(radio);
+                    label.appendChild(document.createTextNode(" " + opt.label));
+                    radios.appendChild(label);
+                    radioEls.push(radio);
+                });
+
+                body.appendChild(radios);
             }
-
-            // Radio toggle
-            var radios = document.createElement("div");
-            radios.className = "text-source-radios";
-
-            var snsLabel = document.createElement("label");
-            var snsRadio = document.createElement("input");
-            snsRadio.type = "radio";
-            snsRadio.name = "text_source_" + key;
-            snsRadio.value = "sns";
-            if (defaultSource === "sns") snsRadio.checked = true;
-            if (!info.has_sns) snsRadio.disabled = true;
-            snsLabel.appendChild(snsRadio);
-            snsLabel.appendChild(document.createTextNode(" This Week's (S&S)"));
-            radios.appendChild(snsLabel);
-
-            var stdLabel = document.createElement("label");
-            var stdRadio = document.createElement("input");
-            stdRadio.type = "radio";
-            stdRadio.name = "text_source_" + key;
-            stdRadio.value = "standard";
-            if (defaultSource === "standard") stdRadio.checked = true;
-            stdLabel.appendChild(stdRadio);
-            stdLabel.appendChild(document.createTextNode(" Standard"));
-            radios.appendChild(stdLabel);
-
-            body.appendChild(radios);
 
             if (isStructured) {
                 // Structured editor for call-and-response texts
                 var editor = buildStructuredEditor(key, initialData);
                 body.appendChild(editor);
 
-                // Wire radio changes — rebuild editor with new data
-                [snsRadio, stdRadio].forEach(function(radio) {
+                // Wire radio changes — rebuild editor with selected option's data
+                radioEls.forEach(function(radio) {
                     radio.addEventListener("change", function() {
                         var choice = state.textChoices[key];
                         choice.source = this.value;
                         choice.isCustom = false;
-                        var newData = this.value === "sns" ? choice.snsData : choice.stdData;
-                        // Replace editor rows
+                        var newData = findOptionData(choice.options, this.value) || [];
                         var rowsContainer = editor.querySelector(".entry-rows");
                         rowsContainer.innerHTML = "";
-                        (newData || []).forEach(function(entry) {
+                        newData.forEach(function(entry) {
                             rowsContainer.appendChild(buildEntryRow(entry));
                         });
                         hide($("#custom-edit-warning"));
@@ -1359,25 +1361,26 @@ async function loadLiturgicalTexts() {
                 body.appendChild(textarea);
 
                 // Wire radio changes
-                [snsRadio, stdRadio].forEach(function(radio) {
+                radioEls.forEach(function(radio) {
                     radio.addEventListener("change", function() {
                         var choice = state.textChoices[key];
                         choice.source = this.value;
                         choice.isCustom = false;
-                        var newText = this.value === "sns" ? (choice.snsData || "") : (choice.stdData || "");
+                        var newText = findOptionData(choice.options, this.value) || "";
                         choice.value = newText;
                         textarea.value = newText;
                         hide($("#custom-edit-warning"));
                     });
                 });
 
-                // Wire textarea edits
+                // Wire textarea edits — detect custom modifications
                 textarea.addEventListener("input", function() {
                     var choice = state.textChoices[key];
                     choice.value = this.value;
-                    var matchesSns = this.value === (choice.snsData || "");
-                    var matchesStd = this.value === (choice.stdData || "");
-                    choice.isCustom = !matchesSns && !matchesStd;
+                    var matchesAny = choice.options.some(function(opt) {
+                        return (opt.data || "") === choice.value;
+                    });
+                    choice.isCustom = !matchesAny;
                     if (choice.isCustom) {
                         show($("#custom-edit-warning"));
                     }

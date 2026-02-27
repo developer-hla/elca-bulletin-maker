@@ -196,8 +196,20 @@ class TestParseDialogHtml:
         html = "<p>God of all mercy and consolation.</p>"
         entries = parse_dialog_html(html)
         assert len(entries) == 1
-        assert entries[0][0] is DialogRole.NONE
+        assert entries[0][0] is DialogRole.PASTOR
         assert entries[0][1] == "God of all mercy and consolation."
+
+    def test_bold_paragraph_is_congregation(self):
+        html = "<p><strong>We confess that we are captive to sin.</strong></p>"
+        entries = parse_dialog_html(html)
+        assert len(entries) == 1
+        assert entries[0][0] is DialogRole.CONGREGATION
+
+    def test_italic_paragraph_is_instruction(self):
+        html = "<p><em>All may make the sign of the cross.</em></p>"
+        entries = parse_dialog_html(html)
+        assert len(entries) == 1
+        assert entries[0][0] is DialogRole.INSTRUCTION
 
     def test_empty_input(self):
         assert parse_dialog_html("") == []
@@ -212,3 +224,33 @@ class TestParseDialogHtml:
         html = "<p>Congregation: Thanks be to God.</p>"
         entries = parse_dialog_html(html)
         assert entries[0][0] is DialogRole.CONGREGATION
+
+    def test_sns_rubric_body_classes(self):
+        """S&S uses class='rubric' for instructions and class='body' for spoken."""
+        html = (
+            '<div class="rubric"><div>Silence is kept for reflection.</div></div>'
+            '<div class="body"><div>Go in peace.</div>'
+            '<div><strong>Thanks be to God.</strong></div></div>'
+        )
+        entries = parse_dialog_html(html)
+        assert len(entries) == 3
+        assert entries[0] == (DialogRole.INSTRUCTION, "Silence is kept for reflection.")
+        assert entries[1] == (DialogRole.PASTOR, "Go in peace.")
+        assert entries[2] == (DialogRole.CONGREGATION, "Thanks be to God.")
+
+    def test_sns_litany_alternation(self):
+        """Bold congregation responses alternate with pastor petitions."""
+        html = (
+            '<div class="body">'
+            '<div>Gracious God,</div>'
+            '<div><strong>have mercy on us.</strong></div>'
+            '<div>For our sin:</div>'
+            '<div><strong>have mercy on us.</strong></div>'
+            '</div>'
+        )
+        entries = parse_dialog_html(html)
+        assert len(entries) == 4
+        assert entries[0][0] is DialogRole.PASTOR
+        assert entries[1][0] is DialogRole.CONGREGATION
+        assert entries[2][0] is DialogRole.PASTOR
+        assert entries[3][0] is DialogRole.CONGREGATION

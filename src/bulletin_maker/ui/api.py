@@ -299,10 +299,12 @@ class BulletinAPI:
     # ── Liturgical Texts ────────────────────────────────────────────────
 
     def get_liturgical_texts(self) -> dict:
-        """Return S&S and standard versions of the 5 variable liturgical texts.
+        """Return named options for the 5 variable liturgical texts.
 
         Must be called after fetch_day_content() populates self._day.
-        Returns both options for each text so the UI can let the user choose.
+        Each text has an ``options`` list of named presets (Ascension
+        customs, S&S weekly variants, etc.) and a ``default`` key.
+        The UI renders radio buttons from the options list.
         """
         from bulletin_maker.renderer.static_text import (
             AARONIC_BLESSING,
@@ -321,51 +323,71 @@ class BulletinAPI:
                 return [{"role": r.value, "text": t} for r, t in entries]
 
             # Parse S&S structured versions
-            sns_confession = []
-            if day.confession_html:
-                parsed = parse_dialog_html(day.confession_html)
-                sns_confession = _entries_to_dicts(parsed)
+            sns_confession = _entries_to_dicts(
+                parse_dialog_html(day.confession_html)
+            ) if day.confession_html else []
 
-            sns_dismissal = []
-            if day.dismissal_html:
-                parsed = parse_dialog_html(day.dismissal_html)
-                sns_dismissal = _entries_to_dicts(parsed)
+            sns_dismissal = _entries_to_dicts(
+                parse_dialog_html(day.dismissal_html)
+            ) if day.dismissal_html else []
 
             texts = {
                 "confession": {
                     "label": "Confession and Forgiveness",
-                    "sns": sns_confession,
-                    "standard": _entries_to_dicts(CONFESSION_AND_FORGIVENESS),
-                    "has_sns": bool(sns_confession),
                     "type": "structured",
+                    "default": "form_a",
+                    "options": [
+                        {"key": "form_a", "label": "ELW Form A",
+                         "data": _entries_to_dicts(CONFESSION_AND_FORGIVENESS)},
+                        {"key": "sns", "label": "This Week\u2019s (S&S)",
+                         "data": sns_confession,
+                         "disabled": not bool(sns_confession)},
+                    ],
                 },
                 "offering_prayer": {
                     "label": "Offering Prayer",
-                    "sns": clean_sns_html(day.offering_prayer_html),
-                    "standard": "",
-                    "has_sns": bool(day.offering_prayer_html),
                     "type": "text",
+                    "default": "sns",
+                    "options": [
+                        {"key": "sns", "label": "This Week\u2019s (S&S)",
+                         "data": clean_sns_html(day.offering_prayer_html),
+                         "disabled": not bool(day.offering_prayer_html)},
+                    ],
                 },
                 "prayer_after_communion": {
                     "label": "Prayer After Communion",
-                    "sns": clean_sns_html(day.prayer_after_communion_html),
-                    "standard": "",
-                    "has_sns": bool(day.prayer_after_communion_html),
                     "type": "text",
+                    "default": "sns",
+                    "options": [
+                        {"key": "sns", "label": "This Week\u2019s (S&S)",
+                         "data": clean_sns_html(day.prayer_after_communion_html),
+                         "disabled": not bool(day.prayer_after_communion_html)},
+                    ],
                 },
                 "blessing": {
                     "label": "Blessing",
-                    "sns": clean_sns_html(day.blessing_html),
-                    "standard": AARONIC_BLESSING,
-                    "has_sns": bool(day.blessing_html),
                     "type": "text",
+                    "default": "aaronic",
+                    "options": [
+                        {"key": "aaronic", "label": "Aaronic Blessing",
+                         "data": AARONIC_BLESSING},
+                        {"key": "sns", "label": "This Week\u2019s (S&S)",
+                         "data": clean_sns_html(day.blessing_html),
+                         "disabled": not bool(day.blessing_html)},
+                    ],
                 },
                 "dismissal": {
                     "label": "Dismissal",
-                    "sns": sns_dismissal,
-                    "standard": _entries_to_dicts(DISMISSAL_ENTRIES),
-                    "has_sns": bool(sns_dismissal),
                     "type": "structured",
+                    "default": "standard",
+                    "options": [
+                        {"key": "standard",
+                         "label": "Go in peace to love and serve the Lord",
+                         "data": _entries_to_dicts(DISMISSAL_ENTRIES)},
+                        {"key": "sns", "label": "This Week\u2019s (S&S)",
+                         "data": sns_dismissal,
+                         "disabled": not bool(sns_dismissal)},
+                    ],
                 },
             }
 
