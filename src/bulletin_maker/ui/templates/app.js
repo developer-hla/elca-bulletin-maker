@@ -599,18 +599,17 @@ async function initLogin() {
             $("#login-spinner").querySelector("span").textContent = "Signing in...";
 
             var result = await window.pywebview.api.login(saved.username, saved.password);
-            if (result.success) {
+            if (result && result.success) {
                 hide($("#login-overlay"));
                 show($("#app"));
                 $("#user-display").textContent = result.username;
                 checkForUpdate();
                 return;
             }
-            // Auto-login failed (password changed, etc.) — fall through to manual login
+            // Auto-login failed — fall through to manual login with pre-filled username
             hide($("#login-spinner"));
             show($("#login-form"));
             $("#login-username").value = saved.username;
-            showError($("#login-error"), "Saved credentials expired. Please sign in again.");
         }
     } catch (e) {
         // Saved credentials unavailable — show normal login
@@ -636,18 +635,24 @@ function setupLogin() {
         hide(form);
         show(spinner);
 
-        const result = await window.pywebview.api.login(username, password);
-
-        if (result.success) {
-            hide($("#login-overlay"));
-            show($("#app"));
-            $("#user-display").textContent = result.username;
-            checkForUpdate();
-        } else {
+        try {
+            const result = await window.pywebview.api.login(username, password);
+            if (result && result.success) {
+                hide($("#login-overlay"));
+                show($("#app"));
+                $("#user-display").textContent = result.username;
+                checkForUpdate();
+            } else {
+                hide(spinner);
+                show(form);
+                btn.disabled = false;
+                showError(errorEl, (result && result.error) || "Login failed");
+            }
+        } catch (err) {
             hide(spinner);
             show(form);
             btn.disabled = false;
-            showError(errorEl, result.error || "Login failed");
+            showError(errorEl, "Connection error: " + (err.message || "Could not reach S&S"));
         }
     });
 }

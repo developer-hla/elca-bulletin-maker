@@ -192,6 +192,10 @@ class BulletinAPI:
             return {"success": True, "username": username}
         except AuthError as e:
             return {"success": False, "error": str(e), "error_type": "auth"}
+        except Exception as e:
+            logger.exception("Login error")
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     def logout(self) -> dict:
         """Close client session and reset state."""
