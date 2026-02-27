@@ -51,6 +51,7 @@ def main() -> None:
         width=900,
         height=700,
         min_size=(800, 600),
+        text_select=True,
     )
 
     api.set_window(window)
