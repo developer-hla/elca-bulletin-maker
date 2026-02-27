@@ -102,6 +102,55 @@ class BulletinAPI:
             return {"success": True, "update_available": True, **result}
         return {"success": True, "update_available": False}
 
+    # ── Credential Storage ────────────────────────────────────────────
+
+    @staticmethod
+    def _config_path() -> Path:
+        return Path.home() / ".bulletin-maker" / "config.json"
+
+    def _save_credentials(self, username: str, password: str) -> None:
+        """Save credentials to ~/.bulletin-maker/config.json."""
+        try:
+            path = self._config_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            data = {}
+            if path.exists():
+                data = json.loads(path.read_text())
+            data["username"] = username
+            data["password"] = password
+            path.write_text(json.dumps(data, indent=2))
+            path.chmod(0o600)
+        except Exception:
+            logger.debug("Could not save credentials", exc_info=True)
+
+    def _clear_credentials(self) -> None:
+        """Remove saved credentials from config.json."""
+        try:
+            path = self._config_path()
+            if not path.exists():
+                return
+            data = json.loads(path.read_text())
+            data.pop("username", None)
+            data.pop("password", None)
+            path.write_text(json.dumps(data, indent=2))
+        except Exception:
+            logger.debug("Could not clear credentials", exc_info=True)
+
+    def get_saved_credentials(self) -> dict:
+        """Return saved credentials if they exist."""
+        try:
+            path = self._config_path()
+            if not path.exists():
+                return {"success": False}
+            data = json.loads(path.read_text())
+            username = data.get("username", "")
+            password = data.get("password", "")
+            if username and password:
+                return {"success": True, "username": username, "password": password}
+            return {"success": False}
+        except Exception:
+            return {"success": False}
+
     # ── Credentials ───────────────────────────────────────────────────
 
     def login(self, username: str, password: str) -> dict:
@@ -109,6 +158,7 @@ class BulletinAPI:
         try:
             client = self._get_client()
             client.login(username, password)
+            self._save_credentials(username, password)
             return {"success": True, "username": username}
         except AuthError as e:
             return {"success": False, "error": str(e), "error_type": "auth"}
@@ -122,6 +172,7 @@ class BulletinAPI:
             self._day = None
             self._date_str = None
             self._hymn_cache.clear()
+            self._clear_credentials()
             return {"success": True}
         except Exception as e:
             logger.exception("Logout error")
@@ -476,6 +527,7 @@ class BulletinAPI:
             reading_overrides=form_data.get("reading_overrides") or None,
             include_baptism=form_data.get("include_baptism", False),
             baptism_candidate_names=form_data.get("baptism_candidate_names", ""),
+            baptism_placement=form_data.get("baptism_placement", "after_welcome"),
             confession_entries=self._parse_dialog_entries(
                 form_data.get("confession_entries")
             ),
