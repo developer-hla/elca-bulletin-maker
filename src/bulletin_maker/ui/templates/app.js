@@ -31,11 +31,15 @@ const DOC_LABELS = {
     leader_guide: "Leader Guide",
 };
 
+/** Wizard panel IDs in step order. */
+const STEP_IDS = ["step-date-music", "step-liturgy-texts", "step-extras", "step-review-generate"];
+
 // ── State ────────────────────────────────────────────────────────────
 
 /** Returns a fresh initial state object. */
 function initialState() {
     return {
+        currentStep: 1,
         dateStr: "",          // "2026-02-22" (HTML input value)
         dateDisplay: "",      // "February 22, 2026"
         apiDate: "",          // "2026-2-22" (for S&S API)
@@ -98,10 +102,6 @@ function hideWarning(el) {
     hide(el);
 }
 
-function enableSection(id) {
-    document.getElementById(id).classList.remove("disabled-section");
-}
-
 /** Formats "2026-02-22" as "February 22, 2026". */
 function formatDate(dateStr) {
     const d = new Date(dateStr + "T12:00:00");
@@ -134,6 +134,291 @@ function waitForApi() {
         }
         window.addEventListener("pywebviewready", resolve);
     });
+}
+
+function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+// ── Wizard Navigation ────────────────────────────────────────────────
+
+/** Shows the given step (1-based) and updates step indicator. */
+function showStep(n) {
+    state.currentStep = n;
+    STEP_IDS.forEach(function(id, i) {
+        var panel = document.getElementById(id);
+        if (i === n - 1) {
+            panel.classList.add("active");
+        } else {
+            panel.classList.remove("active");
+        }
+    });
+    $$(".wizard-step").forEach(function(stepEl) {
+        var stepNum = parseInt(stepEl.dataset.step);
+        stepEl.classList.remove("active", "completed");
+        if (stepNum === n) {
+            stepEl.classList.add("active");
+        } else if (stepNum < n) {
+            stepEl.classList.add("completed");
+        }
+    });
+    if (n === 4) {
+        buildReviewOutline();
+    }
+    window.scrollTo(0, 0);
+}
+
+/** Validates whether the user can leave the given step. */
+function validateStep(n) {
+    if (n === 1) {
+        return !!state.dateStr && !!state.season;
+    }
+    return true;
+}
+
+/** Wires up Next/Back buttons and step indicator clicks. */
+function setupWizardNav() {
+    $$(".wizard-next-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            var panel = this.closest(".wizard-panel");
+            var currentIdx = STEP_IDS.indexOf(panel.id);
+            var stepNum = currentIdx + 1;
+            if (!validateStep(stepNum)) {
+                if (stepNum === 1) {
+                    showError($("#date-error"), "Please fetch content for a date before continuing.");
+                }
+                return;
+            }
+            if (currentIdx < STEP_IDS.length - 1) {
+                showStep(currentIdx + 2);
+            }
+        });
+    });
+
+    $$(".wizard-back-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            var panel = this.closest(".wizard-panel");
+            var currentIdx = STEP_IDS.indexOf(panel.id);
+            if (currentIdx > 0) {
+                showStep(currentIdx);
+            }
+        });
+    });
+
+    $$(".wizard-step").forEach(function(stepEl) {
+        stepEl.addEventListener("click", function() {
+            var targetStep = parseInt(this.dataset.step);
+            if (targetStep < state.currentStep) {
+                showStep(targetStep);
+            } else if (targetStep === state.currentStep + 1 && validateStep(state.currentStep)) {
+                showStep(targetStep);
+            }
+        });
+    });
+}
+
+// ── Review Outline Builder ───────────────────────────────────────────
+
+/** Returns an outline item object for a hymn slot. */
+function hymnOutlineItem(label, slotName) {
+    var hymn = state.hymns[slotName];
+    if (hymn && hymn.number) {
+        return { label: label, value: hymn.collection + " " + hymn.number + " \u2014 " + hymn.title };
+    }
+    return { label: label, value: "(not set)", empty: true };
+}
+
+/** Returns the source label for a liturgical text choice. */
+function getTextSourceLabel(key) {
+    var tc = state.textChoices[key];
+    if (!tc) return "S&S";
+    if (tc.isCustom) return "Custom edit";
+    return tc.source === "sns" ? "S&S (this week\u2019s)" : "Standard";
+}
+
+/** Returns the gospel acclamation label for the current season. */
+function getGospelAccLabel() {
+    var season = state.season;
+    if (season === "advent") return "\u201CWait for the Lord\u201D";
+    if (season === "lent") return "Lenten verse";
+    return "Alleluia";
+}
+
+/** Maps an outline item label to its wizard step number. */
+function getStepForOutlineItem(label) {
+    var l = label.toLowerCase();
+    if (l === "prelude" || l === "postlude" || l.indexOf("hymn") !== -1 ||
+        l === "sermon" || l === "choral") return 1;
+    if (l.indexOf("reading") !== -1 || l === "psalm" || l === "gospel" ||
+        l === "readings") return 1;
+    if (l === "baptism") return 3;
+    return 2;
+}
+
+/** Builds the visual liturgy outline in Step 4. */
+function buildReviewOutline() {
+    var outline = $("#review-outline");
+    outline.innerHTML = "";
+
+    var dayName = $("#day-name") ? ($("#day-name").textContent || "Sunday Service") : "Sunday Service";
+
+    var title = document.createElement("div");
+    title.className = "outline-title";
+    title.textContent = "SERVICE ORDER \u2014 " + dayName;
+    outline.appendChild(title);
+
+    var divider = document.createElement("div");
+    divider.className = "outline-divider";
+    outline.appendChild(divider);
+
+    var list = document.createElement("div");
+    list.className = "outline-list";
+
+    var items = [];
+
+    // Prelude
+    var pt = $("#prelude-title").value.trim();
+    var pp = $("#prelude-performer").value.trim();
+    var preludeVal = "";
+    if (pt || pp) {
+        preludeVal = (pt ? "\u201C" + pt + "\u201D" : "") + (pp ? " \u2014 " + pp : "");
+    }
+    items.push({ label: "Prelude", value: preludeVal || "(not set)", empty: !preludeVal });
+
+    // Baptism after welcome
+    var baptismOn = $("#include-baptism").checked;
+    var placementEl = $("#baptism-placement");
+    var baptismPlacement = placementEl ? placementEl.value : "replace_creed";
+    var baptismNames = $("#baptism-names").value.trim();
+    if (baptismOn && baptismPlacement === "after_welcome") {
+        items.push({ label: "BAPTISM", value: baptismNames || "(names not set)", extra: true });
+    }
+
+    // Confession
+    var showConf = $("#show-confession").checked;
+    items.push({ label: "Confession", value: showConf ? getTextSourceLabel("confession") : "(omitted)", empty: !showConf });
+
+    // Gathering Hymn
+    items.push(hymnOutlineItem("Gathering Hymn", "gathering"));
+
+    // Kyrie
+    var hasKyrie = $("#include-kyrie").checked;
+    items.push({ label: "Kyrie", value: hasKyrie ? "Setting Two" : "(omitted)", empty: !hasKyrie });
+
+    // Canticle
+    var canticleEl = document.querySelector('input[name="canticle"]:checked');
+    var canticleVal = canticleEl ? canticleEl.value : "none";
+    items.push({ label: "Canticle", value: canticleVal === "none" ? "(omitted)" : (CANTICLE_LABELS[canticleVal] || canticleVal), empty: canticleVal === "none" });
+
+    // Prayer of Day
+    items.push({ label: "Prayer of Day", value: "S&S" });
+
+    // Readings
+    var readings = $$("#readings-list .reading-item");
+    readings.forEach(function(r) {
+        var label = r.querySelector(".reading-label").textContent.replace(":", "").trim();
+        var citation = r.querySelector(".reading-citation-text").textContent.trim();
+        items.push({ label: label, value: citation || "(not set)", empty: !citation });
+    });
+    if (readings.length === 0) {
+        items.push({ label: "Readings", value: "(not fetched)", empty: true });
+    }
+
+    // Gospel Acclamation
+    items.push({ label: "Gospel Acc.", value: getGospelAccLabel() });
+
+    // Sermon
+    items.push({ label: "Sermon", value: "" });
+
+    // Sermon Hymn
+    items.push(hymnOutlineItem("Sermon Hymn", "sermon"));
+
+    // Baptism after sermon
+    if (baptismOn && baptismPlacement === "after_sermon") {
+        items.push({ label: "BAPTISM", value: baptismNames || "(names not set)", extra: true });
+    }
+
+    // Creed (or Baptism replacing creed)
+    var creedEl = document.querySelector('input[name="creed_type"]:checked');
+    var creedType = creedEl ? creedEl.value : "apostles";
+    if (baptismOn && baptismPlacement === "replace_creed") {
+        items.push({ label: "BAPTISM", value: (baptismNames || "(names not set)") + " (replaces Creed)", extra: true });
+    } else {
+        items.push({ label: "Creed", value: creedType === "nicene" ? "Nicene Creed" : "Apostles\u2019 Creed" });
+    }
+
+    // Prayers
+    items.push({ label: "Prayers", value: "S&S (this week\u2019s)" });
+
+    // Baptism after prayers
+    if (baptismOn && baptismPlacement === "after_prayers") {
+        items.push({ label: "BAPTISM", value: baptismNames || "(names not set)", extra: true });
+    }
+
+    // Offering Prayer
+    items.push({ label: "Offering Prayer", value: getTextSourceLabel("offering_prayer") });
+
+    // Choral
+    var choralTitle = $("#choral-title").value.trim();
+    if (choralTitle) {
+        items.push({ label: "Choral", value: "\u201C" + choralTitle + "\u201D" });
+    }
+
+    // Communion Hymn
+    items.push(hymnOutlineItem("Communion Hymn", "communion"));
+
+    // Blessing
+    items.push({ label: "Blessing", value: getTextSourceLabel("blessing") });
+
+    // Sending Hymn
+    items.push(hymnOutlineItem("Sending Hymn", "sending"));
+
+    // Dismissal
+    items.push({ label: "Dismissal", value: getTextSourceLabel("dismissal") });
+
+    // Postlude
+    var pot = $("#postlude-title").value.trim();
+    var pop = $("#postlude-performer").value.trim();
+    var postVal = "";
+    if (pot || pop) {
+        postVal = (pot ? "\u201C" + pot + "\u201D" : "") + (pop ? " \u2014 " + pop : "");
+    }
+    items.push({ label: "Postlude", value: postVal || "(not set)", empty: !postVal });
+
+    // Render items
+    items.forEach(function(item) {
+        var row = document.createElement("div");
+        row.className = "outline-item";
+        if (item.extra) row.classList.add("outline-extra");
+        if (item.empty) row.classList.add("outline-empty");
+
+        var labelSpan = document.createElement("span");
+        labelSpan.className = "outline-label";
+        labelSpan.textContent = (item.extra ? "* " : "") + item.label;
+        row.appendChild(labelSpan);
+
+        if (item.value) {
+            var valueSpan = document.createElement("span");
+            valueSpan.className = "outline-value";
+            valueSpan.textContent = item.value;
+            row.appendChild(valueSpan);
+        }
+
+        var step = getStepForOutlineItem(item.label);
+        if (step) {
+            row.style.cursor = "pointer";
+            row.title = "Click to edit";
+            (function(s) {
+                row.addEventListener("click", function() { showStep(s); });
+            })(step);
+        }
+
+        list.appendChild(row);
+    });
+
+    outline.appendChild(list);
 }
 
 // ── Progress callback (called from Python via evaluate_js) ──────────
@@ -176,6 +461,35 @@ function setupUpdateBanner() {
 
 async function initLogin() {
     await waitForApi();
+
+    // Try auto-login with saved credentials
+    try {
+        var saved = await window.pywebview.api.get_saved_credentials();
+        if (saved.success && saved.username && saved.password) {
+            // Show a subtle spinner while auto-logging in
+            hide($("#login-form"));
+            show($("#login-spinner"));
+            $("#login-spinner").querySelector("span").textContent = "Signing in...";
+
+            var result = await window.pywebview.api.login(saved.username, saved.password);
+            if (result.success) {
+                hide($("#login-overlay"));
+                show($("#app"));
+                $("#user-display").textContent = result.username;
+                checkForUpdate();
+                return;
+            }
+            // Auto-login failed (password changed, etc.) — fall through to manual login
+            hide($("#login-spinner"));
+            show($("#login-form"));
+            $("#login-username").value = saved.username;
+            showError($("#login-error"), "Saved credentials expired. Please sign in again.");
+        }
+    } catch (e) {
+        // Saved credentials unavailable — show normal login
+        hide($("#login-spinner"));
+        show($("#login-form"));
+    }
 }
 
 function setupLogin() {
@@ -264,10 +578,6 @@ function resetAll() {
     $("#date-input").value = "";
     $("#preface-select").innerHTML = "";
 
-    ["section-hymns", "section-liturgy", "section-details", "section-texts", "section-generate"].forEach(function(id) {
-        document.getElementById(id).classList.add("disabled-section");
-    });
-
     // Reset liturgical texts
     $("#texts-panels").innerHTML = "";
     hide($("#custom-edit-warning"));
@@ -281,6 +591,19 @@ function resetAll() {
     hide($("#progress-area"));
     hide($("#results-area"));
     hideError($("#generate-error"));
+
+    // Reset baptism
+    $("#include-baptism").checked = false;
+    hide($("#baptism-details"));
+    $("#baptism-names").value = "";
+    var placementEl = $("#baptism-placement");
+    if (placementEl) placementEl.value = "after_welcome";
+
+    // Reset review outline
+    $("#review-outline").innerHTML = "";
+
+    // Go back to step 1
+    showStep(1);
 }
 
 // ── Date & Season Fetch ──────────────────────────────────────────────
@@ -305,7 +628,7 @@ function setupDateFetch() {
         hideWarning($("#date-warning"));
         hide($("#day-info"));
 
-        // M14: Warn if date is not a Sunday (non-blocking)
+        // Warn if date is not a Sunday (non-blocking)
         if (dateVal.getDay() !== 0) {
             showWarning($("#date-warning"), "Note: this date is not a Sunday.");
         }
@@ -447,13 +770,6 @@ function setupDateFetch() {
             hide($("#filename-preview"));
         }
 
-        // Enable all sections
-        enableSection("section-hymns");
-        enableSection("section-liturgy");
-        enableSection("section-details");
-        enableSection("section-texts");
-        enableSection("section-generate");
-
         // Fetch liturgical texts for the review step
         loadLiturgicalTexts();
 
@@ -511,8 +827,10 @@ function applyDefaults(defaults) {
 
     // Baptism (always unchecked by default)
     $("#include-baptism").checked = false;
-    hide($("#baptism-names-group"));
+    hide($("#baptism-details"));
     $("#baptism-names").value = "";
+    var placementEl = $("#baptism-placement");
+    if (placementEl) placementEl.value = "after_welcome";
 }
 
 /** Populate preface dropdown from API, pre-selecting the seasonal default. */
@@ -960,12 +1278,6 @@ async function loadLiturgicalTexts() {
     }
 }
 
-function escapeHtml(str) {
-    var div = document.createElement("div");
-    div.appendChild(document.createTextNode(str));
-    return div.innerHTML;
-}
-
 // ── Generation ───────────────────────────────────────────────────────
 
 /** Collects all form data into a dict for the Python API. */
@@ -974,6 +1286,8 @@ function collectFormData() {
     const creedEl = document.querySelector('input[name="creed_type"]:checked');
     const canticleEl = document.querySelector('input[name="canticle"]:checked');
     const epEl = document.querySelector('input[name="eucharistic_form"]:checked');
+
+    var placementEl = $("#baptism-placement");
 
     const formData = {
         date: state.dateStr,
@@ -988,6 +1302,7 @@ function collectFormData() {
         show_nunc_dimittis: $("#show-nunc-dimittis").checked,
         include_baptism: $("#include-baptism").checked,
         baptism_candidate_names: $("#baptism-names").value.trim(),
+        baptism_placement: placementEl ? placementEl.value : "after_welcome",
         prelude_title: $("#prelude-title").value.trim(),
         prelude_performer: $("#prelude-performer").value.trim(),
         postlude_title: $("#postlude-title").value.trim(),
@@ -1174,7 +1489,6 @@ function setupGenerate() {
     $("#generate-again-btn").addEventListener("click", function() {
         hide($("#results-area"));
         $$('input[name="doc_select"]').forEach(function(el) { el.checked = true; });
-        $("#section-generate").scrollIntoView({ behavior: "smooth" });
     });
 
     // Open folder button
@@ -1191,9 +1505,9 @@ function setupGenerate() {
 function setupBaptismToggle() {
     $("#include-baptism").addEventListener("change", function() {
         if (this.checked) {
-            show($("#baptism-names-group"));
+            show($("#baptism-details"));
         } else {
-            hide($("#baptism-names-group"));
+            hide($("#baptism-details"));
             $("#baptism-names").value = "";
         }
     });
@@ -1210,5 +1524,6 @@ document.addEventListener("DOMContentLoaded", function() {
     setupFilePickers();
     setupGenerate();
     setupBaptismToggle();
+    setupWizardNav();
     initLogin();
 });
