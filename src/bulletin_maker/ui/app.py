@@ -35,6 +35,9 @@ def main() -> None:
 
     load_dotenv()
 
+    from bulletin_maker.updater import cleanup_update_artifacts
+    cleanup_update_artifacts()
+
     debug = is_debug()
 
     logging.basicConfig(

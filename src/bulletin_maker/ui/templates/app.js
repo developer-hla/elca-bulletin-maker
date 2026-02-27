@@ -586,6 +586,14 @@ function buildReviewOutline() {
 // ── Progress callback (called from Python via evaluate_js) ──────────
 
 window.updateProgress = function(data) {
+    // Route update-step progress to the banner progress bar
+    if (data.step === "update") {
+        var upFill = document.getElementById("update-progress-fill");
+        var upText = document.getElementById("update-progress-text");
+        if (upFill) upFill.style.width = data.pct + "%";
+        if (upText) upText.textContent = data.detail;
+        return;
+    }
     const fill = document.getElementById("progress-fill");
     const status = document.getElementById("progress-status");
     const bar = document.querySelector(".progress-bar");
@@ -596,20 +604,83 @@ window.updateProgress = function(data) {
 
 // ── Update Check ─────────────────────────────────────────────────────
 
+var _updateState = { downloadUrl: null, releaseNotes: null, installing: false };
+
 async function checkForUpdate() {
     try {
         var result = await window.pywebview.api.check_for_update();
         if (result.success && result.update_available) {
-            var banner = $("#update-banner");
+            _updateState.downloadUrl = result.download_url || null;
+            _updateState.releaseNotes = result.release_notes || null;
+
             $("#update-message").textContent =
                 "Version " + result.latest + " is available (you have " + result.current + ").";
-            var link = $("#update-link");
-            link.href = result.download_url || "#";
-            if (!result.download_url) hide(link);
-            show(banner);
+
+            // Show install button if we have a direct download URL
+            var installBtn = $("#update-install-btn");
+            if (_updateState.downloadUrl) {
+                show(installBtn);
+            } else {
+                hide(installBtn);
+            }
+
+            show($("#update-banner"));
         }
     } catch (e) {
         // Silently ignore — update check is non-critical
+    }
+}
+
+async function installUpdate() {
+    if (_updateState.installing || !_updateState.downloadUrl) return;
+    _updateState.installing = true;
+
+    var installBtn = $("#update-install-btn");
+    var progressEl = $("#update-progress");
+    var errorEl = $("#update-error");
+    var downloadLink = $("#update-download-link");
+
+    installBtn.disabled = true;
+    installBtn.textContent = "Installing...";
+    hide(errorEl);
+    hide(downloadLink);
+    show(progressEl);
+
+    try {
+        var result = await window.pywebview.api.install_update(_updateState.downloadUrl);
+        if (result && !result.success) {
+            hide(progressEl);
+            errorEl.textContent = result.error || "Update failed.";
+            show(errorEl);
+
+            if (result.fallback_url) {
+                downloadLink.href = result.fallback_url;
+                show(downloadLink);
+            }
+            installBtn.textContent = "Install Update";
+            installBtn.disabled = false;
+            _updateState.installing = false;
+        }
+        // If success, the app is relaunching — nothing more to do
+    } catch (e) {
+        hide(progressEl);
+        errorEl.textContent = "Update failed: " + (e.message || e);
+        show(errorEl);
+        downloadLink.href = _updateState.downloadUrl;
+        show(downloadLink);
+        installBtn.textContent = "Install Update";
+        installBtn.disabled = false;
+        _updateState.installing = false;
+    }
+}
+
+function toggleWhatsNew() {
+    var notesEl = $("#update-notes");
+    if (notesEl.hidden) {
+        notesEl.textContent = _updateState.releaseNotes || "No release notes available.";
+        show(notesEl);
+    } else {
+        hide(notesEl);
     }
 }
 
@@ -617,6 +688,8 @@ function setupUpdateBanner() {
     $("#update-dismiss").addEventListener("click", function() {
         hide($("#update-banner"));
     });
+    $("#update-install-btn").addEventListener("click", installUpdate);
+    $("#update-whats-new-btn").addEventListener("click", toggleWhatsNew);
 }
 
 // ── Login ────────────────────────────────────────────────────────────

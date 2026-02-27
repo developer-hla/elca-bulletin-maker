@@ -36,9 +36,21 @@
 
     <!-- Update banner (shown when newer version available) -->
     <div id="update-banner" class="update-banner" hidden>
-        <span id="update-message"></span>
-        <a id="update-link" href="#" target="_blank" class="update-link">Download</a>
-        <button id="update-dismiss" class="update-dismiss" aria-label="Dismiss">&times;</button>
+        <div class="update-banner-top">
+            <span id="update-message"></span>
+            <button id="update-install-btn" class="btn update-install-btn">Install Update</button>
+            <button id="update-whats-new-btn" class="update-whats-new-btn">What's New</button>
+            <a id="update-download-link" href="#" target="_blank" class="update-link" hidden>Download Manually</a>
+            <button id="update-dismiss" class="update-dismiss" aria-label="Dismiss">&times;</button>
+        </div>
+        <div id="update-notes" class="update-notes" hidden></div>
+        <div id="update-progress" class="update-progress" hidden>
+            <div class="update-progress-bar">
+                <div id="update-progress-fill" class="update-progress-fill"></div>
+            </div>
+            <span id="update-progress-text" class="update-progress-text">Downloading...</span>
+        </div>
+        <div id="update-error" class="error-msg" hidden></div>
     </div>
 
     <!-- Season bar (shown after date fetch, persists across steps) -->

@@ -117,6 +117,30 @@ class BulletinAPI:
             return {"success": True, "update_available": True, **result}
         return {"success": True, "update_available": False}
 
+    def install_update(self, download_url: str) -> dict:
+        """Download, install, and relaunch the updated application."""
+        from bulletin_maker.exceptions import UpdateError
+        from bulletin_maker.updater import install_update, is_install_writable
+
+        if not is_install_writable():
+            return {
+                "success": False,
+                "error": "Install location is not writable.",
+                "fallback_url": download_url,
+            }
+
+        try:
+            install_update(download_url, progress_callback=self._push_progress)
+            # If we get here on Windows, the bat script hasn't launched yet
+            return {"success": True}
+        except UpdateError as e:
+            logger.exception("Update install failed")
+            return {
+                "success": False,
+                "error": str(e),
+                "fallback_url": download_url,
+            }
+
     # ── Credential Storage ────────────────────────────────────────────
 
     @staticmethod

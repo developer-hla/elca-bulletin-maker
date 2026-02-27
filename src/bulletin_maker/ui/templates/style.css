@@ -125,9 +125,6 @@ h1, h2, h3, .login-card h1 {
 /* ── Update Banner ─────────────────────────────────────── */
 
 .update-banner {
-    display: flex;
-    align-items: center;
-    gap: 10px;
     padding: 8px 16px;
     background: var(--gold-light);
     border-bottom: 1px solid #DCC88A;
@@ -135,10 +132,45 @@ h1, h2, h3, .login-card h1 {
     color: #6B5808;
 }
 
+.update-banner-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.update-install-btn {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    padding: 4px 14px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.update-install-btn:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.update-whats-new-btn {
+    background: none;
+    border: none;
+    color: #6B5808;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+}
+
+.update-whats-new-btn:hover {
+    opacity: 0.7;
+}
+
 .update-link {
     color: var(--primary);
     font-weight: 600;
     text-decoration: none;
+    font-size: 12px;
 }
 
 .update-link:hover {
@@ -158,6 +190,45 @@ h1, h2, h3, .login-card h1 {
 
 .update-dismiss:hover {
     opacity: 0.7;
+}
+
+.update-notes {
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.6);
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.update-progress {
+    margin-top: 8px;
+}
+
+.update-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #DCC88A;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.update-progress-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.update-progress-text {
+    font-size: 12px;
+    color: #6B5808;
+    margin-top: 4px;
+    display: block;
 }
 
 /* ── Season Bar ────────────────────────────────────────── */

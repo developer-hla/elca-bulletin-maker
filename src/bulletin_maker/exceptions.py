@@ -21,3 +21,7 @@ class ContentNotFoundError(BulletinError):
 
 class NetworkError(BulletinError):
     """Transient network errors (timeout, connection refused, DNS failure)."""
+
+
+class UpdateError(BulletinError):
+    """Errors during the in-app update process."""
