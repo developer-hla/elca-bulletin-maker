@@ -288,6 +288,84 @@ class BulletinAPI:
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
 
+    # ── Reading Preview ─────────────────────────────────────────────────
+
+    def get_reading_preview(self, slot: str) -> dict:
+        """Return rendered HTML for a reading preview.
+
+        Args:
+            slot: "first", "second", "psalm", or "gospel".
+        """
+        from bulletin_maker.renderer.text_utils import (
+            clean_sns_html,
+            group_psalm_verses,
+            preprocess_html,
+        )
+
+        try:
+            if self._day is None:
+                return {"success": False, "error": "No content fetched yet.",
+                        "error_type": "validation"}
+
+            # Find the matching reading
+            slot_labels = {
+                "first": "First Reading",
+                "second": "Second Reading",
+                "psalm": "Psalm",
+                "gospel": "Gospel",
+            }
+            target_label = slot_labels.get(slot)
+            if not target_label:
+                return {"success": False, "error": f"Unknown slot: {slot}",
+                        "error_type": "validation"}
+
+            reading = None
+            for r in self._day.readings:
+                if r.label == target_label:
+                    reading = r
+                    break
+            if not reading:
+                return {"success": False,
+                        "error": f"No {target_label} found for this date.",
+                        "error_type": "validation"}
+
+            # Build preview HTML
+            if slot == "psalm":
+                groups = group_psalm_verses(reading.text_html)
+                lines = []
+                for g in groups:
+                    prefix = f'<sup>{g.verse_num}</sup>' if g.verse_num else ''
+                    if g.bold:
+                        lines.append(f'<p class="psalm-bold">{prefix}{g.text}</p>')
+                    else:
+                        lines.append(f'<p>{prefix}{g.text}</p>')
+                    for c in g.continuations:
+                        if c.bold:
+                            lines.append(
+                                f'<p class="psalm-bold psalm-cont">{c.text}</p>')
+                        else:
+                            lines.append(
+                                f'<p class="psalm-cont">{c.text}</p>')
+                preview_html = "\n".join(lines)
+            else:
+                # Strip outer S&S wrapper divs, keep inner HTML
+                body = reading.text_html
+                body = re.sub(r'^<div[^>]*>', '', body)
+                body = re.sub(r'</div>\s*$', '', body)
+                preview_html = preprocess_html(body)
+
+            return {
+                "success": True,
+                "label": reading.label,
+                "citation": reading.citation,
+                "intro": clean_sns_html(reading.intro),
+                "preview_html": preview_html,
+            }
+        except Exception as e:
+            logger.exception("Error getting reading preview")
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
+
     # ── Custom Reading ─────────────────────────────────────────────────
 
     def fetch_custom_reading(self, citation: str) -> dict:

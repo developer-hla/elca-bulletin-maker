@@ -748,15 +748,19 @@ function setupDateFetch() {
             div.className = "reading-item";
             div.dataset.slot = slot;
 
+            // Header row: label + citation + action links
+            var header = document.createElement("div");
+            header.className = "reading-header";
+
             var labelSpan = document.createElement("span");
             labelSpan.className = "reading-label";
             labelSpan.textContent = r.label + ":";
-            div.appendChild(labelSpan);
+            header.appendChild(labelSpan);
 
             var citationSpan = document.createElement("span");
             citationSpan.className = "reading-citation-text";
             citationSpan.textContent = " " + r.citation;
-            div.appendChild(citationSpan);
+            header.appendChild(citationSpan);
 
             var editBtn = document.createElement("button");
             editBtn.type = "button";
@@ -766,8 +770,10 @@ function setupDateFetch() {
                 var editArea = div.querySelector(".reading-edit-area");
                 if (editArea) {
                     editArea.hidden = !editArea.hidden;
+                    editBtn.textContent = editArea.hidden ? "Edit" : "Cancel";
                     return;
                 }
+                editBtn.textContent = "Cancel";
                 var area = document.createElement("div");
                 area.className = "reading-edit-area";
                 var input = document.createElement("input");
@@ -789,14 +795,14 @@ function setupDateFetch() {
                     var result = await window.pywebview.api.fetch_custom_reading(citation);
                     fetchBtn.disabled = false;
                     fetchBtn.textContent = "Fetch";
-                    var preview = area.querySelector(".reading-preview");
-                    if (!preview) {
-                        preview = document.createElement("div");
-                        preview.className = "reading-preview";
-                        area.appendChild(preview);
+                    var msg = area.querySelector(".reading-edit-msg");
+                    if (!msg) {
+                        msg = document.createElement("div");
+                        msg.className = "reading-edit-msg";
+                        area.appendChild(msg);
                     }
                     if (result.success) {
-                        preview.innerHTML = '<p class="reading-preview-ok">Passage fetched. Will use custom citation.</p>';
+                        msg.innerHTML = '<span class="reading-edit-ok">Fetched. Will use custom citation.</span>';
                         state.readingOverrides[slot] = {
                             label: r.label,
                             citation: citation,
@@ -804,8 +810,12 @@ function setupDateFetch() {
                             text_html: result.text_html,
                         };
                         citationSpan.textContent = " " + citation + " (custom)";
+                        // Invalidate any cached preview
+                        var oldPreview = div.querySelector(".reading-content-preview");
+                        if (oldPreview) oldPreview.remove();
+                        previewBtn.textContent = "Preview";
                     } else {
-                        preview.innerHTML = '<p class="error-msg">' + escapeHtml(result.error || "Failed to fetch") + '</p>';
+                        msg.innerHTML = '<span class="error-msg">' + escapeHtml(result.error || "Failed to fetch") + '</span>';
                     }
                 });
                 area.appendChild(fetchBtn);
@@ -818,14 +828,62 @@ function setupDateFetch() {
                     delete state.readingOverrides[slot];
                     input.value = r.citation;
                     citationSpan.textContent = " " + r.citation;
-                    var preview = area.querySelector(".reading-preview");
-                    if (preview) preview.innerHTML = "";
+                    var msg = area.querySelector(".reading-edit-msg");
+                    if (msg) msg.innerHTML = "";
+                    // Invalidate any cached preview
+                    var oldPreview = div.querySelector(".reading-content-preview");
+                    if (oldPreview) oldPreview.remove();
+                    previewBtn.textContent = "Preview";
                 });
                 area.appendChild(resetBtn);
 
                 div.appendChild(area);
             });
-            div.appendChild(editBtn);
+            header.appendChild(editBtn);
+
+            // Preview button
+            var previewBtn = document.createElement("button");
+            previewBtn.type = "button";
+            previewBtn.className = "btn-link reading-preview-btn";
+            previewBtn.textContent = "Preview";
+            previewBtn.addEventListener("click", async function() {
+                var existing = div.querySelector(".reading-content-preview");
+                if (existing) {
+                    existing.hidden = !existing.hidden;
+                    previewBtn.textContent = existing.hidden ? "Preview" : "Hide";
+                    return;
+                }
+                previewBtn.textContent = "Loading...";
+                previewBtn.disabled = true;
+                try {
+                    var res = await window.pywebview.api.get_reading_preview(slot);
+                    previewBtn.disabled = false;
+                    if (!res.success) {
+                        previewBtn.textContent = "Preview";
+                        return;
+                    }
+                    var preview = document.createElement("div");
+                    preview.className = "reading-content-preview";
+                    if (res.intro) {
+                        var intro = document.createElement("p");
+                        intro.className = "reading-intro";
+                        intro.textContent = res.intro;
+                        preview.appendChild(intro);
+                    }
+                    var content = document.createElement("div");
+                    content.className = "reading-content";
+                    content.innerHTML = res.preview_html;
+                    preview.appendChild(content);
+                    div.appendChild(preview);
+                    previewBtn.textContent = "Hide";
+                } catch (_) {
+                    previewBtn.disabled = false;
+                    previewBtn.textContent = "Preview";
+                }
+            });
+            header.appendChild(previewBtn);
+
+            div.appendChild(header);
 
             readingsEl.appendChild(div);
         });
@@ -1266,6 +1324,21 @@ async function loadLiturgicalTexts() {
 
         state.liturgicalTexts = result.texts;
         state.textChoices = {};
+
+        // Initialize read-only text choices (no editable panel, preview only)
+        ["prayer_of_day"].forEach(function(key) {
+            var info = result.texts[key];
+            if (!info) return;
+            var options = info.options || [];
+            var opt = options.find(function(o) { return !o.disabled; }) || options[0];
+            state.textChoices[key] = {
+                source: opt ? opt.key : "",
+                isCustom: false,
+                value: opt ? (opt.data || "") : "",
+                options: options,
+                type: info.type,
+            };
+        });
 
         var textOrder = ["confession", "offering_prayer", "prayer_after_communion", "blessing", "dismissal"];
         textOrder.forEach(function(key) {
