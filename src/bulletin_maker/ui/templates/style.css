@@ -494,6 +494,15 @@ main {
     max-width: 260px;
 }
 
+.cover-preview {
+    margin-top: 8px;
+    max-width: 120px;
+    max-height: 120px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    object-fit: contain;
+}
+
 /* ── Settings Grid ─────────────────────────────────────── */
 
 .settings-grid {

@@ -637,6 +637,7 @@ function resetFormUI() {
     $("#choral-title").value = "";
     $("#cover-image-path").textContent = "None selected";
     hide($("#cover-image-clear"));
+    hide($("#cover-image-preview"));
 }
 
 /** Resets all wizard state and UI to initial values. */
@@ -1116,6 +1117,15 @@ function setupFilePickers() {
                 const name = result.path.split("/").pop().split("\\").pop();
                 $("#cover-image-path").textContent = name;
                 show($("#cover-image-clear"));
+                // Load thumbnail preview
+                var preview = await window.pywebview.api.get_cover_preview(result.path);
+                var img = $("#cover-image-preview");
+                if (preview.success) {
+                    img.src = preview.data_uri;
+                    show(img);
+                } else {
+                    hide(img);
+                }
             }
         } finally {
             this.disabled = false;
@@ -1126,6 +1136,7 @@ function setupFilePickers() {
         state.coverImage = "";
         $("#cover-image-path").textContent = "None selected";
         hide(this);
+        hide($("#cover-image-preview"));
     });
 
     $("#output-dir-btn").addEventListener("click", async function() {

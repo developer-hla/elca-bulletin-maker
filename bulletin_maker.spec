@@ -12,6 +12,14 @@ import platform
 
 from PyInstaller.utils.hooks import collect_data_files
 
+# Read version from version.py (single source of truth)
+VERSION = "0.0.0"
+with open("src/bulletin_maker/version.py") as _f:
+    for _line in _f:
+        if _line.startswith("__version__"):
+            VERSION = _line.split('"')[1]
+            break
+
 block_cipher = None
 
 # Playwright data (browser driver + bundled headless shell)
@@ -89,6 +97,6 @@ if platform.system() == "Darwin":
         bundle_identifier="com.ascensionjackson.bulletinmaker",
         info_plist={
             "NSHighResolutionCapable": True,
-            "CFBundleShortVersionString": "0.2.0",
+            "CFBundleShortVersionString": VERSION,
         },
     )

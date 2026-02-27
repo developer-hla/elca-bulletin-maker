@@ -20,6 +20,30 @@ PAGE_HEIGHT_PT = 612.0      # 8.5 inches
 
 AUTO_SHRINK_SCALES = (0.95, 0.90, 0.85, 0.80)
 
+# ── Page margin presets ──────────────────────────────────────────────
+# Single source of truth for all document types.
+
+MARGINS_DEFAULT = {
+    "top": "0.25in",
+    "bottom": "0.5in",
+    "left": "0.438in",
+    "right": "0.438in",
+}
+
+MARGINS_PULPIT = {
+    "top": "0.85in",
+    "bottom": "0.4in",
+    "left": "0.5in",
+    "right": "0.5in",
+}
+
+MARGINS_BULLETIN = {
+    "top": "0.3in",
+    "bottom": "0.35in",
+    "left": "0.35in",
+    "right": "0.35in",
+}
+
 
 def render_to_pdf(
     html_string: str,
@@ -57,13 +81,7 @@ def render_to_pdf(
     output_path = Path(output_path).with_suffix(".pdf")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    default_margins = {
-        "top": "0.25in",
-        "bottom": "0.5in",
-        "left": "0.438in",
-        "right": "0.438in",
-    }
-    margins = margins or default_margins
+    margins = margins or MARGINS_DEFAULT
 
     with sync_playwright() as p:
         browser = p.chromium.launch()

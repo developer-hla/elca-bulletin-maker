@@ -45,6 +45,9 @@ from bulletin_maker.renderer.text_utils import (
 )
 from bulletin_maker.renderer.filters import TEMPLATE_DIR, setup_jinja_env
 from bulletin_maker.renderer.pdf_engine import (
+    MARGINS_BULLETIN,
+    MARGINS_DEFAULT,
+    MARGINS_PULPIT,
     count_pages,
     impose_booklet,
     render_to_pdf,
@@ -721,14 +724,7 @@ def _render_large_format(
         debug_name = label.lower().replace(" ", "_") + ".html"
         (debug_dir / debug_name).write_text(html_string)
 
-    lp_margins = {
-        "top": "0.25in",
-        "bottom": "0.5in",
-        "left": "0.438in",
-        "right": "0.438in",
-    }
-
-    render_to_pdf(html_string, output_path, margins=lp_margins, display_footer=True)
+    render_to_pdf(html_string, output_path, margins=MARGINS_DEFAULT, display_footer=True)
 
     # Auto-tighten: try progressively tighter CSS to reduce page count
     pages = count_pages(output_path)
@@ -737,7 +733,7 @@ def _render_large_format(
         best_pages = pages
         for level_css in LP_TIGHTEN_CSS:
             candidate = _inject_css(html_string, level_css)
-            render_to_pdf(candidate, output_path, margins=lp_margins,
+            render_to_pdf(candidate, output_path, margins=MARGINS_DEFAULT,
                           display_footer=True)
             n = count_pages(output_path)
             if n and n < best_pages:
@@ -745,7 +741,7 @@ def _render_large_format(
                 best_pages = n
         if best_pages < pages:
             logger.info("%s auto-tighten: %d -> %d pages", label, pages, best_pages)
-        render_to_pdf(best_html, output_path, margins=lp_margins,
+        render_to_pdf(best_html, output_path, margins=MARGINS_DEFAULT,
                       display_footer=True)
 
     logger.info("%s PDF saved: %s", label, output_path)
@@ -860,12 +856,7 @@ def generate_pulpit_scripture(
     result = render_with_shrink(
         html_string,
         output_path,
-        margins={
-            "top": "0.85in",
-            "bottom": "0.4in",
-            "left": "0.5in",
-            "right": "0.5in",
-        },
+        margins=MARGINS_PULPIT,
         max_pages=2,
         header_left=f"SCRIPTURE Readings \u2013 {date_display}",
         pulpit_header=True,
@@ -904,12 +895,7 @@ def generate_pulpit_prayers(
     result = render_with_shrink(
         html_string,
         output_path,
-        margins={
-            "top": "0.85in",
-            "bottom": "0.4in",
-            "left": "0.5in",
-            "right": "0.5in",
-        },
+        margins=MARGINS_PULPIT,
         max_pages=2,
         header_left=f"CREED & PRAYERS \u2013 {date_display}",
         pulpit_header=True,
@@ -982,17 +968,11 @@ def generate_bulletin(
 
     # Render sequential half-pages (7" x 8.5")
     seq_path = output_path.parent / f".{output_path.stem}_sequential.pdf"
-    bulletin_margins = {
-        "top": "0.3in",
-        "bottom": "0.35in",
-        "left": "0.35in",
-        "right": "0.35in",
-    }
     bulletin_page_size = {"width": "7in", "height": "8.5in"}
 
     render_to_pdf(
         html_string, seq_path,
-        margins=bulletin_margins, display_footer=True,
+        margins=MARGINS_BULLETIN, display_footer=True,
         page_size=bulletin_page_size,
     )
 
@@ -1009,7 +989,7 @@ def generate_bulletin(
             candidate = _inject_css(html_string, level_css)
             render_to_pdf(
                 candidate, seq_path,
-                margins=bulletin_margins, display_footer=True,
+                margins=MARGINS_BULLETIN, display_footer=True,
                 page_size=bulletin_page_size,
             )
             n = count_pages(seq_path)
@@ -1025,7 +1005,7 @@ def generate_bulletin(
                 candidate = _inject_css(html_string, level_css)
                 render_to_pdf(
                     candidate, seq_path,
-                    margins=bulletin_margins, display_footer=True,
+                    margins=MARGINS_BULLETIN, display_footer=True,
                     page_size=bulletin_page_size,
                 )
                 n = count_pages(seq_path)
@@ -1041,7 +1021,7 @@ def generate_bulletin(
                         final_blanks, best_blanks)
         render_to_pdf(
             best_html, seq_path,
-            margins=bulletin_margins, display_footer=True,
+            margins=MARGINS_BULLETIN, display_footer=True,
             page_size=bulletin_page_size,
         )
 

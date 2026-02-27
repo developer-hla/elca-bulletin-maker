@@ -467,6 +467,25 @@ class BulletinAPI:
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
 
+    def get_cover_preview(self, path: str) -> dict:
+        """Return a small base64 JPEG thumbnail for a cover image."""
+        try:
+            import base64
+            import io
+            from PIL import Image
+
+            img = Image.open(path)
+            img.thumbnail((150, 150))
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=75)
+            data = base64.b64encode(buf.getvalue()).decode()
+            return {"success": True, "data_uri": f"data:image/jpeg;base64,{data}"}
+        except Exception as e:
+            logger.debug("Cover preview failed: %s", e)
+            return {"success": False, "error": str(e)}
+
     def choose_cover_image(self) -> dict:
         """Open native file picker for cover image."""
         try:
