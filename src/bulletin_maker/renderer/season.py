@@ -8,8 +8,12 @@ which forms are used, etc.).
 from __future__ import annotations
 
 import re
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from bulletin_maker.sns.models import ServiceConfig
 
 
 class LiturgicalSeason(Enum):
@@ -214,32 +218,27 @@ def get_seasonal_config(season: LiturgicalSeason) -> SeasonalConfig:
     return _SEASON_CONFIGS[season]
 
 
-def fill_seasonal_defaults(config: object, season: LiturgicalSeason) -> None:
+def fill_seasonal_defaults(config: ServiceConfig, season: LiturgicalSeason) -> None:
     """Fill any None liturgical-choice fields on config from the season defaults.
 
     Mutates ``config`` in place.  Only touches fields that are None;
     values already set by the user/wizard are left unchanged.
-
-    Args:
-        config: A ServiceConfig instance (imported as ``object`` to avoid
-                circular imports — season.py should not import models).
-        season: The detected liturgical season.
     """
     seasonal = _SEASON_CONFIGS[season]
 
-    if getattr(config, "creed_type", None) is None:
-        config.creed_type = seasonal.creed_default  # type: ignore[attr-defined]
-    if getattr(config, "include_kyrie", None) is None:
-        config.include_kyrie = seasonal.has_kyrie  # type: ignore[attr-defined]
-    if getattr(config, "canticle", None) is None:
-        config.canticle = seasonal.canticle  # type: ignore[attr-defined]
-    if getattr(config, "eucharistic_form", None) is None:
-        config.eucharistic_form = seasonal.eucharistic_form  # type: ignore[attr-defined]
-    if getattr(config, "include_memorial_acclamation", None) is None:
-        config.include_memorial_acclamation = seasonal.has_memorial_acclamation  # type: ignore[attr-defined]
-    if getattr(config, "preface", None) is None:
-        config.preface = seasonal.preface  # type: ignore[attr-defined]
-    if getattr(config, "show_confession", None) is None:
-        config.show_confession = seasonal.show_confession  # type: ignore[attr-defined]
-    if getattr(config, "show_nunc_dimittis", None) is None:
-        config.show_nunc_dimittis = seasonal.show_nunc_dimittis  # type: ignore[attr-defined]
+    if config.creed_type is None:
+        config.creed_type = seasonal.creed_default
+    if config.include_kyrie is None:
+        config.include_kyrie = seasonal.has_kyrie
+    if config.canticle is None:
+        config.canticle = seasonal.canticle
+    if config.eucharistic_form is None:
+        config.eucharistic_form = seasonal.eucharistic_form
+    if config.include_memorial_acclamation is None:
+        config.include_memorial_acclamation = seasonal.has_memorial_acclamation
+    if config.preface is None:
+        config.preface = seasonal.preface
+    if config.show_confession is None:
+        config.show_confession = seasonal.show_confession
+    if config.show_nunc_dimittis is None:
+        config.show_nunc_dimittis = seasonal.show_nunc_dimittis

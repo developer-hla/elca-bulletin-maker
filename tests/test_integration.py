@@ -213,3 +213,33 @@ class TestClientIntegration:
         client._logged_in = True
         with pytest.raises(ValueError, match="Citation must not be empty"):
             client.search_passage("")
+
+
+class TestExtractErrorDetail:
+    """SundaysClient._extract_error_detail() parses S&S error pages."""
+
+    @staticmethod
+    def _make_response(text: str):
+        resp = MagicMock()
+        resp.text = text
+        return resp
+
+    def test_extracts_title(self):
+        resp = self._make_response('<html><title>Service Unavailable</title></html>')
+        assert SundaysClient._extract_error_detail(resp) == "Service Unavailable"
+
+    def test_ignores_generic_error_title(self):
+        resp = self._make_response('<html><title>Error</title></html>')
+        assert SundaysClient._extract_error_detail(resp) == ""
+
+    def test_extracts_heading(self):
+        resp = self._make_response('<html><title>Error</title><h1>Rate limit exceeded</h1></html>')
+        assert SundaysClient._extract_error_detail(resp) == "Rate limit exceeded"
+
+    def test_empty_page(self):
+        resp = self._make_response('')
+        assert SundaysClient._extract_error_detail(resp) == ""
+
+    def test_no_useful_content(self):
+        resp = self._make_response('<html><body><p>Some text</p></body></html>')
+        assert SundaysClient._extract_error_detail(resp) == ""

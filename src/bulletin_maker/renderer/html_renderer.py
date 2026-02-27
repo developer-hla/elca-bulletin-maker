@@ -391,11 +391,14 @@ def resolve_text_defaults(config: ServiceConfig, day: DayContent) -> None:
 # Context builders
 # ══════════════════════════════════════════════════════════════════════
 
-def _build_large_print_context(
+def _build_common_context(
     day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
 ) -> dict:
-    """Build the full template context for the Large Print document."""
+    """Build context keys shared by bulletin, large print, and leader guide.
 
+    Resolves readings, creed, prayers, GA image, cover image, and all
+    liturgical content that is identical across document types.
+    """
     # Readings (with override support)
     first_reading = _reading_data(_get_reading_with_override(day, config, SLOT_FIRST))
     second_reading = _reading_data(_get_reading_with_override(day, config, SLOT_SECOND))
@@ -413,10 +416,6 @@ def _build_large_print_context(
         logger.warning("Gospel Acclamation image not found for season %s", season)
     except ImportError:
         logger.warning("Pillow not installed — cannot convert GA image to data URI")
-
-    ga_text = ""
-    if day.gospel_acclamation:
-        ga_text = strip_tags(preprocess_html(day.gospel_acclamation))
 
     # Creed
     creed_name = "NICENE CREED" if config.creed_type == "nicene" else "APOSTLES CREED"
@@ -440,14 +439,8 @@ def _build_large_print_context(
         except FileNotFoundError:
             logger.warning("Cover image not found: %s", config.cover_image)
 
-    # CSS
-    css = (TEMPLATE_DIR / "large_print.css").read_text()
-
     return {
-        # CSS
-        "css": css,
-
-        # Cover
+        # Cover / metadata
         "church_name": CHURCH_NAME,
         "church_address": CHURCH_ADDRESS,
         "cover_image_uri": cover_image_uri,
@@ -458,11 +451,9 @@ def _build_large_print_context(
         "welcome_message": WELCOME_MESSAGE,
         "standing_instructions": STANDING_INSTRUCTIONS,
 
-        # Gathering
+        # Confession
         "show_confession": config.show_confession,
-        "choral_title": config.choral_title,
         "confession_entries": config.confession_entries,
-        "gathering_hymn": config.gathering_hymn,
 
         # Season
         "is_lent": season == LiturgicalSeason.LENT,
@@ -476,11 +467,7 @@ def _build_large_print_context(
         "psalm_data": psalm_data,
         "second_reading": second_reading,
         "ga_image_uri": ga_image_uri,
-        "ga_text_fallback": ga_text,
         "gospel": gospel_entry,
-
-        # Sermon
-        "sermon_hymn": config.sermon_hymn,
 
         # Creed / Baptism
         "include_baptism": config.include_baptism,
@@ -495,11 +482,7 @@ def _build_large_print_context(
         "offertory_hymn_verses": OFFERTORY_HYMN_VERSES,
 
         # Great Thanksgiving
-        "great_thanksgiving_dialog": GREAT_THANKSGIVING_DIALOG,
         "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE,
-
-        # Sanctus
-        "sanctus_stanzas": _split_stanzas(SANCTUS),
 
         # Eucharistic Prayer
         "eucharistic_form": config.eucharistic_form,
@@ -520,21 +503,39 @@ def _build_large_print_context(
         # Invitation to Communion
         "invitation_to_communion_text": invitation_text,
 
-        # Agnus Dei
-        "agnus_dei_stanzas": _split_agnus_dei(),
-
-        # Communion Hymn
-        "communion_hymn": config.communion_hymn,
-
         # Closing
         "show_nunc_dimittis": config.show_nunc_dimittis,
-        "nunc_dimittis_lines": NUNC_DIMITTIS.split("\n"),
         "offering_prayer_text": config.offering_prayer_text or "",
         "prayer_after_communion_text": config.prayer_after_communion_text or "",
         "blessing_lines": (config.blessing_text or AARONIC_BLESSING).split("\n"),
         "dismissal_entries": config.dismissal_entries or DISMISSAL_ENTRIES,
-        "sending_hymn": config.sending_hymn,
     }
+
+
+def _build_large_print_context(
+    day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
+) -> dict:
+    """Build the full template context for the Large Print document."""
+    ctx = _build_common_context(day, config, season)
+
+    ga_text = ""
+    if day.gospel_acclamation:
+        ga_text = strip_tags(preprocess_html(day.gospel_acclamation))
+
+    ctx.update({
+        "css": (TEMPLATE_DIR / "large_print.css").read_text(),
+        "choral_title": config.choral_title,
+        "gathering_hymn": config.gathering_hymn,
+        "ga_text_fallback": ga_text,
+        "sermon_hymn": config.sermon_hymn,
+        "great_thanksgiving_dialog": GREAT_THANKSGIVING_DIALOG,
+        "sanctus_stanzas": _split_stanzas(SANCTUS),
+        "agnus_dei_stanzas": _split_agnus_dei(),
+        "communion_hymn": config.communion_hymn,
+        "nunc_dimittis_lines": NUNC_DIMITTIS.split("\n"),
+        "sending_hymn": config.sending_hymn,
+    })
+    return ctx
 
 
 def _build_pulpit_scripture_context(
@@ -619,22 +620,7 @@ def _build_bulletin_context(
     communion_hymn_image_uri: str = "",
 ) -> dict:
     """Build template context for the standard Bulletin for Congregation."""
-
-    # Readings (with override support)
-    first_reading = _reading_data(_get_reading_with_override(day, config, SLOT_FIRST))
-    second_reading = _reading_data(_get_reading_with_override(day, config, SLOT_SECOND))
-    gospel_override = _get_reading_with_override(day, config, SLOT_GOSPEL)
-    gospel_entry = _reading_data(gospel_override) if gospel_override else _build_gospel_entry(day)
-    psalm_override = _get_reading_with_override(day, config, SLOT_PSALM)
-    psalm_data = _build_psalm_data_from_reading(psalm_override) if (config.reading_overrides and SLOT_PSALM in config.reading_overrides) else _build_psalm_data(day)
-
-    # Gospel Acclamation image
-    ga_image_uri = ""
-    try:
-        path = get_gospel_acclamation_image(season)
-        ga_image_uri = _image_to_data_uri(path)
-    except FileNotFoundError:
-        logger.warning("GA image not found for season %s", season)
+    ctx = _build_common_context(day, config, season)
 
     # Notation images for liturgical setting pieces
     kyrie_uri = _safe_setting_image_uri("kyrie") if config.include_kyrie else ""
@@ -656,44 +642,8 @@ def _build_bulletin_context(
         memorial_acc_uri = _safe_setting_image_uri("memorial_acclamation")
         amen_uri = _safe_setting_image_uri("amen")
 
-    # Creed
-    creed_name = "NICENE CREED" if config.creed_type == "nicene" else "APOSTLES CREED"
-    creed_text = NICENE_CREED if config.creed_type == "nicene" else APOSTLES_CREED
-
-    # Prayers response
-    prayers_response = DEFAULT_PRAYERS_RESPONSE
-    if day.prayers_html:
-        prayers_response = parse_prayers_response(day.prayers_html)
-
-    # Invitation to communion
-    invitation_text = "Taste and see that the Lord is good."
-    if day.invitation_to_communion:
-        invitation_text = strip_tags(preprocess_html(day.invitation_to_communion))
-
-    # Cover image
-    cover_image_uri = ""
-    if config.cover_image:
-        try:
-            cover_image_uri = _image_to_data_uri(Path(config.cover_image))
-        except FileNotFoundError:
-            logger.warning("Cover image not found: %s", config.cover_image)
-
-    css = (TEMPLATE_DIR / "bulletin.css").read_text()
-
-    return {
-        # CSS
-        "css": css,
-
-        # Cover
-        "church_name": CHURCH_NAME,
-        "church_address": CHURCH_ADDRESS,
-        "cover_image_uri": cover_image_uri,
-        "date_display": config.date_display,
-        "day_name": _extract_day_name(day.title),
-
-        # Welcome
-        "welcome_message": WELCOME_MESSAGE,
-        "standing_instructions": STANDING_INSTRUCTIONS,
+    ctx.update({
+        "css": (TEMPLATE_DIR / "bulletin.css").read_text(),
 
         # Prelude/postlude
         "prelude_title": config.prelude_title,
@@ -702,99 +652,25 @@ def _build_bulletin_context(
         "postlude_performer": config.postlude_performer,
         "choral_title": config.choral_title,
 
-        # Confession
-        "show_confession": config.show_confession,
-        "confession_entries": config.confession_entries,
-
-        # Notation images — setting pieces
+        # Notation images
         "kyrie_image_uri": kyrie_uri,
         "canticle_image_uri": canticle_uri,
-
-        # Gathering hymn (title only)
-        "gathering_hymn_title": _hymn_title_str(config.gathering_hymn),
-
-        # Season
-        "is_lent": season == LiturgicalSeason.LENT,
-        "invitation_to_lent_paragraphs": _split_stanzas(INVITATION_TO_LENT),
-
-        # Prayer of the Day
-        "prayer_of_day_html": _clean_html(day.prayer_of_the_day_html),
-
-        # Readings
-        "first_reading": first_reading,
-        "psalm_data": psalm_data,
-        "second_reading": second_reading,
-        "ga_image_uri": ga_image_uri,
-        "gospel": gospel_entry,
-
-        # Sermon hymn (title only)
-        "sermon_hymn_title": _hymn_title_str(config.sermon_hymn),
-
-        # Creed / Baptism
-        "include_baptism": config.include_baptism,
-        "creed_name": creed_name,
-        "creed_stanzas": _split_stanzas(creed_text),
-        **(_build_baptism_context(config) if config.include_baptism else {}),
-
-        # Prayers
-        "prayers_response": prayers_response,
-
-        # Offering
-        "offertory_image_uri": "",  # text fallback for now
-        "offertory_hymn_verses": OFFERTORY_HYMN_VERSES,
-
-        # Great Thanksgiving
         "great_thanksgiving_image_uri": great_thanksgiving_uri,
-        "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE,
-
-        # Sanctus
         "sanctus_image_uri": sanctus_uri,
-
-        # Eucharistic Prayer
-        "eucharistic_form": config.eucharistic_form,
-        "eucharistic_prayer_first_line": EUCHARISTIC_PRAYER_EXTENDED.split("\n")[0],
-        "eucharistic_prayer_lines": [
-            l.strip() for l in EUCHARISTIC_PRAYER_EXTENDED.split("\n")[1:]
-            if l.strip()
-        ],
-        "words_of_institution_paragraphs": _split_stanzas(WORDS_OF_INSTITUTION),
-        "has_memorial_acclamation": config.include_memorial_acclamation,
-        "memorial_acclamation": MEMORIAL_ACCLAMATION,
+        "agnus_dei_image_uri": agnus_dei_uri,
+        "nunc_dimittis_image_uri": nunc_dimittis_uri,
         "memorial_acclamation_image_uri": memorial_acc_uri,
         "amen_image_uri": amen_uri,
-        "eucharistic_prayer_closing_stanzas": _split_stanzas(EUCHARISTIC_PRAYER_CLOSING),
-        "come_holy_spirit": COME_HOLY_SPIRIT,
+        "offertory_image_uri": "",
 
-        # Lord's Prayer
-        "lords_prayer_stanzas": _split_stanzas(LORDS_PRAYER),
-
-        # Invitation to Communion
-        "invitation_to_communion_text": invitation_text,
-
-        # Agnus Dei
-        "agnus_dei_image_uri": agnus_dei_uri,
-
-        # Communion Hymn
+        # Hymn titles (bulletin shows title only, not full lyrics)
+        "gathering_hymn_title": _hymn_title_str(config.gathering_hymn),
+        "sermon_hymn_title": _hymn_title_str(config.sermon_hymn),
         "communion_hymn_title": _hymn_title_str(config.communion_hymn),
         "communion_hymn_image_uri": communion_hymn_image_uri,
-
-        # Nunc Dimittis
-        "show_nunc_dimittis": config.show_nunc_dimittis,
-        "nunc_dimittis_image_uri": nunc_dimittis_uri,
-
-        # Offering Prayer / Prayer After Communion
-        "offering_prayer_text": config.offering_prayer_text or "",
-        "prayer_after_communion_text": config.prayer_after_communion_text or "",
-
-        # Blessing
-        "blessing_lines": (config.blessing_text or AARONIC_BLESSING).split("\n"),
-
-        # Dismissal
-        "dismissal_entries": config.dismissal_entries or DISMISSAL_ENTRIES,
-
-        # Sending hymn (title only)
         "sending_hymn_title": _hymn_title_str(config.sending_hymn),
-    }
+    })
+    return ctx
 
 
 def _find_creed_page(pdf_path: Path) -> int | None:

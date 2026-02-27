@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 
 from bulletin_maker.sns.models import (
@@ -14,9 +16,11 @@ from bulletin_maker.sns.models import (
 )
 from bulletin_maker.renderer.html_renderer import (
     _build_baptism_context,
+    _build_common_context,
     _get_reading,
     _get_reading_with_override,
 )
+from bulletin_maker.renderer.season import LiturgicalSeason
 
 
 def _make_day() -> DayContent:
@@ -144,3 +148,80 @@ class TestBuildBaptismContext:
             "baptism_welcome", "baptism_welcome_response",
         }
         assert expected_keys.issubset(ctx.keys())
+
+
+class TestBuildCommonContext:
+    """_build_common_context() produces keys shared by all document types."""
+
+    @patch("bulletin_maker.renderer.html_renderer.get_gospel_acclamation_image",
+           side_effect=FileNotFoundError)
+    def test_returns_expected_shared_keys(self, _mock_ga):
+        day = _make_day()
+        config = ServiceConfig(
+            date="2026-2-22", date_display="February 22, 2026",
+            creed_type="nicene", include_kyrie=True, canticle="glory_to_god",
+            eucharistic_form="extended", include_memorial_acclamation=True,
+            show_confession=True, show_nunc_dimittis=True,
+        )
+        ctx = _build_common_context(day, config, LiturgicalSeason.LENT)
+        expected_keys = {
+            "church_name", "church_address", "cover_image_uri",
+            "date_display", "day_name",
+            "welcome_message", "standing_instructions",
+            "show_confession", "confession_entries",
+            "is_lent", "invitation_to_lent_paragraphs",
+            "prayer_of_day_html",
+            "first_reading", "psalm_data", "second_reading",
+            "ga_image_uri", "gospel",
+            "include_baptism", "creed_name", "creed_stanzas",
+            "prayers_response",
+            "offertory_hymn_verses",
+            "great_thanksgiving_preface",
+            "eucharistic_form", "eucharistic_prayer_first_line",
+            "eucharistic_prayer_lines", "words_of_institution_paragraphs",
+            "has_memorial_acclamation", "memorial_acclamation",
+            "eucharistic_prayer_closing_stanzas", "come_holy_spirit",
+            "lords_prayer_stanzas",
+            "invitation_to_communion_text",
+            "show_nunc_dimittis",
+            "offering_prayer_text", "prayer_after_communion_text",
+            "blessing_lines", "dismissal_entries",
+        }
+        assert expected_keys.issubset(ctx.keys())
+
+    @patch("bulletin_maker.renderer.html_renderer.get_gospel_acclamation_image",
+           side_effect=FileNotFoundError)
+    def test_nicene_creed_selected(self, _mock_ga):
+        day = _make_day()
+        config = ServiceConfig(
+            date="2026-2-22", date_display="February 22, 2026",
+            creed_type="nicene",
+        )
+        ctx = _build_common_context(day, config, LiturgicalSeason.LENT)
+        assert ctx["creed_name"] == "NICENE CREED"
+        assert ctx["is_lent"] is True
+
+    @patch("bulletin_maker.renderer.html_renderer.get_gospel_acclamation_image",
+           side_effect=FileNotFoundError)
+    def test_apostles_creed_selected(self, _mock_ga):
+        day = _make_day()
+        config = ServiceConfig(
+            date="2026-2-22", date_display="February 22, 2026",
+            creed_type="apostles",
+        )
+        ctx = _build_common_context(day, config, LiturgicalSeason.PENTECOST)
+        assert ctx["creed_name"] == "APOSTLES CREED"
+        assert ctx["is_lent"] is False
+
+    @patch("bulletin_maker.renderer.html_renderer.get_gospel_acclamation_image",
+           side_effect=FileNotFoundError)
+    def test_readings_resolved(self, _mock_ga):
+        day = _make_day()
+        config = ServiceConfig(
+            date="2026-2-22", date_display="February 22, 2026",
+        )
+        ctx = _build_common_context(day, config, LiturgicalSeason.LENT)
+        assert ctx["first_reading"] is not None
+        assert ctx["first_reading"]["citation"] == "Genesis 2:15-17"
+        assert ctx["gospel"] is not None
+        assert ctx["gospel"]["citation"] == "Matthew 4:1-11"
