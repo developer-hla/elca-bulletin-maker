@@ -836,7 +836,7 @@ function setupDateFetch() {
         try {
             var prefixResult = await window.pywebview.api.get_file_prefix();
             if (prefixResult.success) {
-                $("#filename-prefix").textContent = prefixResult.prefix + " - [Document].pdf";
+                $("#filename-prefix").textContent = "[Document] - " + prefixResult.prefix + ".pdf";
                 show($("#filename-preview"));
             } else {
                 hide($("#filename-preview"));

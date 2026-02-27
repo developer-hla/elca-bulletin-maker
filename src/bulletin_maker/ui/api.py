@@ -61,12 +61,11 @@ class BulletinAPI:
             payload = json.dumps({"step": step, "detail": detail, "pct": pct})
             self._window.evaluate_js(f"updateProgress({payload})")
 
-    def _build_file_prefix(self) -> str:
-        """Build file prefix like '2026.02.22 FIRST SUNDAY IN LENT A'.
+    def _build_date_suffix(self) -> str:
+        """Build the date + day portion of a filename.
 
-        If the selected date is not a Sunday, the S&S liturgical title
-        (which always names the nearest Sunday) is replaced with just the
-        weekday name so the filename doesn't misleadingly say "Sunday".
+        Returns e.g. ``2026.03.01 - First Sunday in Lent Year A``.
+        If the selected date is not a Sunday, the weekday is prepended.
         """
         dt = datetime.strptime(self._date_str, "%Y-%m-%d")
         date_dot = dt.strftime("%Y.%m.%d")
@@ -83,16 +82,21 @@ class BulletinAPI:
             weekday = dt.strftime("%A")
             day_label = f"{weekday} - {day_label}"
 
-        day_label = day_label.upper() + (" Year " + year_letter if year_letter else "")
-        return f"{date_dot} {day_label}"
+        if year_letter:
+            day_label += " Year " + year_letter
+        return f"{date_dot} - {day_label}"
+
+    def _build_filename(self, doc_label: str) -> str:
+        """Build a full filename like ``Bulletin - 2026.03.01 - First Sunday in Lent Year A.pdf``."""
+        return f"{doc_label} - {self._build_date_suffix()}.pdf"
 
     def get_file_prefix(self) -> dict:
-        """Return the file-name prefix for the current date (for UI preview)."""
+        """Return the date-suffix portion of filenames (for UI preview)."""
         try:
             if self._day is None or self._date_str is None:
                 return {"success": False, "error": "No content fetched yet.",
                         "error_type": "validation"}
-            return {"success": True, "prefix": self._build_file_prefix()}
+            return {"success": True, "prefix": self._build_date_suffix()}
         except Exception as e:
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
@@ -654,8 +658,6 @@ class BulletinAPI:
                 "bulletin", "prayers", "scripture", "large_print", "leader_guide",
             ])
 
-            prefix = self._build_file_prefix()
-
             results = {}
             errors = {}
             creed_page = None  # Set by bulletin generation
@@ -678,7 +680,7 @@ class BulletinAPI:
                 try:
                     bulletin_path, creed_page = generate_bulletin(
                         self._day, config,
-                        output_path=output_dir / f"{prefix} - Bulletin for Congregation.pdf",
+                        output_path=output_dir / self._build_filename("Bulletin for Congregation"),
                         season=season,
                         client=self._client,
                     )
@@ -701,7 +703,7 @@ class BulletinAPI:
                         config.date_display,
                         creed_type=creed_type,
                         creed_page_num=creed_page,
-                        output_path=output_dir / f"{prefix} - Pulpit PRAYERS + {prayers_label} 8.5 x 11.pdf",
+                        output_path=output_dir / self._build_filename(f"Pulpit PRAYERS + {prayers_label}"),
                     )
                     results["prayers"] = str(prayers_path)
                     self._push_progress("prayers", f"[{step}/{total}] Pulpit prayers saved", 55)
@@ -718,7 +720,7 @@ class BulletinAPI:
                     scripture_path = generate_pulpit_scripture(
                         self._day,
                         config.date_display,
-                        output_path=output_dir / f"{prefix} - Pulpit SCRIPTURE 8.5 x 11.pdf",
+                        output_path=output_dir / self._build_filename("Pulpit SCRIPTURE"),
                         config=config,
                     )
                     results["scripture"] = str(scripture_path)
@@ -735,7 +737,7 @@ class BulletinAPI:
                 try:
                     lp_path = generate_large_print(
                         self._day, config,
-                        output_path=output_dir / f"{prefix} - Full with Hymns LARGE PRINT.pdf",
+                        output_path=output_dir / self._build_filename("Full with Hymns LARGE PRINT"),
                         season=season,
                     )
                     results["large_print"] = str(lp_path)
@@ -752,7 +754,7 @@ class BulletinAPI:
                 try:
                     lg_path = generate_leader_guide(
                         self._day, config,
-                        output_path=output_dir / f"{prefix} - Leader Guide.pdf",
+                        output_path=output_dir / self._build_filename("Leader Guide"),
                         season=season,
                     )
                     results["leader_guide"] = str(lg_path)
@@ -786,14 +788,12 @@ class BulletinAPI:
             if not folder.exists() or self._day is None:
                 return {"success": True, "existing": []}
 
-            prefix = self._build_file_prefix()
-
-            # Map doc keys to suffixes
-            suffixes = {
-                "bulletin": "Bulletin for Congregation.pdf",
-                "scripture": "Pulpit SCRIPTURE 8.5 x 11.pdf",
-                "large_print": "Full with Hymns LARGE PRINT.pdf",
-                "leader_guide": "Leader Guide.pdf",
+            # Map doc keys to document labels
+            doc_labels = {
+                "bulletin": "Bulletin for Congregation",
+                "scripture": "Pulpit SCRIPTURE",
+                "large_print": "Full with Hymns LARGE PRINT",
+                "leader_guide": "Leader Guide",
             }
 
             existing = []
@@ -801,13 +801,15 @@ class BulletinAPI:
                 if doc == "prayers":
                     # Prayers filename varies by creed type
                     for f in folder.iterdir():
-                        if f.is_file() and f.name.startswith(f"{prefix} - Pulpit PRAYERS"):
-                            existing.append(f.name)
-                            break
+                        if f.is_file() and f.name.startswith("Pulpit PRAYERS"):
+                            suffix = self._build_date_suffix()
+                            if suffix in f.name:
+                                existing.append(f.name)
+                                break
                 else:
-                    suffix = suffixes.get(doc, "")
-                    if suffix:
-                        target = folder / f"{prefix} - {suffix}"
+                    label = doc_labels.get(doc, "")
+                    if label:
+                        target = folder / self._build_filename(label)
                         if target.exists():
                             existing.append(target.name)
 
