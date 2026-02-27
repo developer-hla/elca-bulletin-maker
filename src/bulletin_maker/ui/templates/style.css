@@ -1137,9 +1137,6 @@ main {
     transition: background 0.1s;
 }
 
-.outline-item:hover {
-    background: var(--primary-light);
-}
 
 .outline-label {
     width: 160px;
@@ -1174,4 +1171,38 @@ main {
 .outline-item.outline-extra .outline-label {
     color: #7d6608;
     font-weight: 700;
+}
+
+.outline-item-wrapper {
+    margin-bottom: 1px;
+}
+
+.outline-peek-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
+    color: var(--text-light);
+    margin-left: 8px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background 0.15s;
+}
+
+.outline-peek-btn:hover {
+    background: var(--border);
+    color: var(--text);
+}
+
+.outline-peek {
+    margin: 0 8px 6px 160px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-left: 3px solid var(--border);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-light);
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
 }

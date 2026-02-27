@@ -293,10 +293,48 @@ function hymnOutlineItem(label, slotName) {
 /** Returns the source label for a liturgical text choice. */
 function getTextSourceLabel(key) {
     var tc = state.textChoices[key];
-    if (!tc) return "S&S";
+    if (!tc) return "This Week\u2019s (S&S)";
     if (tc.isCustom) return "Custom edit";
     var opt = (tc.options || []).find(function(o) { return o.key === tc.source; });
     return opt ? opt.label : tc.source;
+}
+
+/** Returns a preview string for a liturgical text choice. */
+function getTextPreview(key) {
+    var tc = state.textChoices[key];
+    if (!tc) return "";
+
+    if (tc.type === "structured") {
+        // Read current entries from the DOM editor if available
+        var editor = document.querySelector('.structured-editor[data-key="' + key + '"]');
+        if (editor) {
+            var rows = editor.querySelectorAll(".entry-row");
+            var lines = [];
+            rows.forEach(function(row) {
+                var role = row.querySelector(".entry-role");
+                var text = row.querySelector(".entry-text");
+                if (role && text) {
+                    var r = role.value;
+                    var t = (text.value || text.textContent || "").trim();
+                    if (t) lines.push((r ? r + ": " : "") + t);
+                }
+            });
+            return lines.join("\n");
+        }
+        // Fallback: use the selected option's data
+        var data = findOptionData(tc.options, tc.source);
+        if (Array.isArray(data)) {
+            return data.map(function(e) {
+                return (e[0] ? e[0] + ": " : "") + e[1];
+            }).join("\n");
+        }
+        return "";
+    }
+
+    // Plain text
+    if (tc.value) return tc.value;
+    var opt = findOptionData(tc.options, tc.source);
+    return typeof opt === "string" ? opt : "";
 }
 
 /** Returns the gospel acclamation label for the current season. */
@@ -305,17 +343,6 @@ function getGospelAccLabel() {
     if (season === "advent") return "\u201CWait for the Lord\u201D";
     if (season === "lent") return "Lenten verse";
     return "Alleluia";
-}
-
-/** Maps an outline item label to its wizard step number. */
-function getStepForOutlineItem(label) {
-    var l = label.toLowerCase();
-    if (l === "prelude" || l === "postlude" || l.indexOf("hymn") !== -1 ||
-        l === "sermon" || l === "choral") return 1;
-    if (l.indexOf("reading") !== -1 || l === "psalm" || l === "gospel" ||
-        l === "readings") return 1;
-    if (l === "baptism") return 3;
-    return 2;
 }
 
 /** Builds the visual liturgy outline in Step 4. */
@@ -359,7 +386,7 @@ function buildReviewOutline() {
 
     // Confession
     var showConf = $("#show-confession").checked;
-    items.push({ label: "Confession", value: showConf ? getTextSourceLabel("confession") : "(omitted)", empty: !showConf });
+    items.push({ label: "Confession", value: showConf ? getTextSourceLabel("confession") : "(omitted)", empty: !showConf, textKey: showConf ? "confession" : null });
 
     // Gathering Hymn
     items.push(hymnOutlineItem("Gathering Hymn", "gathering"));
@@ -374,7 +401,7 @@ function buildReviewOutline() {
     items.push({ label: "Canticle", value: canticleVal === "none" ? "(omitted)" : (CANTICLE_LABELS[canticleVal] || canticleVal), empty: canticleVal === "none" });
 
     // Prayer of Day
-    items.push({ label: "Prayer of Day", value: "S&S" });
+    items.push({ label: "Prayer of Day", value: "This Week\u2019s (S&S)", textKey: "prayer_of_day" });
 
     // Readings
     var readings = $$("#readings-list .reading-item");
@@ -411,7 +438,7 @@ function buildReviewOutline() {
     }
 
     // Prayers
-    items.push({ label: "Prayers", value: "S&S (this week\u2019s)" });
+    items.push({ label: "Prayers", value: "This Week\u2019s (S&S)" });
 
     // Baptism after prayers
     if (baptismOn && baptismPlacement === "after_prayers") {
@@ -419,7 +446,7 @@ function buildReviewOutline() {
     }
 
     // Offering Prayer
-    items.push({ label: "Offering Prayer", value: getTextSourceLabel("offering_prayer") });
+    items.push({ label: "Offering Prayer", value: getTextSourceLabel("offering_prayer"), textKey: "offering_prayer" });
 
     // Choral
     var choralTitle = $("#choral-title").value.trim();
@@ -430,14 +457,17 @@ function buildReviewOutline() {
     // Communion Hymn
     items.push(hymnOutlineItem("Communion Hymn", "communion"));
 
+    // Prayer After Communion
+    items.push({ label: "Prayer After Comm.", value: getTextSourceLabel("prayer_after_communion"), textKey: "prayer_after_communion" });
+
     // Blessing
-    items.push({ label: "Blessing", value: getTextSourceLabel("blessing") });
+    items.push({ label: "Blessing", value: getTextSourceLabel("blessing"), textKey: "blessing" });
 
     // Sending Hymn
     items.push(hymnOutlineItem("Sending Hymn", "sending"));
 
     // Dismissal
-    items.push({ label: "Dismissal", value: getTextSourceLabel("dismissal") });
+    items.push({ label: "Dismissal", value: getTextSourceLabel("dismissal"), textKey: "dismissal" });
 
     // Postlude
     var pot = $("#postlude-title").value.trim();
@@ -450,6 +480,9 @@ function buildReviewOutline() {
 
     // Render items
     items.forEach(function(item) {
+        var wrapper = document.createElement("div");
+        wrapper.className = "outline-item-wrapper";
+
         var row = document.createElement("div");
         row.className = "outline-item";
         if (item.extra) row.classList.add("outline-extra");
@@ -467,16 +500,40 @@ function buildReviewOutline() {
             row.appendChild(valueSpan);
         }
 
-        var step = getStepForOutlineItem(item.label);
-        if (step) {
-            row.style.cursor = "pointer";
-            row.title = "Click to edit";
-            (function(s) {
-                row.addEventListener("click", function() { showStep(s); });
-            })(step);
+        // Preview toggle for liturgical texts
+        if (item.textKey) {
+            var peekBtn = document.createElement("button");
+            peekBtn.type = "button";
+            peekBtn.className = "outline-peek-btn";
+            peekBtn.textContent = "\u25B6";
+            peekBtn.title = "Preview text";
+            (function(key) {
+                peekBtn.addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    var existing = wrapper.querySelector(".outline-peek");
+                    if (existing) {
+                        existing.hidden = !existing.hidden;
+                        peekBtn.textContent = existing.hidden ? "\u25B6" : "\u25BC";
+                        return;
+                    }
+                    var peek = document.createElement("div");
+                    peek.className = "outline-peek";
+                    var text = getTextPreview(key);
+                    if (text) {
+                        peek.textContent = text;
+                    } else {
+                        peek.textContent = "(no text available)";
+                        peek.classList.add("outline-empty");
+                    }
+                    wrapper.appendChild(peek);
+                    peekBtn.textContent = "\u25BC";
+                });
+            })(item.textKey);
+            row.appendChild(peekBtn);
         }
 
-        list.appendChild(row);
+        wrapper.appendChild(row);
+        list.appendChild(wrapper);
     });
 
     outline.appendChild(list);

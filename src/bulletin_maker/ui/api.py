@@ -414,6 +414,16 @@ class BulletinAPI:
             ) if day.dismissal_html else []
 
             texts = {
+                "prayer_of_day": {
+                    "label": "Prayer of the Day",
+                    "type": "text",
+                    "default": "sns",
+                    "options": [
+                        {"key": "sns", "label": "This Week\u2019s (S&S)",
+                         "data": clean_sns_html(day.prayer_of_the_day_html),
+                         "disabled": not bool(day.prayer_of_the_day_html)},
+                    ],
+                },
                 "confession": {
                     "label": "Confession and Forgiveness",
                     "type": "structured",
