@@ -202,7 +202,7 @@ header h1 {
 main {
     max-width: 720px;
     margin: 0 auto;
-    padding: 20px 16px 40px;
+    padding: 20px 16px 80px;
 }
 
 /* ── Cards (sections) ──────────────────────────────────── */
@@ -341,11 +341,22 @@ main {
 /* ── Wizard Buttons ───────────────────────────────────────── */
 
 .wizard-buttons {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 16px;
-    padding-top: 16px;
+    padding: 12px 24px;
+    background: var(--card-bg);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.06);
+    z-index: 10;
+}
+
+.wizard-buttons .btn {
+    min-width: 100px;
 }
 
 /* ── Buttons ───────────────────────────────────────────── */
