@@ -1174,7 +1174,7 @@ main {
 
 .filename-preview .info-value {
     font-family: monospace;
-    word-break: break-all;
+    overflow-wrap: break-word;
 }
 
 /* ── Readiness Summary ────────────────────────────────────── */
