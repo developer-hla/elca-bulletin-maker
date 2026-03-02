@@ -486,19 +486,14 @@
 </div>
 
 
-{# ── Announcements ── #}
+{# ── Announcements + Sending Hymn + Sending + Postlude ── #}
+<div class="flow-group">
 <div class="liturgy-heading"><span>ANNOUNCEMENTS</span></div>
 <div class="spacer"></div>
 
-
-{# ── Sending Hymn ── #}
 {% if sending_hymn %}
 {{ render_hymn(sending_hymn, "*SENDING HYMN") }}
 {% endif %}
-
-
-{# ── Sending + Postlude ── #}
-<div class="flow-group">
 <div class="liturgy-heading">
     <span>SENDING</span>
     <span class="heading-role">Pastor</span>
