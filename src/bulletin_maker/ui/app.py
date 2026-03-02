@@ -45,7 +45,7 @@ def main() -> None:
         format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
     )
 
-    api = BulletinAPI()
+    api = BulletinAPI(debug=debug)
 
     window = webview.create_window(
         title="Bulletin Maker — Ascension Lutheran Church",

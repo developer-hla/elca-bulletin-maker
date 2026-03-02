@@ -34,12 +34,13 @@ logger = logging.getLogger(__name__)
 class BulletinAPI:
     """Bridge between the pywebview JS frontend and the Python backend."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, debug: bool = False) -> None:
         self._client: Optional[SundaysClient] = None
         self._day: Optional[DayContent] = None
         self._date_str: Optional[str] = None  # "YYYY-MM-DD" from last fetch
         self._window: Optional[webview.Window] = None
         self._hymn_cache: dict[str, dict] = {}
+        self._debug: bool = debug
 
     def set_window(self, window: webview.Window) -> None:
         self._window = window
@@ -802,6 +803,7 @@ class BulletinAPI:
                         output_path=output_dir / self._build_filename("Bulletin for Congregation"),
                         season=season,
                         client=self._client,
+                        keep_intermediates=self._debug,
                         on_progress=_bulletin_progress,
                     )
                     results["bulletin"] = str(bulletin_path)
@@ -824,6 +826,7 @@ class BulletinAPI:
                         creed_type=creed_type,
                         creed_page_num=creed_page,
                         output_path=output_dir / self._build_filename(f"Pulpit PRAYERS + {prayers_label}"),
+                        keep_intermediates=self._debug,
                     )
                     results["prayers"] = str(prayers_path)
                     self._push_progress("prayers", f"[{step}/{total}] Pulpit prayers saved", 55)
@@ -842,6 +845,7 @@ class BulletinAPI:
                         config.date_display,
                         output_path=output_dir / self._build_filename("Pulpit SCRIPTURE"),
                         config=config,
+                        keep_intermediates=self._debug,
                     )
                     results["scripture"] = str(scripture_path)
                     self._push_progress("scripture", f"[{step}/{total}] Pulpit scripture saved", 75)
@@ -859,6 +863,7 @@ class BulletinAPI:
                         self._day, config,
                         output_path=output_dir / self._build_filename("Full with Hymns LARGE PRINT"),
                         season=season,
+                        keep_intermediates=self._debug,
                     )
                     results["large_print"] = str(lp_path)
                     self._push_progress("large_print", f"[{step}/{total}] Large print saved", 85)
@@ -876,6 +881,7 @@ class BulletinAPI:
                         self._day, config,
                         output_path=output_dir / self._build_filename("Leader Guide"),
                         season=season,
+                        keep_intermediates=self._debug,
                     )
                     results["leader_guide"] = str(lg_path)
                     self._push_progress("leader_guide", f"[{step}/{total}] Leader guide saved", 95)

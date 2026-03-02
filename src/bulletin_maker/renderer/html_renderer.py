@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import base64
 import io
+import json
 import logging
 import re
 from dataclasses import dataclass
@@ -444,17 +445,19 @@ def _booklet_blanks(n: int) -> int:
 
 
 def _best_direction(pages: int) -> str:
-    """Pick the closer direction to reach a multiple of 4.
+    """Pick the closer direction to reach an acceptable blank count (0 or 1).
 
     Returns "tighten" if removing pages is closer (or tied),
     "loosen" if adding pages is closer.
     """
     blanks = _booklet_blanks(pages)
-    if blanks == 0:
-        return "tighten"  # already perfect, doesn't matter
-    pages_to_remove = pages % 4  # distance down to lower multiple
-    pages_to_add = blanks         # distance up to upper multiple
-    if pages_to_add < pages_to_remove:
+    if blanks <= 1:
+        return "tighten"  # already acceptable, direction irrelevant
+    # blanks==2 (n%4==2): tighten 2 to 0-blank, or loosen 1 to 1-blank
+    # blanks==3 (n%4==1): tighten 1 to 0-blank, or loosen 2 to 1-blank
+    tighten_dist = pages % 4       # distance down to lower multiple of 4
+    loosen_dist = blanks - 1       # distance up to 1-blank state (n%4==3)
+    if loosen_dist < tighten_dist:
         return "loosen"
     return "tighten"
 
@@ -464,14 +467,18 @@ def _auto_adjust_bulletin(
     seq_path: Path,
     bulletin_page_size: dict,
     on_progress: object | None = None,
-) -> None:
-    """Try CSS profiles to land the bulletin on a multiple-of-4 page count.
+) -> dict:
+    """Try CSS profiles to land the bulletin on an acceptable page count.
 
+    An acceptable count has at most 1 blank page (0 or 1 blanks).
     Renders the baseline, tries profiles, and leaves the best result on
     disk at seq_path.  The caller does not need to re-render.
 
     Args:
         on_progress: Optional callable(detail_str) for UI status updates.
+
+    Returns:
+        Metadata dict describing the auto-adjust decisions.
     """
     def _report(msg: str) -> None:
         if on_progress is not None:
@@ -484,9 +491,22 @@ def _auto_adjust_bulletin(
         page_size=bulletin_page_size,
     )
     pages = count_pages(seq_path)
-    if not pages or pages % 4 == 0:
-        _report(f"Layout fits perfectly ({pages} pages)")
-        return
+
+    meta: dict = {
+        "baseline_pages": pages,
+        "baseline_blanks": _booklet_blanks(pages) if pages else None,
+        "direction": None,
+        "profiles_tried": [],
+        "selected_profile": None,
+        "final_pages": pages,
+        "final_blanks": _booklet_blanks(pages) if pages else None,
+        "final_scale": 1.0,
+        "adjusted": False,
+    }
+
+    if not pages or _booklet_blanks(pages) <= 1:
+        _report(f"Layout acceptable ({pages} pages, {_booklet_blanks(pages) if pages else 0} blank)")
+        return meta
 
     blanks = _booklet_blanks(pages)
     _report(f"Baseline: {pages} pages ({blanks} blank) — adjusting...")
@@ -494,10 +514,12 @@ def _auto_adjust_bulletin(
     best_html = html_string
     best_scale = 1.0
     best_blanks = blanks
+    best_profile_name: str | None = None
     baseline_pages = pages
     adjusted = False
 
     direction = _best_direction(pages)
+    meta["direction"] = direction
     if direction == "tighten":
         primary = BULLETIN_TIGHTEN_PROFILES
         secondary = BULLETIN_LOOSEN_PROFILES
@@ -516,16 +538,19 @@ def _auto_adjust_bulletin(
         )
         n = count_pages(seq_path)
         if not n:
+            meta["profiles_tried"].append({"name": profile.name, "pages": None, "blanks": None})
             continue
         blanks = _booklet_blanks(n)
+        meta["profiles_tried"].append({"name": profile.name, "pages": n, "blanks": blanks})
         if blanks < best_blanks:
             best_html = candidate
             best_scale = profile.scale
             best_blanks = blanks
+            best_profile_name = profile.name
             adjusted = True
             logger.info("Bulletin auto-adjust %s: %d pages, %d blanks",
                         profile.name, n, blanks)
-        if best_blanks == 0:
+        if best_blanks <= 1:
             break
         # Overshoot detection: if we passed through a multiple of 4
         # (e.g. tightened from 13 past 12 to 11), stop this direction
@@ -538,8 +563,8 @@ def _auto_adjust_bulletin(
             if n > upper:
                 break
 
-    # Try secondary direction if still not perfect
-    if best_blanks > 0:
+    # Try secondary direction if still not acceptable
+    if best_blanks > 1:
         secondary_dir = "loosen" if direction == "tighten" else "tighten"
         for profile in secondary:
             _report(f"Trying {profile.name} ({secondary_dir})...")
@@ -551,16 +576,19 @@ def _auto_adjust_bulletin(
             )
             n = count_pages(seq_path)
             if not n:
+                meta["profiles_tried"].append({"name": profile.name, "pages": None, "blanks": None})
                 continue
             blanks = _booklet_blanks(n)
+            meta["profiles_tried"].append({"name": profile.name, "pages": n, "blanks": blanks})
             if blanks < best_blanks:
                 best_html = candidate
                 best_scale = profile.scale
                 best_blanks = blanks
+                best_profile_name = profile.name
                 adjusted = True
                 logger.info("Bulletin auto-adjust %s: %d pages, %d blanks",
                             profile.name, n, blanks)
-            if best_blanks == 0:
+            if best_blanks <= 1:
                 break
 
     if best_blanks < _booklet_blanks(baseline_pages):
@@ -575,6 +603,16 @@ def _auto_adjust_bulletin(
             margins=MARGINS_BULLETIN, display_footer=True,
             page_size=bulletin_page_size, scale=best_scale,
         )
+
+    final_pages = count_pages(seq_path) if adjusted else baseline_pages
+    meta.update({
+        "selected_profile": best_profile_name,
+        "final_pages": final_pages,
+        "final_blanks": _booklet_blanks(final_pages) if final_pages else None,
+        "final_scale": best_scale,
+        "adjusted": adjusted,
+    })
+    return meta
 
 
 # ── Liturgical text resolution ────────────────────────────────────────
@@ -1211,8 +1249,15 @@ def generate_bulletin(
     seq_path = output_path.parent / f".{output_path.stem}_sequential.pdf"
     bulletin_page_size = {"width": "7in", "height": "8.5in"}
 
-    _auto_adjust_bulletin(html_string, seq_path, bulletin_page_size,
-                          on_progress=on_progress)
+    adjust_meta = _auto_adjust_bulletin(html_string, seq_path, bulletin_page_size,
+                                        on_progress=on_progress)
+
+    if keep_intermediates:
+        debug_dir = output_path.parent / ".bulletin_debug"
+        debug_dir.mkdir(exist_ok=True)
+        (debug_dir / "adjust_meta.json").write_text(
+            json.dumps(adjust_meta, indent=2)
+        )
 
     if on_progress is not None:
         on_progress("Assembling booklet...")

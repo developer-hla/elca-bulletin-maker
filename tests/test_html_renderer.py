@@ -249,28 +249,40 @@ class TestBookletBlanks:
 
 class TestBestDirection:
     def test_13_pages_tighten(self):
-        # 13 -> 12 (remove 1) vs 13 -> 16 (add 3) => tighten
+        # 3 blanks: tighten_dist=1, loosen_dist=2 => tighten
         assert _best_direction(13) == "tighten"
 
-    def test_14_pages_tighten_tie(self):
-        # 14 -> 12 (remove 2) vs 14 -> 16 (add 2) => tie = tighten
-        assert _best_direction(14) == "tighten"
+    def test_14_pages_loosen(self):
+        # 2 blanks: tighten_dist=2, loosen_dist=1 => loosen
+        assert _best_direction(14) == "loosen"
 
-    def test_15_pages_loosen(self):
-        # 15 -> 12 (remove 3) vs 15 -> 16 (add 1) => loosen
-        assert _best_direction(15) == "loosen"
+    def test_15_pages_already_acceptable(self):
+        # 1 blank — already acceptable, direction irrelevant => tighten
+        assert _best_direction(15) == "tighten"
 
     def test_multiple_of_4_returns_tighten(self):
-        # Already perfect — direction doesn't matter, defaults to tighten
+        # 0 blanks — already acceptable, direction irrelevant => tighten
         assert _best_direction(16) == "tighten"
 
     def test_9_pages_tighten(self):
-        # 9 -> 8 (remove 1) vs 9 -> 12 (add 3) => tighten
+        # 3 blanks: tighten_dist=1, loosen_dist=2 => tighten
         assert _best_direction(9) == "tighten"
 
-    def test_11_pages_loosen(self):
-        # 11 -> 8 (remove 3) vs 11 -> 12 (add 1) => loosen
-        assert _best_direction(11) == "loosen"
+    def test_11_pages_already_acceptable(self):
+        # 1 blank — already acceptable, direction irrelevant => tighten
+        assert _best_direction(11) == "tighten"
+
+    def test_10_pages_loosen(self):
+        # 2 blanks: tighten_dist=2, loosen_dist=1 => loosen
+        assert _best_direction(10) == "loosen"
+
+    def test_6_pages_loosen(self):
+        # 2 blanks: tighten_dist=2, loosen_dist=1 => loosen
+        assert _best_direction(6) == "loosen"
+
+    def test_5_pages_tighten(self):
+        # 3 blanks: tighten_dist=1, loosen_dist=2 => tighten
+        assert _best_direction(5) == "tighten"
 
 
 class TestTightenProfiles:
