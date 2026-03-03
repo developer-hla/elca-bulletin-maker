@@ -7,11 +7,12 @@ All interaction with sundaysandseasons.com goes through this module.
 from __future__ import annotations
 
 import io
+import logging
 import os
 import re
+import threading
 import time
 import zipfile
-import logging
 
 import httpx
 
@@ -23,6 +24,7 @@ from bulletin_maker.exceptions import (
     ParseError,
 )
 from bulletin_maker.sns.models import DayContent, HymnLyrics, HymnResult, Reading
+from bulletin_maker.sns.rtf_parser import parse_rtf_lyrics
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +45,7 @@ class SundaysClient:
             },
         )
         self._logged_in = False
+        self._lock = threading.Lock()
 
     # -- HTTP helpers -------------------------------------------------------
 
@@ -65,7 +68,15 @@ class SundaysClient:
         return ""
 
     def _request(self, method: str, url: str, **kwargs) -> httpx.Response:
-        """Execute an HTTP request with one retry for transient failures."""
+        """Execute an HTTP request with one retry for transient failures.
+
+        Thread-safe: acquires a lock around the entire request cycle.
+        """
+        with self._lock:
+            return self._request_inner(method, url, **kwargs)
+
+    def _request_inner(self, method: str, url: str, **kwargs) -> httpx.Response:
+        """Inner request implementation (called under lock)."""
         last_exc: Exception | None = None
         for attempt in range(2):
             try:
@@ -117,11 +128,11 @@ class SundaysClient:
 
     def login(self, username: str | None = None, password: str | None = None):
         """Log in and establish a session cookie."""
-        from dotenv import load_dotenv
-
-        load_dotenv()
-        username = username or os.getenv("SNDS_USERNAME")
-        password = password or os.getenv("SNDS_PASSWORD")
+        if not username or not password:
+            from dotenv import load_dotenv
+            load_dotenv()
+            username = username or os.getenv("SNDS_USERNAME")
+            password = password or os.getenv("SNDS_PASSWORD")
         if not username or not password:
             raise AuthError("Credentials not provided and not found in .env")
 
@@ -147,19 +158,18 @@ class SundaysClient:
             },
         )
 
-        # Check for successful login — the page should welcome the user
+        # Check for successful login
         if "Welcome back" in resp.text or "/Account/LogOff" in resp.text:
             self._logged_in = True
-            logger.info("Logged in successfully.")
-        elif "Account/Login" in str(resp.url):
+            logger.debug("Logged in successfully.")
+            return
+        if "Account/Login" in str(resp.url):
             raise AuthError("Login failed — still on the login page. Check credentials.")
-        else:
-            # Might have redirected to home — check for nav
-            if "/Planner" in resp.text:
-                self._logged_in = True
-                logger.info("Logged in successfully.")
-            else:
-                raise AuthError("Unexpected response after login")
+        if "/Planner" in resp.text:
+            self._logged_in = True
+            logger.debug("Logged in successfully.")
+            return
+        raise AuthError("Unexpected response after login")
 
     def _ensure_logged_in(self):
         if not self._logged_in:
@@ -559,8 +569,6 @@ class SundaysClient:
             raise ValueError("Hymn number must not be empty.")
         if not re.match(r'^\d{1,2}/\d{1,2}/\d{4}$', use_date):
             raise ValueError(f"Invalid use_date format: {use_date!r}. Expected 'M/D/YYYY'.")
-
-        from bulletin_maker.sns.rtf_parser import parse_rtf_lyrics
 
         results = self.search_hymn(number, collection)
         if not results:

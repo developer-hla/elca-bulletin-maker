@@ -8,22 +8,8 @@ from bulletin_maker.renderer.static_text import DEFAULT_PRAYERS_RESPONSE
 from bulletin_maker.renderer.text_utils import preprocess_html, strip_tags
 
 
-def parse_prayers_html(prayers_html: str) -> dict:
-    """Parse structured S&S prayers HTML into intro, petitions, and closing.
-
-    Returns:
-        Dict with keys: intro, brief_silence, petitions, closing_text,
-        closing_response. Each petition has 'text' and 'response' keys.
-    """
-    html = preprocess_html(prayers_html)
-    result = {
-        "intro": "",
-        "brief_silence": False,
-        "petitions": [],
-        "closing_text": "",
-        "closing_response": "",
-    }
-
+def _parse_sections(html: str) -> list[tuple[str, str]]:
+    """Extract (section_type, content) pairs from prayers HTML divs."""
     sections = []
     pos = 0
     outer_match = re.match(r'\s*<div>\s*', html)
@@ -59,42 +45,62 @@ def parse_prayers_html(prayers_html: str) -> dict:
             sections.append((section_type, html[section_start:]))
             break
 
+    return sections
+
+
+def _parse_petitions(inner_divs: list[str], result: dict) -> None:
+    """Parse petition/response pairs from inner div contents."""
+    i = 0
+    while i < len(inner_divs):
+        petition_text = strip_tags(inner_divs[i])
+        response_text = ""
+        if i + 1 < len(inner_divs) and "<strong>" in inner_divs[i + 1]:
+            response_text = strip_tags(inner_divs[i + 1])
+            i += 2
+        else:
+            i += 1
+        if not petition_text:
+            continue
+        if response_text.lower().strip(".") == "amen":
+            result["closing_text"] = petition_text
+            result["closing_response"] = response_text
+        else:
+            result["petitions"].append({
+                "text": petition_text,
+                "response": response_text,
+            })
+
+
+def parse_prayers_html(prayers_html: str) -> dict:
+    """Parse structured S&S prayers HTML into intro, petitions, and closing."""
+    html = preprocess_html(prayers_html)
+    result = {
+        "intro": "",
+        "brief_silence": False,
+        "petitions": [],
+        "closing_text": "",
+        "closing_response": "",
+    }
+
+    sections = _parse_sections(html)
     body_index = 0
+
     for sec_type, content in sections:
         if sec_type == "rubric":
             text = strip_tags(content)
             if "brief silence" in text.lower():
                 result["brief_silence"] = True
             continue
-        if sec_type == "body":
-            inner_divs = re.findall(r'<div>(.*?)</div>', content, re.DOTALL)
-            if not inner_divs:
-                text = strip_tags(content)
-                if body_index == 0:
-                    result["intro"] = text
-                else:
-                    result["closing_text"] = text
+        inner_divs = re.findall(r'<div>(.*?)</div>', content, re.DOTALL)
+        if not inner_divs:
+            text = strip_tags(content)
+            if body_index == 0:
+                result["intro"] = text
             else:
-                i = 0
-                while i < len(inner_divs):
-                    petition_html = inner_divs[i]
-                    petition_text = strip_tags(petition_html)
-                    response_text = ""
-                    if i + 1 < len(inner_divs) and "<strong>" in inner_divs[i + 1]:
-                        response_text = strip_tags(inner_divs[i + 1])
-                        i += 2
-                    else:
-                        i += 1
-                    if petition_text:
-                        if response_text.lower().strip(".") == "amen":
-                            result["closing_text"] = petition_text
-                            result["closing_response"] = response_text
-                        else:
-                            result["petitions"].append({
-                                "text": petition_text,
-                                "response": response_text,
-                            })
-            body_index += 1
+                result["closing_text"] = text
+        else:
+            _parse_petitions(inner_divs, result)
+        body_index += 1
 
     return result
 

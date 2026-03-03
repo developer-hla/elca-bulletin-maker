@@ -6,27 +6,50 @@ Every method returns a dict with at least {"success": bool}.
 
 from __future__ import annotations
 
+import base64
+import io
 import json
 import logging
 import platform
-import subprocess
 import re
+import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import webview
+from PIL import Image
 
-from bulletin_maker.exceptions import AuthError, BulletinError, NetworkError
-from bulletin_maker.renderer.text_utils import DialogRole, clean_sns_html, parse_dialog_html
-from bulletin_maker.sns.client import SundaysClient
-from bulletin_maker.sns.models import DayContent, HymnLyrics, ServiceConfig
+from bulletin_maker.exceptions import AuthError, BulletinError, NetworkError, UpdateError
+from bulletin_maker.renderer import (
+    generate_bulletin,
+    generate_large_print,
+    generate_leader_guide,
+    generate_pulpit_prayers,
+    generate_pulpit_scripture,
+)
 from bulletin_maker.renderer.season import (
     PrefaceType,
     detect_season,
     fill_seasonal_defaults,
+    get_preface_options,
     get_seasonal_config,
 )
+from bulletin_maker.renderer.static_text import (
+    AARONIC_BLESSING,
+    CONFESSION_AND_FORGIVENESS,
+    DISMISSAL_ENTRIES,
+)
+from bulletin_maker.renderer.text_utils import (
+    DialogRole,
+    clean_sns_html,
+    group_psalm_verses,
+    parse_dialog_html,
+    preprocess_html,
+)
+from bulletin_maker.sns.client import SundaysClient
+from bulletin_maker.sns.models import DayContent, HymnLyrics, ServiceConfig
+from bulletin_maker.updater import check_for_update, install_update, is_install_writable
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +91,8 @@ class BulletinAPI:
         Returns e.g. ``2026.03.01 - First Sunday in Lent Year A``.
         If the selected date is not a Sunday, the weekday is prepended.
         """
+        if not self._date_str:
+            raise ValueError("No date selected")
         dt = datetime.strptime(self._date_str, "%Y-%m-%d")
         date_dot = dt.strftime("%Y.%m.%d")
         day_label = self._day.title
@@ -98,7 +123,7 @@ class BulletinAPI:
                 return {"success": False, "error": "No content fetched yet.",
                         "error_type": "validation"}
             return {"success": True, "prefix": self._build_date_suffix()}
-        except Exception as e:
+        except (ValueError, BulletinError) as e:
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
 
@@ -112,7 +137,6 @@ class BulletinAPI:
 
     def check_for_update(self) -> dict:
         """Check GitHub for a newer release."""
-        from bulletin_maker.updater import check_for_update
         result = check_for_update()
         if result:
             return {"success": True, "update_available": True, **result}
@@ -120,9 +144,6 @@ class BulletinAPI:
 
     def install_update(self, download_url: str) -> dict:
         """Download, install, and relaunch the updated application."""
-        from bulletin_maker.exceptions import UpdateError
-        from bulletin_maker.updater import install_update, is_install_writable
-
         if not is_install_writable():
             return {
                 "success": False,
@@ -217,36 +238,30 @@ class BulletinAPI:
             return {"success": True, "username": username}
         except AuthError as e:
             return {"success": False, "error": str(e), "error_type": "auth"}
-        except Exception as e:
+        except BulletinError as e:
             logger.exception("Login error")
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
 
     def logout(self) -> dict:
         """Close client session and reset state."""
-        try:
-            if self._client:
-                self._client.close()
-                self._client = None
-            self._day = None
-            self._date_str = None
-            self._hymn_cache.clear()
-            self._clear_credentials()
-            return {"success": True}
-        except Exception as e:
-            logger.exception("Logout error")
-            return {"success": False, "error": str(e),
-                    "error_type": self._classify_error(e)}
+        if self._client:
+            self._client.close()
+            self._client = None
+        self._day = None
+        self._date_str = None
+        self._hymn_cache.clear()
+        self._clear_credentials()
+        return {"success": True}
 
     # ── Preface Options ─────────────────────────────────────────────
 
     def get_preface_options(self) -> dict:
         """Return available preface options for the UI dropdown."""
-        from bulletin_maker.renderer.season import get_preface_options
         try:
             options = get_preface_options()
             return {"success": True, "prefaces": options}
-        except Exception as e:
+        except BulletinError as e:
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
 
@@ -263,14 +278,14 @@ class BulletinAPI:
         seasonal default values for the liturgical settings.
         """
         try:
-            client = self._get_client()
-
             # Convert "2026-02-22" to "2026-2-22" (S&S API format)
-            try:
-                dt = datetime.strptime(date_str, "%Y-%m-%d")
-            except ValueError:
-                return {"success": False, "error": f"Invalid date format: {date_str}",
-                        "error_type": "validation"}
+            dt = datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            return {"success": False, "error": f"Invalid date format: {date_str}",
+                    "error_type": "validation"}
+
+        try:
+            client = self._get_client()
             api_date = f"{dt.year}-{dt.month}-{dt.day}"
 
             self._day = client.get_day_texts(api_date)
@@ -319,65 +334,51 @@ class BulletinAPI:
 
     # ── Reading Preview ─────────────────────────────────────────────────
 
-    def get_reading_preview(self, slot: str) -> dict:
-        """Return rendered HTML for a reading preview.
+    @staticmethod
+    def _build_psalm_preview(text_html: str) -> str:
+        """Build preview HTML for a psalm reading."""
+        groups = group_psalm_verses(text_html)
+        lines = []
+        for g in groups:
+            prefix = f'<sup>{g.verse_num}</sup>' if g.verse_num else ''
+            cls = ' class="psalm-bold"' if g.bold else ''
+            lines.append(f'<p{cls}>{prefix}{g.text}</p>')
+            for c in g.continuations:
+                cls = "psalm-bold psalm-cont" if c.bold else "psalm-cont"
+                lines.append(f'<p class="{cls}">{c.text}</p>')
+        return "\n".join(lines)
 
-        Args:
-            slot: "first", "second", "psalm", or "gospel".
-        """
-        from bulletin_maker.renderer.text_utils import (
-            clean_sns_html,
-            group_psalm_verses,
-            preprocess_html,
-        )
+    def get_reading_preview(self, slot: str) -> dict:
+        """Return rendered HTML for a reading preview."""
+        if self._day is None:
+            return {"success": False, "error": "No content fetched yet.",
+                    "error_type": "validation"}
+
+        slot_labels = {
+            "first": "First Reading",
+            "second": "Second Reading",
+            "psalm": "Psalm",
+            "gospel": "Gospel",
+        }
+        target_label = slot_labels.get(slot)
+        if not target_label:
+            return {"success": False, "error": f"Unknown slot: {slot}",
+                    "error_type": "validation"}
+
+        reading = None
+        for r in self._day.readings:
+            if r.label == target_label:
+                reading = r
+                break
+        if not reading:
+            return {"success": False,
+                    "error": f"No {target_label} found for this date.",
+                    "error_type": "validation"}
 
         try:
-            if self._day is None:
-                return {"success": False, "error": "No content fetched yet.",
-                        "error_type": "validation"}
-
-            # Find the matching reading
-            slot_labels = {
-                "first": "First Reading",
-                "second": "Second Reading",
-                "psalm": "Psalm",
-                "gospel": "Gospel",
-            }
-            target_label = slot_labels.get(slot)
-            if not target_label:
-                return {"success": False, "error": f"Unknown slot: {slot}",
-                        "error_type": "validation"}
-
-            reading = None
-            for r in self._day.readings:
-                if r.label == target_label:
-                    reading = r
-                    break
-            if not reading:
-                return {"success": False,
-                        "error": f"No {target_label} found for this date.",
-                        "error_type": "validation"}
-
-            # Build preview HTML
             if slot == "psalm":
-                groups = group_psalm_verses(reading.text_html)
-                lines = []
-                for g in groups:
-                    prefix = f'<sup>{g.verse_num}</sup>' if g.verse_num else ''
-                    if g.bold:
-                        lines.append(f'<p class="psalm-bold">{prefix}{g.text}</p>')
-                    else:
-                        lines.append(f'<p>{prefix}{g.text}</p>')
-                    for c in g.continuations:
-                        if c.bold:
-                            lines.append(
-                                f'<p class="psalm-bold psalm-cont">{c.text}</p>')
-                        else:
-                            lines.append(
-                                f'<p class="psalm-cont">{c.text}</p>')
-                preview_html = "\n".join(lines)
+                preview_html = self._build_psalm_preview(reading.text_html)
             else:
-                # Strip outer S&S wrapper divs, keep inner HTML
                 body = reading.text_html
                 body = re.sub(r'^<div[^>]*>', '', body)
                 body = re.sub(r'</div>\s*$', '', body)
@@ -390,7 +391,7 @@ class BulletinAPI:
                 "intro": clean_sns_html(reading.intro),
                 "preview_html": preview_html,
             }
-        except Exception as e:
+        except BulletinError as e:
             logger.exception("Error getting reading preview")
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
@@ -417,12 +418,6 @@ class BulletinAPI:
         customs, S&S weekly variants, etc.) and a ``default`` key.
         The UI renders radio buttons from the options list.
         """
-        from bulletin_maker.renderer.static_text import (
-            AARONIC_BLESSING,
-            CONFESSION_AND_FORGIVENESS,
-            DISMISSAL_ENTRIES,
-        )
-
         try:
             if self._day is None:
                 return {"success": False, "error": "No content fetched yet.",
@@ -513,7 +508,7 @@ class BulletinAPI:
             }
 
             return {"success": True, "texts": texts}
-        except Exception as e:
+        except BulletinError as e:
             logger.exception("Error getting liturgical texts")
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
@@ -608,7 +603,7 @@ class BulletinAPI:
                 return {"success": True, "path": result[0]}
             return {"success": False, "error": "No folder selected",
                     "error_type": "validation"}
-        except Exception as e:
+        except (OSError, RuntimeError) as e:
             logger.exception("Error choosing output directory")
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
@@ -616,10 +611,6 @@ class BulletinAPI:
     def get_cover_preview(self, path: str) -> dict:
         """Return a small base64 JPEG thumbnail for a cover image."""
         try:
-            import base64
-            import io
-            from PIL import Image
-
             img = Image.open(path)
             img.thumbnail((150, 150))
             if img.mode in ("RGBA", "P"):
@@ -628,7 +619,7 @@ class BulletinAPI:
             img.save(buf, format="JPEG", quality=75)
             data = base64.b64encode(buf.getvalue()).decode()
             return {"success": True, "data_uri": f"data:image/jpeg;base64,{data}"}
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.debug("Cover preview failed: %s", e)
             return {"success": False, "error": str(e)}
 
@@ -649,7 +640,7 @@ class BulletinAPI:
                 return {"success": True, "path": result[0]}
             return {"success": False, "error": "No file selected",
                     "error_type": "validation"}
-        except Exception as e:
+        except (OSError, RuntimeError) as e:
             logger.exception("Error choosing cover image")
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
@@ -699,8 +690,14 @@ class BulletinAPI:
         """Convert JSON dialog dicts back to (DialogRole, text) tuples."""
         if not raw:
             return None
-        return [(DialogRole(e.get("role", "")), e.get("text", ""))
-                for e in raw]
+        entries = []
+        for e in raw:
+            try:
+                role = DialogRole(e.get("role", ""))
+            except ValueError:
+                role = DialogRole.NONE
+            entries.append((role, e.get("text", "")))
+        return entries
 
     def _build_service_config(self, form_data: dict) -> ServiceConfig:
         """Build a ServiceConfig from wizard form data."""
@@ -742,16 +739,28 @@ class BulletinAPI:
 
     # ── Generation ────────────────────────────────────────────────────
 
-    def generate_all(self, form_data: dict) -> dict:
-        """Generate all 5 documents from the wizard form data.
+    def _generate_one(
+        self, key: str, label: str, gen_fn: Callable, results: dict,
+        errors: dict, step: int, total: int,
+    ) -> None:
+        """Run a single document generation with progress + error handling.
 
-        form_data keys:
-            date, date_display, creed_type, include_kyrie, canticle,
-            eucharistic_form, include_memorial_acclamation,
-            gathering_hymn, sermon_hymn, communion_hymn, sending_hymn,
-            prelude_title, prelude_performer, postlude_title,
-            postlude_performer, choral_title, cover_image, output_dir
+        Catches all exceptions to isolate individual document failures —
+        one failing document must not prevent the others from generating.
         """
+        pct = int(step / total * 95) if total else 0
+        self._push_progress(key, f"[{step}/{total}] Generating {label}...", pct)
+        try:
+            path = gen_fn()
+            results[key] = str(path)
+            self._push_progress(key, f"[{step}/{total}] {label} saved", pct)
+        except Exception as e:
+            logger.exception("%s generation failed", label)
+            errors[key] = str(e)
+            self._push_progress(key, f"[{step}/{total}] {label} failed: {e}", pct)
+
+    def generate_all(self, form_data: dict) -> dict:
+        """Generate all 5 documents from the wizard form data."""
         try:
             if self._day is None:
                 return {"success": False, "error": "No content fetched. Pick a date first.",
@@ -775,30 +784,23 @@ class BulletinAPI:
                 "bulletin", "prayers", "scripture", "large_print", "leader_guide",
             ])
 
-            results = {}
-            errors = {}
-            creed_page = None  # Set by bulletin generation
-
-            from bulletin_maker.renderer import (
-                generate_bulletin,
-                generate_large_print,
-                generate_leader_guide,
-                generate_pulpit_prayers,
-                generate_pulpit_scripture,
-            )
-
+            results: dict = {}
+            errors: dict = {}
+            creed_page = None
             total = len(selected)
             step = 0
 
             # 1. Bulletin (must be first — determines creed page)
             if "bulletin" in selected:
                 step += 1
-                self._push_progress("bulletin", f"[{step}/{total}] Generating bulletin booklet...", 10)
-                try:
-                    def _bulletin_progress(detail: str) -> None:
-                        self._push_progress("bulletin", f"[{step}/{total}] Bulletin: {detail}", 10)
+                pct = int(step / total * 95) if total else 0
 
-                    bulletin_path, creed_page = generate_bulletin(
+                def _bulletin_progress(detail: str) -> None:
+                    self._push_progress("bulletin", f"[{step}/{total}] Bulletin: {detail}", pct)
+
+                def _gen_bulletin() -> Path:
+                    nonlocal creed_page
+                    path, creed_page = generate_bulletin(
                         self._day, config,
                         output_path=output_dir / self._build_filename("Bulletin for Congregation"),
                         season=season,
@@ -806,89 +808,65 @@ class BulletinAPI:
                         keep_intermediates=self._debug,
                         on_progress=_bulletin_progress,
                     )
-                    results["bulletin"] = str(bulletin_path)
-                    self._push_progress("bulletin", f"[{step}/{total}] Bulletin saved (creed p.{creed_page})", 30)
-                except Exception as e:
-                    logger.exception("Bulletin generation failed")
-                    errors["bulletin"] = str(e)
-                    self._push_progress("bulletin", f"[{step}/{total}] Bulletin failed: {e}", 30)
+                    return path
+
+                self._generate_one("bulletin", "Bulletin booklet", _gen_bulletin,
+                                   results, errors, step, total)
 
             # 2. Pulpit Prayers (needs creed page from bulletin)
             if "prayers" in selected:
                 step += 1
-                self._push_progress("prayers", f"[{step}/{total}] Generating pulpit prayers...", 40)
-                try:
-                    creed_type = config.creed_type or "apostles"
-                    prayers_label = "NICENE" if creed_type == "nicene" else "APOSTLES"
-                    prayers_path = generate_pulpit_prayers(
-                        self._day,
-                        config.date_display,
-                        creed_type=creed_type,
-                        creed_page_num=creed_page,
+                creed_type = config.creed_type or "apostles"
+                prayers_label = "NICENE" if creed_type == "nicene" else "APOSTLES"
+                self._generate_one(
+                    "prayers", "Pulpit prayers",
+                    lambda: generate_pulpit_prayers(
+                        self._day, config.date_display,
+                        creed_type=creed_type, creed_page_num=creed_page,
                         output_path=output_dir / self._build_filename(f"Pulpit PRAYERS + {prayers_label}"),
                         keep_intermediates=self._debug,
-                    )
-                    results["prayers"] = str(prayers_path)
-                    self._push_progress("prayers", f"[{step}/{total}] Pulpit prayers saved", 55)
-                except Exception as e:
-                    logger.exception("Pulpit prayers generation failed")
-                    errors["prayers"] = str(e)
-                    self._push_progress("prayers", f"[{step}/{total}] Prayers failed: {e}", 55)
+                    ),
+                    results, errors, step, total,
+                )
 
             # 3. Pulpit Scripture
             if "scripture" in selected:
                 step += 1
-                self._push_progress("scripture", f"[{step}/{total}] Generating pulpit scripture...", 60)
-                try:
-                    scripture_path = generate_pulpit_scripture(
-                        self._day,
-                        config.date_display,
+                self._generate_one(
+                    "scripture", "Pulpit scripture",
+                    lambda: generate_pulpit_scripture(
+                        self._day, config.date_display,
                         output_path=output_dir / self._build_filename("Pulpit SCRIPTURE"),
-                        config=config,
-                        keep_intermediates=self._debug,
-                    )
-                    results["scripture"] = str(scripture_path)
-                    self._push_progress("scripture", f"[{step}/{total}] Pulpit scripture saved", 75)
-                except Exception as e:
-                    logger.exception("Pulpit scripture generation failed")
-                    errors["scripture"] = str(e)
-                    self._push_progress("scripture", f"[{step}/{total}] Scripture failed: {e}", 75)
+                        config=config, keep_intermediates=self._debug,
+                    ),
+                    results, errors, step, total,
+                )
 
             # 4. Large Print
             if "large_print" in selected:
                 step += 1
-                self._push_progress("large_print", f"[{step}/{total}] Generating large print...", 75)
-                try:
-                    lp_path = generate_large_print(
+                self._generate_one(
+                    "large_print", "Large print",
+                    lambda: generate_large_print(
                         self._day, config,
                         output_path=output_dir / self._build_filename("Full with Hymns LARGE PRINT"),
-                        season=season,
-                        keep_intermediates=self._debug,
-                    )
-                    results["large_print"] = str(lp_path)
-                    self._push_progress("large_print", f"[{step}/{total}] Large print saved", 85)
-                except Exception as e:
-                    logger.exception("Large print generation failed")
-                    errors["large_print"] = str(e)
-                    self._push_progress("large_print", f"[{step}/{total}] Large print failed: {e}", 85)
+                        season=season, keep_intermediates=self._debug,
+                    ),
+                    results, errors, step, total,
+                )
 
             # 5. Leader Guide
             if "leader_guide" in selected:
                 step += 1
-                self._push_progress("leader_guide", f"[{step}/{total}] Generating leader guide...", 87)
-                try:
-                    lg_path = generate_leader_guide(
+                self._generate_one(
+                    "leader_guide", "Leader guide",
+                    lambda: generate_leader_guide(
                         self._day, config,
                         output_path=output_dir / self._build_filename("Leader Guide"),
-                        season=season,
-                        keep_intermediates=self._debug,
-                    )
-                    results["leader_guide"] = str(lg_path)
-                    self._push_progress("leader_guide", f"[{step}/{total}] Leader guide saved", 95)
-                except Exception as e:
-                    logger.exception("Leader guide generation failed")
-                    errors["leader_guide"] = str(e)
-                    self._push_progress("leader_guide", f"[{step}/{total}] Leader guide failed: {e}", 95)
+                        season=season, keep_intermediates=self._debug,
+                    ),
+                    results, errors, step, total,
+                )
 
             self._push_progress("done", "Generation complete!", 100)
 
@@ -902,7 +880,7 @@ class BulletinAPI:
             logger.exception("Auth error during generation")
             return {"success": False, "error": str(e), "auth_error": True,
                     "error_type": "auth"}
-        except Exception as e:
+        except BulletinError as e:
             logger.exception("Generation error")
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
@@ -926,12 +904,11 @@ class BulletinAPI:
             for doc in (selected_docs or []):
                 if doc == "prayers":
                     # Prayers filename varies by creed type
-                    for f in folder.iterdir():
-                        if f.is_file() and f.name.startswith("Pulpit PRAYERS"):
-                            suffix = self._build_date_suffix()
-                            if suffix in f.name:
-                                existing.append(f.name)
-                                break
+                    suffix = self._build_date_suffix()
+                    for f in folder.glob("Pulpit PRAYERS*"):
+                        if f.is_file() and suffix in f.name:
+                            existing.append(f.name)
+                            break
                 else:
                     label = doc_labels.get(doc, "")
                     if label:
@@ -940,7 +917,7 @@ class BulletinAPI:
                             existing.append(target.name)
 
             return {"success": True, "existing": existing}
-        except Exception as e:
+        except (OSError, ValueError) as e:
             logger.exception("Error checking existing files")
             return {"success": True, "existing": []}
 
@@ -963,7 +940,7 @@ class BulletinAPI:
                 subprocess.Popen(["xdg-open", str(folder)])
 
             return {"success": True}
-        except Exception as e:
+        except OSError as e:
             logger.exception("Error opening folder")
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
@@ -971,8 +948,5 @@ class BulletinAPI:
     def cleanup(self) -> None:
         """Close the S&S client session."""
         if self._client:
-            try:
-                self._client.close()
-            except Exception:
-                pass
+            self._client.close()
             self._client = None

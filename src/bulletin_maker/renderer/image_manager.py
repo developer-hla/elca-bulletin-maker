@@ -204,42 +204,33 @@ def load_asset_catalog() -> dict:
 
 # ── Bulk download from S&S Library ───────────────────────────────────
 
-def download_setting_assets(client: SundaysClient) -> dict[str, Path]:
-    """Download all Setting Two + Gospel Acclamation images from S&S Library.
-
-    Uses the authenticated client to fetch images via their atom codes.
-    Skips files that already exist. Returns a dict of piece name → file path.
-    """
+def _download_batch(
+    client: SundaysClient, codes: dict[str, str], dest_dir: Path,
+    prefix: str = "",
+) -> dict[str, Path]:
+    """Download a batch of images from S&S Library, skipping existing files."""
     downloaded: dict[str, Path] = {}
-
-    # Setting Two pieces
-    for piece, atom_code in _SETTING_TWO_ATOM_CODES.items():
-        existing = _find_image(SETTING_TWO_DIR, piece)
+    for name, atom_code in codes.items():
+        key = f"{prefix}{name}" if prefix else name
+        existing = _find_image(dest_dir, name)
         if existing:
-            logger.info("Already have: %s", existing.name)
-            downloaded[piece] = existing
+            logger.debug("Already have: %s", existing.name)
+            downloaded[key] = existing
             continue
+        logger.debug("Downloading %s (atom: %s)...", name, atom_code)
+        path = _download_library_image(client, atom_code, dest_dir, name)
+        downloaded[key] = path
+        logger.debug("  Saved: %s", path.name)
+    return downloaded
 
-        logger.info("Downloading %s (atom: %s)...", piece, atom_code)
-        path = _download_library_image(client, atom_code, SETTING_TWO_DIR, piece)
-        downloaded[piece] = path
-        logger.info("  Saved: %s", path.name)
 
-    # Gospel Acclamation variants
-    for variant, atom_code in _GOSPEL_ACCLAMATION_ATOM_CODES.items():
-        existing = _find_image(GOSPEL_ACCLAMATION_DIR, variant)
-        if existing:
-            logger.info("Already have: %s", existing.name)
-            downloaded[f"ga_{variant}"] = existing
-            continue
-
-        logger.info("Downloading GA %s (atom: %s)...", variant, atom_code)
-        path = _download_library_image(
-            client, atom_code, GOSPEL_ACCLAMATION_DIR, variant,
-        )
-        downloaded[f"ga_{variant}"] = path
-        logger.info("  Saved: %s", path.name)
-
+def download_setting_assets(client: SundaysClient) -> dict[str, Path]:
+    """Download all Setting Two + Gospel Acclamation images from S&S Library."""
+    downloaded = _download_batch(client, _SETTING_TWO_ATOM_CODES, SETTING_TWO_DIR)
+    ga = _download_batch(
+        client, _GOSPEL_ACCLAMATION_ATOM_CODES, GOSPEL_ACCLAMATION_DIR, prefix="ga_",
+    )
+    downloaded.update(ga)
     return downloaded
 
 
@@ -283,7 +274,7 @@ def fetch_hymn_image(
     cache_key = f"{collection}{number}_{image_type}"
     found = _find_image(cache_dir, cache_key)
     if found:
-        logger.info("Using cached image: %s", found)
+        logger.debug("Using cached image: %s", found)
         return found
 
     # Search for the hymn
@@ -319,6 +310,6 @@ def fetch_hymn_image(
 
     out_path = cache_dir / f"{cache_key}{ext}"
     out_path.write_bytes(image_bytes)
-    logger.info("Downloaded %s image: %s", image_type, out_path)
+    logger.debug("Downloaded %s image: %s", image_type, out_path)
 
     return out_path

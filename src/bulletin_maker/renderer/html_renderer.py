@@ -19,6 +19,7 @@ import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable, Optional
 
 from bulletin_maker.exceptions import BulletinError, ContentNotFoundError
 from bulletin_maker.sns.models import (
@@ -99,10 +100,23 @@ logger = logging.getLogger(__name__)
 
 # ── Image helpers ─────────────────────────────────────────────────────
 
+_IMAGE_MIME_TYPES: dict[str, str] = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+    ".bmp": "image/bmp",
+    ".webp": "image/webp",
+    ".tif": "image/png",   # converted to PNG below
+    ".tiff": "image/png",  # converted to PNG below
+}
+
+
 def _image_to_data_uri(path: Path) -> str:
     """Convert an image file to a base64 data URI."""
     path = Path(path)
     suffix = path.suffix.lower()
+    mime = _IMAGE_MIME_TYPES.get(suffix, "image/jpeg")
 
     if suffix in (".tif", ".tiff"):
         from PIL import Image
@@ -110,13 +124,10 @@ def _image_to_data_uri(path: Path) -> str:
         buf = io.BytesIO()
         img.save(buf, format="PNG")
         data = base64.b64encode(buf.getvalue()).decode()
-        return f"data:image/png;base64,{data}"
-    elif suffix == ".png":
-        data = base64.b64encode(path.read_bytes()).decode()
-        return f"data:image/png;base64,{data}"
-    else:
-        data = base64.b64encode(path.read_bytes()).decode()
-        return f"data:image/jpeg;base64,{data}"
+        return f"data:{mime};base64,{data}"
+
+    data = base64.b64encode(path.read_bytes()).decode()
+    return f"data:{mime};base64,{data}"
 
 
 # ── Text helpers ──────────────────────────────────────────────────────
@@ -169,6 +180,7 @@ def _split_stanzas(text: str) -> list[str]:
 def _split_agnus_dei() -> list[str]:
     """Split Agnus Dei text into 3 stanzas (mercy/mercy/peace)."""
     lines = AGNUS_DEI.split("\n")
+    assert len(lines) == 6, f"Expected 6 AGNUS_DEI lines, got {len(lines)}"
     stanzas = []
     for i in range(0, len(lines), 2):
         chunk = lines[i:i + 2]
@@ -220,12 +232,8 @@ def _reading_data(reading: Reading | None) -> dict | None:
 def _build_gospel_entry(day: DayContent) -> dict | None:
     """Build template-ready dict for the Gospel reading."""
     gospel_raw = _get_reading(day, SLOT_GOSPEL)
-    if gospel_raw and gospel_raw.label.lower() == SLOT_GOSPEL:
+    if gospel_raw:
         return _reading_data(gospel_raw)
-    if gospel_raw is None:
-        for r in day.readings:
-            if r.label.lower() == SLOT_GOSPEL:
-                return _reading_data(r)
     return None
 
 
@@ -452,7 +460,7 @@ def _best_direction(pages: int) -> str:
     """
     blanks = _booklet_blanks(pages)
     if blanks <= 1:
-        return "tighten"  # already acceptable, direction irrelevant
+        return "tighten"  # already acceptable — no-op direction
     # blanks==2 (n%4==2): tighten 2 to 0-blank, or loosen 1 to 1-blank
     # blanks==3 (n%4==1): tighten 1 to 0-blank, or loosen 2 to 1-blank
     tighten_dist = pages % 4       # distance down to lower multiple of 4
@@ -462,11 +470,60 @@ def _best_direction(pages: int) -> str:
     return "tighten"
 
 
+def _try_profiles(
+    profiles: list[AdjustProfile],
+    html_string: str,
+    seq_path: Path,
+    page_size: dict,
+    direction: str,
+    baseline_pages: int,
+    best: dict,
+    meta: dict,
+    report: Callable[[str], None],
+) -> None:
+    """Try a list of AdjustProfiles, updating best state in place."""
+    for profile in profiles:
+        report(f"Trying {profile.name} ({direction})...")
+        candidate = _inject_css(html_string, profile.css)
+        render_to_pdf(
+            candidate, seq_path,
+            margins=MARGINS_BULLETIN, display_footer=True,
+            page_size=page_size, scale=profile.scale,
+        )
+        n = count_pages(seq_path)
+        if not n:
+            meta["profiles_tried"].append(
+                {"name": profile.name, "pages": None, "blanks": None})
+            continue
+        blanks = _booklet_blanks(n)
+        meta["profiles_tried"].append(
+            {"name": profile.name, "pages": n, "blanks": blanks})
+        if blanks < best["blanks"]:
+            best["html"] = candidate
+            best["scale"] = profile.scale
+            best["blanks"] = blanks
+            best["profile_name"] = profile.name
+            best["adjusted"] = True
+            logger.debug("Bulletin auto-adjust %s: %d pages, %d blanks",
+                         profile.name, n, blanks)
+        if best["blanks"] <= 1:
+            break
+        # Overshoot detection
+        if direction == "tighten" and n < baseline_pages and n % 4 != 0:
+            lower = baseline_pages - (baseline_pages % 4)
+            if n < lower:
+                break
+        elif direction == "loosen" and n > baseline_pages and n % 4 != 0:
+            upper = baseline_pages + _booklet_blanks(baseline_pages)
+            if n > upper:
+                break
+
+
 def _auto_adjust_bulletin(
     html_string: str,
     seq_path: Path,
     bulletin_page_size: dict,
-    on_progress: object | None = None,
+    on_progress: Optional[Callable[[str], None]] = None,
 ) -> dict:
     """Try CSS profiles to land the bulletin on an acceptable page count.
 
@@ -527,73 +584,32 @@ def _auto_adjust_bulletin(
         primary = BULLETIN_LOOSEN_PROFILES
         secondary = BULLETIN_TIGHTEN_PROFILES
 
-    # Try primary direction
-    for profile in primary:
-        _report(f"Trying {profile.name} ({direction})...")
-        candidate = _inject_css(html_string, profile.css)
-        render_to_pdf(
-            candidate, seq_path,
-            margins=MARGINS_BULLETIN, display_footer=True,
-            page_size=bulletin_page_size, scale=profile.scale,
-        )
-        n = count_pages(seq_path)
-        if not n:
-            meta["profiles_tried"].append({"name": profile.name, "pages": None, "blanks": None})
-            continue
-        blanks = _booklet_blanks(n)
-        meta["profiles_tried"].append({"name": profile.name, "pages": n, "blanks": blanks})
-        if blanks < best_blanks:
-            best_html = candidate
-            best_scale = profile.scale
-            best_blanks = blanks
-            best_profile_name = profile.name
-            adjusted = True
-            logger.info("Bulletin auto-adjust %s: %d pages, %d blanks",
-                        profile.name, n, blanks)
-        if best_blanks <= 1:
-            break
-        # Overshoot detection: if we passed through a multiple of 4
-        # (e.g. tightened from 13 past 12 to 11), stop this direction
-        if direction == "tighten" and n < baseline_pages and n % 4 != 0:
-            lower = baseline_pages - (baseline_pages % 4)
-            if n < lower:
-                break
-        elif direction == "loosen" and n > baseline_pages and n % 4 != 0:
-            upper = baseline_pages + _booklet_blanks(baseline_pages)
-            if n > upper:
-                break
+    best = {
+        "html": html_string, "scale": 1.0, "blanks": blanks,
+        "profile_name": None, "adjusted": False,
+    }
 
-    # Try secondary direction if still not acceptable
-    if best_blanks > 1:
+    _try_profiles(
+        primary, html_string, seq_path, bulletin_page_size, direction,
+        baseline_pages, best, meta, _report,
+    )
+
+    if best["blanks"] > 1:
         secondary_dir = "loosen" if direction == "tighten" else "tighten"
-        for profile in secondary:
-            _report(f"Trying {profile.name} ({secondary_dir})...")
-            candidate = _inject_css(html_string, profile.css)
-            render_to_pdf(
-                candidate, seq_path,
-                margins=MARGINS_BULLETIN, display_footer=True,
-                page_size=bulletin_page_size, scale=profile.scale,
-            )
-            n = count_pages(seq_path)
-            if not n:
-                meta["profiles_tried"].append({"name": profile.name, "pages": None, "blanks": None})
-                continue
-            blanks = _booklet_blanks(n)
-            meta["profiles_tried"].append({"name": profile.name, "pages": n, "blanks": blanks})
-            if blanks < best_blanks:
-                best_html = candidate
-                best_scale = profile.scale
-                best_blanks = blanks
-                best_profile_name = profile.name
-                adjusted = True
-                logger.info("Bulletin auto-adjust %s: %d pages, %d blanks",
-                            profile.name, n, blanks)
-            if best_blanks <= 1:
-                break
+        _try_profiles(
+            secondary, html_string, seq_path, bulletin_page_size,
+            secondary_dir, baseline_pages, best, meta, _report,
+        )
+
+    best_html = best["html"]
+    best_scale = best["scale"]
+    best_blanks = best["blanks"]
+    best_profile_name = best["profile_name"]
+    adjusted = best["adjusted"]
 
     if best_blanks < _booklet_blanks(baseline_pages):
-        logger.info("Bulletin auto-adjust: %d blanks -> %d blanks",
-                    _booklet_blanks(baseline_pages), best_blanks)
+        logger.debug("Bulletin auto-adjust: %d blanks -> %d blanks",
+                     _booklet_blanks(baseline_pages), best_blanks)
 
     # Re-render the best result so it's on disk for the caller
     if adjusted:
@@ -671,23 +687,18 @@ def resolve_text_defaults(config: ServiceConfig, day: DayContent) -> None:
 # Context builders
 # ══════════════════════════════════════════════════════════════════════
 
-def _build_common_context(
+def _build_readings_context(
     day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
 ) -> dict:
-    """Build context keys shared by bulletin, large print, and leader guide.
-
-    Resolves readings, creed, prayers, GA image, cover image, and all
-    liturgical content that is identical across document types.
-    """
-    # Readings (with override support)
+    """Build template context for readings + Gospel Acclamation image."""
     first_reading = _reading_data(_get_reading_with_override(day, config, SLOT_FIRST))
     second_reading = _reading_data(_get_reading_with_override(day, config, SLOT_SECOND))
     gospel_override = _get_reading_with_override(day, config, SLOT_GOSPEL)
     gospel_entry = _reading_data(gospel_override) if gospel_override else _build_gospel_entry(day)
     psalm_override = _get_reading_with_override(day, config, SLOT_PSALM)
-    psalm_data = _build_psalm_data_from_reading(psalm_override) if (config.reading_overrides and SLOT_PSALM in config.reading_overrides) else _build_psalm_data(day)
+    has_psalm_override = config.reading_overrides and SLOT_PSALM in config.reading_overrides
+    psalm_data = _build_psalm_data_from_reading(psalm_override) if has_psalm_override else _build_psalm_data(day)
 
-    # Gospel Acclamation image
     ga_image_uri = ""
     try:
         path = get_gospel_acclamation_image(season)
@@ -697,99 +708,97 @@ def _build_common_context(
     except ImportError:
         logger.warning("Pillow not installed — cannot convert GA image to data URI")
 
-    # Creed
-    creed_name = "NICENE CREED" if config.creed_type == "nicene" else "APOSTLES CREED"
-    creed_text = NICENE_CREED if config.creed_type == "nicene" else APOSTLES_CREED
-
-    # Prayers response
-    prayers_response = DEFAULT_PRAYERS_RESPONSE
-    if day.prayers_html:
-        prayers_response = parse_prayers_response(day.prayers_html)
-
-    # Invitation to communion
-    invitation_text = "Taste and see that the Lord is good."
-    if day.invitation_to_communion:
-        invitation_text = strip_tags(preprocess_html(day.invitation_to_communion))
-
-    # Cover image
-    cover_image_uri = ""
-    if config.cover_image:
-        try:
-            cover_image_uri = _image_to_data_uri(Path(config.cover_image))
-        except FileNotFoundError:
-            logger.warning("Cover image not found: %s", config.cover_image)
-
     return {
-        # Cover / metadata
-        "church_name": CHURCH_NAME,
-        "church_address": CHURCH_ADDRESS,
-        "cover_image_uri": cover_image_uri,
-        "date_display": config.date_display,
-        "day_name": _extract_day_name(day.title),
-
-        # Welcome
-        "welcome_message": WELCOME_MESSAGE,
-        "standing_instructions": STANDING_INSTRUCTIONS,
-
-        # Confession
-        "show_confession": config.show_confession,
-        "confession_entries": config.confession_entries,
-
-        # Season
-        "is_lent": season == LiturgicalSeason.LENT,
-        "invitation_to_lent_paragraphs": _split_stanzas(INVITATION_TO_LENT),
-
-        # Prayer of the Day
-        "prayer_of_day_html": _clean_html(day.prayer_of_the_day_html),
-
-        # Readings
         "first_reading": first_reading,
         "psalm_data": psalm_data,
         "second_reading": second_reading,
         "ga_image_uri": ga_image_uri,
         "gospel": gospel_entry,
+    }
 
-        # Creed / Baptism
+
+def _build_creed_context(config: ServiceConfig) -> dict:
+    """Build template context for the creed + baptism."""
+    creed_name = "NICENE CREED" if config.creed_type == "nicene" else "APOSTLES CREED"
+    creed_text = NICENE_CREED if config.creed_type == "nicene" else APOSTLES_CREED
+    ctx = {
         "include_baptism": config.include_baptism,
         "creed_name": creed_name,
         "creed_stanzas": _split_stanzas(creed_text),
-        **(_build_baptism_context(config) if config.include_baptism else {}),
+    }
+    if config.include_baptism:
+        ctx.update(_build_baptism_context(config))
+    return ctx
 
-        # Prayers
-        "prayers_response": prayers_response,
 
-        # Offering
-        "offertory_hymn_verses": OFFERTORY_HYMN_VERSES,
-
-        # Great Thanksgiving
-        "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE,
-
-        # Eucharistic Prayer
+def _build_eucharistic_context(config: ServiceConfig) -> dict:
+    """Build template context for the Eucharistic Prayer + communion."""
+    ep_lines = EUCHARISTIC_PRAYER_EXTENDED.split("\n")
+    return {
         "eucharistic_form": config.eucharistic_form,
-        "eucharistic_prayer_first_line": EUCHARISTIC_PRAYER_EXTENDED.split("\n")[0],
+        "eucharistic_prayer_first_line": ep_lines[0],
         "eucharistic_prayer_lines": [
-            l.strip() for l in EUCHARISTIC_PRAYER_EXTENDED.split("\n")[1:]
-            if l.strip()
+            line.strip() for line in ep_lines[1:] if line.strip()
         ],
         "words_of_institution_paragraphs": _split_stanzas(WORDS_OF_INSTITUTION),
         "has_memorial_acclamation": config.include_memorial_acclamation,
         "memorial_acclamation": MEMORIAL_ACCLAMATION,
         "eucharistic_prayer_closing_stanzas": _split_stanzas(EUCHARISTIC_PRAYER_CLOSING),
         "come_holy_spirit": COME_HOLY_SPIRIT,
-
-        # Lord's Prayer
         "lords_prayer_stanzas": _split_stanzas(LORDS_PRAYER),
+    }
 
-        # Invitation to Communion
+
+def _build_common_context(
+    day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
+) -> dict:
+    """Build context keys shared by bulletin, large print, and leader guide."""
+    prayers_response = DEFAULT_PRAYERS_RESPONSE
+    if day.prayers_html:
+        prayers_response = parse_prayers_response(day.prayers_html)
+
+    invitation_text = "Taste and see that the Lord is good."
+    if day.invitation_to_communion:
+        invitation_text = strip_tags(preprocess_html(day.invitation_to_communion))
+
+    cover_image_uri = ""
+    if config.cover_image:
+        cover_path = Path(config.cover_image)
+        if cover_path.suffix.lower() not in _IMAGE_MIME_TYPES:
+            logger.warning("Unsupported cover image format: %s", cover_path.suffix)
+        else:
+            try:
+                cover_image_uri = _image_to_data_uri(cover_path)
+            except FileNotFoundError:
+                logger.warning("Cover image not found: %s", config.cover_image)
+
+    ctx = {
+        "church_name": CHURCH_NAME,
+        "church_address": CHURCH_ADDRESS,
+        "cover_image_uri": cover_image_uri,
+        "date_display": config.date_display,
+        "day_name": _extract_day_name(day.title),
+        "welcome_message": WELCOME_MESSAGE,
+        "standing_instructions": STANDING_INSTRUCTIONS,
+        "show_confession": config.show_confession,
+        "confession_entries": config.confession_entries,
+        "is_lent": season == LiturgicalSeason.LENT,
+        "invitation_to_lent_paragraphs": _split_stanzas(INVITATION_TO_LENT),
+        "prayer_of_day_html": _clean_html(day.prayer_of_the_day_html),
+        "prayers_response": prayers_response,
+        "offertory_hymn_verses": OFFERTORY_HYMN_VERSES,
+        "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE,
         "invitation_to_communion_text": invitation_text,
-
-        # Closing
         "show_nunc_dimittis": config.show_nunc_dimittis,
         "offering_prayer_text": config.offering_prayer_text or "",
         "prayer_after_communion_text": config.prayer_after_communion_text or "",
         "blessing_lines": (config.blessing_text or AARONIC_BLESSING).split("\n"),
         "dismissal_entries": config.dismissal_entries or DISMISSAL_ENTRIES,
     }
+    ctx.update(_build_readings_context(day, config, season))
+    ctx.update(_build_creed_context(config))
+    ctx.update(_build_eucharistic_context(config))
+    return ctx
 
 
 def _build_large_print_context(
@@ -826,7 +835,8 @@ def _build_pulpit_scripture_context(
         first_reading = _reading_data(_get_reading_with_override(day, config, SLOT_FIRST))
         second_reading = _reading_data(_get_reading_with_override(day, config, SLOT_SECOND))
         psalm_override = _get_reading_with_override(day, config, SLOT_PSALM)
-        psalm_data = _build_psalm_data_from_reading(psalm_override) if (config.reading_overrides and SLOT_PSALM in config.reading_overrides) else _build_psalm_data(day)
+        has_psalm_override = config.reading_overrides and SLOT_PSALM in config.reading_overrides
+        psalm_data = _build_psalm_data_from_reading(psalm_override) if has_psalm_override else _build_psalm_data(day)
     else:
         first_reading = _reading_data(_get_reading(day, SLOT_FIRST))
         second_reading = _reading_data(_get_reading(day, SLOT_SECOND))
@@ -1017,11 +1027,11 @@ def _render_large_format(
                 best_html = candidate
                 best_pages = n
         if best_pages < pages:
-            logger.info("%s auto-tighten: %d -> %d pages", label, pages, best_pages)
-        render_to_pdf(best_html, output_path, margins=MARGINS_DEFAULT,
-                      display_footer=True)
+            logger.debug("%s auto-tighten: %d -> %d pages", label, pages, best_pages)
+            render_to_pdf(best_html, output_path, margins=MARGINS_DEFAULT,
+                          display_footer=True)
 
-    logger.info("%s PDF saved: %s", label, output_path)
+    logger.debug("%s PDF saved: %s", label, output_path)
     return output_path
 
 
@@ -1139,7 +1149,7 @@ def generate_pulpit_scripture(
         pulpit_header=True,
     )
 
-    logger.info("Pulpit Scripture PDF saved: %s", result)
+    logger.debug("Pulpit Scripture PDF saved: %s", result)
     return result
 
 
@@ -1178,7 +1188,7 @@ def generate_pulpit_prayers(
         pulpit_header=True,
     )
 
-    logger.info("Pulpit Prayers PDF saved: %s", result)
+    logger.debug("Pulpit Prayers PDF saved: %s", result)
     return result
 
 
@@ -1190,7 +1200,7 @@ def generate_bulletin(
     season: LiturgicalSeason,
     client: object | None = None,
     keep_intermediates: bool = False,
-    on_progress: object | None = None,
+    on_progress: Optional[Callable[[str], None]] = None,
 ) -> tuple[Path, int | None]:
     """Generate the standard Bulletin for Congregation as a booklet PDF.
 
@@ -1229,6 +1239,8 @@ def generate_bulletin(
             except (BulletinError, OSError):
                 logger.warning("Could not fetch communion hymn image for %s",
                                hymn_num)
+        else:
+            logger.warning("Unexpected hymn number format: %s", hymn_num)
 
     env = setup_jinja_env()
     template = env.get_template("bulletin.html")
@@ -1265,7 +1277,7 @@ def generate_bulletin(
     # Find creed page in sequential PDF
     creed_page = _find_creed_page(seq_path)
     if creed_page:
-        logger.info("Creed found on page %d of sequential bulletin", creed_page)
+        logger.debug("Creed found on page %d of sequential bulletin", creed_page)
     else:
         logger.warning("Could not find creed page marker in bulletin")
 
@@ -1277,6 +1289,6 @@ def generate_bulletin(
         seq_path.unlink()
 
     page_count = count_pages(result)
-    logger.info("Bulletin booklet PDF saved: %s (%s sheets)",
+    logger.debug("Bulletin booklet PDF saved: %s (%s sheets)",
                 result, page_count // 2 if page_count else "?")
     return result, creed_page

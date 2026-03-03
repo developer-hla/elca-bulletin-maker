@@ -45,6 +45,37 @@ MARGINS_BULLETIN = {
 }
 
 
+def _build_header_template(
+    header_left: str, header_right: str, pulpit_header: bool,
+) -> str:
+    """Build the Playwright header HTML template."""
+    if pulpit_header:
+        return (
+            '<div style="font-size: 10pt; width: 100%; '
+            'padding: 0 0.5in 4pt 0.5in; '
+            'border-bottom: 1.5pt solid black; '
+            'font-family: Cambria, Georgia, serif;">'
+            '<div style="display: flex; justify-content: space-between; '
+            'align-items: baseline;">'
+            f'<span style="font-weight: bold; font-size: 13pt;">'
+            f'{header_left}</span>'
+            '<span style="font-size: 10pt;">Leader: '
+            '<span style="display: inline-block; width: 100pt; '
+            'border-bottom: 1pt solid black;">&nbsp;</span></span>'
+            '</div>'
+            '</div>'
+        )
+    if header_left or header_right:
+        return (
+            '<div style="font-size: 9pt; width: 100%; display: flex; '
+            'justify-content: space-between; padding: 0 0.5in;">'
+            f'<span>{header_left}</span>'
+            f'<span>{header_right}</span>'
+            '</div>'
+        )
+    return "<span></span>"
+
+
 def render_to_pdf(
     html_string: str,
     output_path: Path,
@@ -103,34 +134,9 @@ def render_to_pdf(
 
         if display_footer or pulpit_header:
             pdf_opts["display_header_footer"] = True
-
-            if pulpit_header:
-                pdf_opts["header_template"] = (
-                    '<div style="font-size: 10pt; width: 100%; '
-                    'padding: 0 0.5in 4pt 0.5in; '
-                    'border-bottom: 1.5pt solid black; '
-                    'font-family: Cambria, Georgia, serif;">'
-                    '<div style="display: flex; justify-content: space-between; '
-                    'align-items: baseline;">'
-                    f'<span style="font-weight: bold; font-size: 13pt;">'
-                    f'{header_left}</span>'
-                    '<span style="font-size: 10pt;">Leader: '
-                    '<span style="display: inline-block; width: 100pt; '
-                    'border-bottom: 1pt solid black;">&nbsp;</span></span>'
-                    '</div>'
-                    '</div>'
-                )
-            elif header_left or header_right:
-                pdf_opts["header_template"] = (
-                    '<div style="font-size: 9pt; width: 100%; display: flex; '
-                    'justify-content: space-between; padding: 0 0.5in;">'
-                    f'<span>{header_left}</span>'
-                    f'<span>{header_right}</span>'
-                    '</div>'
-                )
-            else:
-                pdf_opts["header_template"] = "<span></span>"
-
+            pdf_opts["header_template"] = _build_header_template(
+                header_left, header_right, pulpit_header,
+            )
             pdf_opts["footer_template"] = (
                 '<div style="font-size: 12pt; text-align: center; width: 100%;">'
                 '<span class="pageNumber"></span>'
@@ -228,7 +234,7 @@ def impose_booklet(input_pdf: Path, output_pdf: Path) -> Path:
     with open(output_pdf, "wb") as f:
         writer.write(f)
 
-    logger.info("Booklet imposed: %d pages -> %d sheets, saved %s",
+    logger.debug("Booklet imposed: %d pages -> %d sheets, saved %s",
                 n, padded // 4, output_pdf)
     return output_pdf
 
@@ -271,7 +277,7 @@ def render_with_shrink(
         )
         pages = count_pages(result)
         if pages is not None and pages <= max_pages:
-            logger.info("Auto-shrink: scale=%.2f gave %d pages", scale, pages)
+            logger.debug("Auto-shrink: scale=%.2f gave %d pages", scale, pages)
             return result
 
     return result

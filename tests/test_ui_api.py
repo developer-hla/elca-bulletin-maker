@@ -189,14 +189,13 @@ class TestGenerateAll:
         }
 
         # Mock generation functions to avoid Playwright dependency
-        # These are imported inside generate_all from bulletin_maker.renderer
         with patch("bulletin_maker.renderer.html_renderer.render_to_pdf") as mock_rtp, \
              patch("bulletin_maker.renderer.html_renderer.render_with_shrink") as mock_rws, \
-             patch("bulletin_maker.renderer.generate_bulletin") as mock_bull, \
-             patch("bulletin_maker.renderer.generate_pulpit_prayers") as mock_pray, \
-             patch("bulletin_maker.renderer.generate_pulpit_scripture") as mock_scrip, \
-             patch("bulletin_maker.renderer.generate_large_print") as mock_lp, \
-             patch("bulletin_maker.renderer.generate_leader_guide") as mock_lg:
+             patch("bulletin_maker.ui.api.generate_bulletin") as mock_bull, \
+             patch("bulletin_maker.ui.api.generate_pulpit_prayers") as mock_pray, \
+             patch("bulletin_maker.ui.api.generate_pulpit_scripture") as mock_scrip, \
+             patch("bulletin_maker.ui.api.generate_large_print") as mock_lp, \
+             patch("bulletin_maker.ui.api.generate_leader_guide") as mock_lg:
 
             mock_bull.return_value = (Path("/tmp/test_output/bulletin.pdf"), 5)
             mock_pray.return_value = Path("/tmp/test_output/prayers.pdf")
@@ -297,11 +296,11 @@ class TestGenerateAllErrors:
             "output_dir": str(tmp_path),
         }
 
-        with patch("bulletin_maker.renderer.generate_bulletin") as mock_bull, \
-             patch("bulletin_maker.renderer.generate_pulpit_prayers") as mock_pray, \
-             patch("bulletin_maker.renderer.generate_pulpit_scripture") as mock_scrip, \
-             patch("bulletin_maker.renderer.generate_large_print") as mock_lp, \
-             patch("bulletin_maker.renderer.generate_leader_guide") as mock_lg:
+        with patch("bulletin_maker.ui.api.generate_bulletin") as mock_bull, \
+             patch("bulletin_maker.ui.api.generate_pulpit_prayers") as mock_pray, \
+             patch("bulletin_maker.ui.api.generate_pulpit_scripture") as mock_scrip, \
+             patch("bulletin_maker.ui.api.generate_large_print") as mock_lp, \
+             patch("bulletin_maker.ui.api.generate_leader_guide") as mock_lg:
 
             mock_bull.side_effect = RuntimeError("Playwright crashed")
             mock_pray.return_value = Path(tmp_path / "prayers.pdf")
@@ -328,11 +327,11 @@ class TestGenerateAllErrors:
             "output_dir": str(tmp_path),
         }
 
-        with patch("bulletin_maker.renderer.generate_bulletin") as mock_bull, \
-             patch("bulletin_maker.renderer.generate_pulpit_prayers") as mock_pray, \
-             patch("bulletin_maker.renderer.generate_pulpit_scripture") as mock_scrip, \
-             patch("bulletin_maker.renderer.generate_large_print") as mock_lp, \
-             patch("bulletin_maker.renderer.generate_leader_guide") as mock_lg:
+        with patch("bulletin_maker.ui.api.generate_bulletin") as mock_bull, \
+             patch("bulletin_maker.ui.api.generate_pulpit_prayers") as mock_pray, \
+             patch("bulletin_maker.ui.api.generate_pulpit_scripture") as mock_scrip, \
+             patch("bulletin_maker.ui.api.generate_large_print") as mock_lp, \
+             patch("bulletin_maker.ui.api.generate_leader_guide") as mock_lg:
 
             mock_bull.side_effect = RuntimeError("fail 1")
             mock_pray.side_effect = RuntimeError("fail 2")
