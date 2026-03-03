@@ -19,9 +19,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from bulletin_maker.sns import SundaysClient, HymnLyrics, ServiceConfig
 from bulletin_maker.renderer import (
     generate_bulletin,
-    generate_pulpit_scripture,
-    generate_pulpit_prayers,
     generate_large_print,
+    generate_leader_guide,
+    generate_pulpit_prayers,
+    generate_pulpit_scripture,
 )
 from bulletin_maker.renderer.season import detect_season, fill_seasonal_defaults
 
@@ -165,28 +166,36 @@ def main():
         print(f"   Saved: {bulletin_path}")
         print(f"   Creed page: {creed_page}")
 
-    print("\n3. Generating Pulpit Scripture PDF...")
-    scripture_path = generate_pulpit_scripture(
-        day, DATE_DISPLAY, OUTPUT_DIR / "Pulpit SCRIPTURE 8.5 x 11.pdf"
-    )
-    print(f"   Saved: {scripture_path}")
+        print("\n3. Generating Pulpit Scripture PDF...")
+        scripture_path = generate_pulpit_scripture(
+            day, DATE_DISPLAY, OUTPUT_DIR / "Pulpit SCRIPTURE 8.5 x 11.pdf"
+        )
+        print(f"   Saved: {scripture_path}")
 
-    print("\n4. Generating Pulpit Prayers PDF...")
-    prayers_path = generate_pulpit_prayers(
-        day, DATE_DISPLAY,
-        creed_type="nicene",
-        creed_page_num=creed_page,
-        output_path=OUTPUT_DIR / "Pulpit PRAYERS + NICENE 8.5 x 11.pdf",
-    )
-    print(f"   Saved: {prayers_path}")
+        print("\n4. Generating Pulpit Prayers PDF...")
+        prayers_path = generate_pulpit_prayers(
+            day, DATE_DISPLAY,
+            creed_type="nicene",
+            creed_page_num=creed_page,
+            output_path=OUTPUT_DIR / "Pulpit PRAYERS + NICENE 8.5 x 11.pdf",
+        )
+        print(f"   Saved: {prayers_path}")
 
-    print("\n5. Generating Large Print PDF...")
-    lp_path = generate_large_print(
-        day, config,
-        output_path=OUTPUT_DIR / "Full with Hymns LARGE PRINT.pdf",
-        season=season,
-    )
-    print(f"   Saved: {lp_path}")
+        print("\n5. Generating Large Print PDF...")
+        lp_path = generate_large_print(
+            day, config,
+            output_path=OUTPUT_DIR / "Full with Hymns LARGE PRINT.pdf",
+            season=season,
+        )
+        print(f"   Saved: {lp_path}")
+
+        print("\n6. Generating Leader Guide PDF...")
+        lg_path = generate_leader_guide(
+            day, config,
+            output_path=OUTPUT_DIR / "Leader Guide.pdf",
+            season=season,
+        )
+        print(f"   Saved: {lg_path}")
 
     print("\n" + "=" * 60)
     print(f"Done! Files in: {OUTPUT_DIR}")

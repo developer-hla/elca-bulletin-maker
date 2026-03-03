@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 import fitz  # pymupdf
-from PIL import Image, ImageChops, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw
 
 EXAMPLE_DIR = Path("examples/-02-2026 February/ASCENSION -- 2026.02.22 LENT 1A")
 OUTPUT_DIR = Path("output")
@@ -81,15 +81,19 @@ def make_side_by_side(ours: Image.Image, ref: Image.Image, label: str) -> Image.
     composite.paste(ref, (ours.width + gap, label_height))
 
     # Draw separator line
-    for y in range(label_height, h + label_height):
-        for x in range(ours.width + 2, ours.width + gap - 2):
-            composite.putpixel((x, y), (200, 200, 200))
+    draw.rectangle(
+        [ours.width + 2, label_height, ours.width + gap - 3, h + label_height - 1],
+        fill=(200, 200, 200),
+    )
 
     return composite
 
 
 def make_diff(ours: Image.Image, ref: Image.Image) -> Image.Image:
-    """Create a diff image highlighting pixel differences in red."""
+    """Create a diff image highlighting pixel differences in red.
+
+    Uses PIL channel operations instead of per-pixel Python loops.
+    """
     # Resize to same dimensions
     w = max(ours.width, ref.width)
     h = max(ours.height, ref.height)
@@ -98,21 +102,17 @@ def make_diff(ours: Image.Image, ref: Image.Image) -> Image.Image:
 
     diff = ImageChops.difference(ours_r, ref_r)
 
-    # Convert diff to highlight: red where different, light gray where same
-    pixels = diff.load()
-    result = Image.new("RGB", (w, h), (245, 245, 245))
-    result_pixels = result.load()
-    ref_pixels = ref_r.load()
+    # Build a mask: pixel is "different" when sum of RGB channels > 30
+    r, g, b = diff.split()
+    # Add channels pairwise (clamped at 255), then threshold
+    channel_sum = ImageChops.add(ImageChops.add(r, g), b)
+    mask = channel_sum.point(lambda v: 255 if v > 30 else 0)
 
-    for y in range(h):
-        for x in range(w):
-            r, g, b = pixels[x, y]
-            if r + g + b > 30:  # threshold for "different"
-                result_pixels[x, y] = (255, 80, 80)  # red highlight
-            else:
-                result_pixels[x, y] = ref_pixels[x, y]  # show reference where same
+    # Red overlay for changed pixels
+    red = Image.new("RGB", (w, h), (255, 80, 80))
 
-    return result
+    # Composite: red where different, reference where same
+    return Image.composite(red, ref_r, mask)
 
 
 def main():

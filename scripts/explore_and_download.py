@@ -242,7 +242,7 @@ def download_images(client: httpx.Client) -> None:
                 f.write(data)
             print(f"OK  {len(data):>8,} bytes  {ext}  -> {filename}")
             successes.append((atom_code, filename, len(data)))
-        except Exception as e:
+        except httpx.HTTPError as e:
             print(f"FAILED: {e}")
             failures.append((atom_code, save_name, str(e)))
         time.sleep(0.3)

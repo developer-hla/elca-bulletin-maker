@@ -1,7 +1,9 @@
+"""Manual S&S client smoke test — verifies login, day texts, and music search.
+
+Not a pytest test.  Run directly:
+    python scripts/test_sns_client.py
 """
-Test the S&S client — verifies login, day texts, and music search.
-Run: python -m pytest tests/test_sns_client.py -s
-"""
+from __future__ import annotations
 
 from bulletin_maker.sns import SundaysClient
 
