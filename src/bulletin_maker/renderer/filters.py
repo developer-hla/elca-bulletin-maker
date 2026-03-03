@@ -14,7 +14,7 @@ else:
 
 
 def nl2br(text: str) -> str:
-    """Convert newlines to <br> tags."""
+    """Convert newlines to <br> tags.  Input must be plain text (no HTML)."""
     if not text:
         return ""
     return text.replace("\n", "<br>\n")

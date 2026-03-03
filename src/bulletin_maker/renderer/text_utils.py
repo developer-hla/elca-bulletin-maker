@@ -57,11 +57,11 @@ def _clean_line(html_fragment: str) -> str:
 
 
 def _detect_role_prefix(text: str) -> tuple[DialogRole | None, str]:
-    """Check for an explicit P:/C:/Pastor:/Congregation: prefix.
+    """Check for an explicit role prefix like P:/C:/A:/L:/Pastor:/Congregation:.
 
     Returns (role, remaining_text) if found, else (None, original_text).
     """
-    m = re.match(r"^(P|C|Pastor|Congregation)\s*:\s*", text)
+    m = re.match(r"^(P|C|A|L|Pastor|Congregation|Assisting Minister|Leader)\s*:\s*", text)
     if not m:
         return None, text
     raw = m.group(1)
@@ -73,16 +73,18 @@ def _detect_role_prefix(text: str) -> tuple[DialogRole | None, str]:
 def _classify_line(line_html: str) -> DialogRole:
     """Classify a single inner-div/line by its HTML formatting.
 
-    - Entirely wrapped in <strong>/<b> → Congregation
-    - Entirely wrapped in <em>/<i> → Instruction
+    - All text content is bold → Congregation
+    - All text content is italic → Instruction
     - Otherwise → Pastor
     """
     s = line_html.strip()
-    # Bold-only line
-    if re.match(r"^<(?:strong|b)\b[^>]*>(.*)</(?:strong|b)>\s*$", s, re.DOTALL):
+    # Check if all non-whitespace content is within bold tags
+    stripped_bold = re.sub(r"<(?:strong|b)\b[^>]*>.*?</(?:strong|b)>", "", s, flags=re.DOTALL)
+    if not re.sub(r"<[^>]*>", "", stripped_bold).strip():
         return DialogRole.CONGREGATION
-    # Italic-only line
-    if re.match(r"^<(?:em|i)\b[^>]*>(.*)</(?:em|i)>\s*$", s, re.DOTALL):
+    # Check if all non-whitespace content is within italic tags
+    stripped_italic = re.sub(r"<(?:em|i)\b[^>]*>.*?</(?:em|i)>", "", s, flags=re.DOTALL)
+    if not re.sub(r"<[^>]*>", "", stripped_italic).strip():
         return DialogRole.INSTRUCTION
     return DialogRole.PASTOR
 
@@ -97,8 +99,11 @@ def _process_body_lines(lines: list[str]) -> list[tuple[DialogRole, str]]:
         text = _clean_line(raw_line)
         if not text:
             continue
-        role, text = _detect_role_prefix(text) or (None, text)
-        if role is None:
+        detected_role, stripped = _detect_role_prefix(text)
+        if detected_role is not None:
+            role = detected_role
+            text = stripped
+        else:
             role = _classify_line(raw_line)
 
         if role == cur_role:
@@ -149,7 +154,7 @@ def _extract_sns_blocks(html: str) -> list[tuple[str, str]]:
     Handles nested ``<div>`` tags by tracking depth.
     """
     blocks: list[tuple[str, str]] = []
-    opener = re.compile(r'<div\s+class="(rubric|body)"[^>]*>')
+    opener = re.compile(r'<div[^>]*\bclass="(rubric|body)"[^>]*>')
 
     pos = 0
     while pos < len(html):

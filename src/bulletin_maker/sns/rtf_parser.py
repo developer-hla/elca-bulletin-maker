@@ -88,11 +88,11 @@ def _strip_rtf(rtf: str) -> str:
         }
         if code in cp1252:
             return cp1252[code]
-        if code > 0x10FFFF:
-            return ""  # invalid Unicode code point
         return chr(code)
 
     rtf = re.sub(r"\\'([0-9a-fA-F]{2})", _hex_replace, rtf)
+
+    _ctrl_word_re = re.compile(r"([a-z]+)(-?\d+)? ?")
 
     result: list[str] = []
     i = 0
@@ -132,10 +132,10 @@ def _strip_rtf(rtf: str) -> str:
                     i += 2
                     continue
                 # Control word
-                m = re.match(r"([a-z]+)(-?\d+)? ?", rtf[i + 1 :])
+                m = _ctrl_word_re.match(rtf, i + 1)
                 if m:
                     word = m.group(1)
-                    i += 1 + m.end()
+                    i = m.end()
                     if word == "par":
                         result.append("\n")
                     elif word == "tab":
