@@ -387,7 +387,9 @@ class TestInstallUpdate:
         callback = MagicMock()
 
         with patch("bulletin_maker.updater.UPDATES_DIR", Path("/tmp/updates")):
-            install_update("https://example.com/update.zip", callback)
+            with pytest.raises(SystemExit) as exc_info:
+                install_update("https://example.com/update.zip", callback)
+            assert exc_info.value.code == 0
 
         mock_dl.assert_called_once()
         mock_extract.assert_called_once()

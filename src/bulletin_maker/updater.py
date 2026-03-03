@@ -262,7 +262,7 @@ del "%~f0"
 
 
 def _relaunch_macos(install_path: Path) -> None:
-    """Launch the new macOS .app and exit."""
+    """Launch the new macOS .app in a detached process."""
     exe = install_path / "Contents" / "MacOS" / "Bulletin Maker"
     if not exe.exists():
         # Try to find any executable in the MacOS dir
@@ -273,18 +273,16 @@ def _relaunch_macos(install_path: Path) -> None:
                     exe = item
                     break
     subprocess.Popen([str(exe)])
-    sys.exit(0)
 
 
 def _relaunch_windows(bat_path: Path) -> None:
-    """Launch the bat helper and exit."""
+    """Launch the bat helper in a detached process."""
     CREATE_NO_WINDOW = 0x08000000
     DETACHED_PROCESS = 0x00000008
     subprocess.Popen(
         ["cmd.exe", "/c", str(bat_path)],
         creationflags=DETACHED_PROCESS | CREATE_NO_WINDOW,
     )
-    sys.exit(0)
 
 
 # ── Orchestrator ──────────────────────────────────────────────────────
@@ -341,6 +339,10 @@ def install_update(
             _relaunch_windows(bat_path)
         else:
             raise UpdateError(f"Unsupported platform: {system}")
+
+        # Exit the current process so the new version takes over.
+        # Placed here (not in _relaunch_*) to keep helpers testable.
+        sys.exit(0)
 
     except UpdateError:
         # Clean up staging but keep backup intact
