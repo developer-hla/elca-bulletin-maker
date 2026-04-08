@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from bulletin_maker.renderer.static_text import DEFAULT_PRAYERS_RESPONSE
+from bulletin_maker.renderer.static_text import DEFAULT_PRAYERS_CALL, DEFAULT_PRAYERS_RESPONSE
 from bulletin_maker.renderer.text_utils import preprocess_html, strip_tags
 
 
@@ -113,3 +113,35 @@ def parse_prayers_response(prayers_html: str) -> str:
         if text and text.lower() != "amen.":
             return text
     return DEFAULT_PRAYERS_RESPONSE
+
+
+def parse_prayers_call(prayers_html: str) -> str:
+    """Extract leader call phrase from the end of petition texts.
+
+    Each petition ends with a recurring phrase (e.g., "Hear us, O God.").
+    We find the common ending sentence across petitions.
+    """
+    parsed = parse_prayers_html(prayers_html)
+    petitions = parsed.get("petitions", [])
+    if len(petitions) < 2:
+        return DEFAULT_PRAYERS_CALL
+
+    # Extract last sentence from each petition
+    endings = []
+    for p in petitions:
+        text = p["text"].strip()
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        if sentences:
+            endings.append(sentences[-1].strip())
+
+    if not endings:
+        return DEFAULT_PRAYERS_CALL
+
+    # Find the most common ending (the recurring leader call)
+    counts: dict[str, int] = {}
+    for e in endings:
+        counts[e] = counts.get(e, 0) + 1
+    most_common = max(counts, key=lambda k: counts[k])
+    if counts[most_common] >= 2:
+        return most_common
+    return DEFAULT_PRAYERS_CALL

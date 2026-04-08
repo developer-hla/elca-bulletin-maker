@@ -873,6 +873,25 @@ main {
     border-top: 1px solid var(--border);
 }
 
+.verse-select {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    margin-top: 6px;
+    font-size: 13px;
+}
+
+.verse-label {
+    font-weight: 600;
+    margin-right: 2px;
+}
+
+.verse-cb-label {
+    cursor: pointer;
+    user-select: none;
+}
+
 /* ── Error & Warning Messages ──────────────────────────── */
 
 .error-msg {

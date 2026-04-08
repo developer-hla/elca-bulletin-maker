@@ -131,6 +131,11 @@ p { margin: 0; }
        on a single page rather than overflowing across pages. */
 }
 
+.canticle-image img {
+    max-width: 115%;
+    margin-left: -7.5%;
+}
+
 /* ── Readings ── */
 .reading-intro {
     font-style: italic;

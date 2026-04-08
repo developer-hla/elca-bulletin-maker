@@ -69,6 +69,7 @@ class HymnLyrics:
     verses: list[str]        # Each verse as text with line breaks
     refrain: str = ""        # Refrain text (empty if none)
     copyright: str = ""      # Copyright line(s)
+    verse_label: str = ""    # e.g. "Verses 1, 3-5" when subset selected
 
 
 @dataclass
@@ -89,7 +90,7 @@ class ServiceConfig:
     canticle: Optional[str] = None              # "glory_to_god", "this_is_the_feast", or "none"
     eucharistic_form: Optional[str] = None      # "short", "poetic", or "extended"
     include_memorial_acclamation: Optional[bool] = None  # Memorial Acclamation in EP?
-    preface: Optional[PrefaceType] = None       # Preface type. None = seasonal default.
+    preface: Optional[PrefaceType] = None       # None = Sundays/Ordinary Time (not seasonal)
 
     # ── Liturgical texts (None = use S&S default from DayContent) ──
     confession_entries: Optional[list] = None       # list of (DialogRole, text) tuples
@@ -120,7 +121,12 @@ class ServiceConfig:
     # ── Other service details ──
     prelude_title: str = ""
     prelude_performer: str = ""
+    prelude_composer: str = ""
+    offertory_title: str = ""
+    offertory_performer: str = ""
+    offertory_composer: str = ""
     postlude_title: str = ""
     postlude_performer: str = ""
+    postlude_composer: str = ""
     choral_title: str = ""
     cover_image: str = ""                   # Path to seasonal logo image

@@ -11,7 +11,7 @@
 {# ── Hymn rendering macro (used for gathering, sermon, communion, sending) ── #}
 {% macro render_hymn(hymn, label, separator=" - ", extra_class="") %}
 <div class="liturgy-heading red-heading {{ extra_class }}">
-    <span>{{ label }}: {{ hymn.number }}{{ separator }}{{ hymn.title | upper }}</span>
+    <span>{{ label }}: {{ hymn.number }}{{ separator }}{{ hymn.title | upper }}{% if hymn.verse_label %} ({{ hymn.verse_label }}){% endif %}</span>
 </div>
 <div class="two-col">
     {% for verse in hymn.verses %}
@@ -47,6 +47,7 @@
     <div class="cover-footer">
         <p class="cover-date">10:00 AM &mdash; {{ date_display }}</p>
         <p class="cover-day-name">The {{ day_name }}</p>
+        {% if not is_leader_guide %}<p class="cover-format-label">Large Print</p>{% endif %}
     </div>
 </div>
 
@@ -71,7 +72,11 @@
 {% endif %}
 
 <div class="liturgy-heading"><span>PRELUDE</span></div>
+{% if prelude_title %}
+<p class="music-citation">{{ prelude_title }}{% if prelude_composer %} &mdash; {{ prelude_composer }}{% endif %}{% if prelude_performer %} / {{ prelude_performer }}{% endif %}</p>
+{% else %}
 <div class="spacer"></div>
+{% endif %}
 
 <div class="liturgy-heading"><span>WELCOME</span></div>
 <div class="spacer"></div>
@@ -200,7 +205,7 @@
 <p class="gospel-intro-line">
     <span class="role-label">Pastor: </span>
     <span style="font-size: 16.5pt; color: #C00000;">The holy gospel according to St. {{ gospel.book }}.</span>
-    <br><span style="font-size: 16.5pt;">Glory to You, O Lord.</span>
+    <br><strong style="font-size: 16.5pt;">Glory to You, O Lord.</strong>
 </p>
 <div class="gospel-text">{{ gospel.text_html | safe }}</div>
 <p style="line-height: 20pt;">This is the gospel of our Lord. Praise to you, O Christ.</p>
@@ -289,7 +294,7 @@
 </div>
 <p class="instruction">As each petition of the prayers ends:</p>
 <p>
-    <span class="role-label" style="font-style: italic;">Leader: Hear us, O God.</span>
+    <span class="role-label" style="font-style: italic;">Leader: {{ prayers_call }}</span>
     <br><strong>CONGREGATION: {{ prayers_response }}</strong>
 </p>
 </div>
@@ -316,7 +321,11 @@
 </p>
 
 <div class="liturgy-heading"><span>OFFERTORY</span></div>
+{% if offertory_title %}
+<p class="music-citation">{{ offertory_title }}{% if offertory_composer %} &mdash; {{ offertory_composer }}{% endif %}{% if offertory_performer %} / {{ offertory_performer }}{% endif %}</p>
+{% else %}
 <div class="spacer"></div>
+{% endif %}
 </div>
 
 
@@ -507,6 +516,9 @@
 {% endfor %}
 
 <div class="liturgy-heading"><span>*POSTLUDE</span></div>
+{% if postlude_title %}
+<p class="music-citation">{{ postlude_title }}{% if postlude_composer %} &mdash; {{ postlude_composer }}{% endif %}{% if postlude_performer %} / {{ postlude_performer }}{% endif %}</p>
+{% endif %}
 </div>
 
 </body>

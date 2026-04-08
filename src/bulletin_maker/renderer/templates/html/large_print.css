@@ -65,6 +65,20 @@ p { margin: 0; }
     font-weight: bold;
 }
 
+.cover-format-label {
+    font-family: Cambria, 'Times New Roman', serif;
+    font-size: 20pt;
+    font-style: italic;
+    margin-top: 12pt;
+}
+
+.music-citation {
+    font-size: 14pt;
+    font-style: italic;
+    margin-top: 2pt;
+    margin-bottom: 0;
+}
+
 /* ── Heading Bars ── */
 .liturgy-heading {
     background: #D9D9D9;

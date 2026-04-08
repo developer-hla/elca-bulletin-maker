@@ -130,6 +130,7 @@ LORDS_PRAYER = (
 
 PRAYERS_INTRO = "We continue with the prayers of the people:"
 
+DEFAULT_PRAYERS_CALL = "Hear us, O God."
 DEFAULT_PRAYERS_RESPONSE = "Your mercy is great."
 
 # ── Large Print liturgical texts (from LP reference DOCX) ──────────
@@ -147,7 +148,18 @@ GREAT_THANKSGIVING_DIALOG = [
 GREAT_THANKSGIVING_PREFACE = (
     "It is indeed right, our duty and our joy, that we should, "
     "at all times and in all places, give thanks and praise to you, "
-    "almighty and merciful God, through our Savior Jesus Christ."
+    "almighty and merciful God, through our Savior Jesus Christ; "
+    "who on this day overcame death and the grave, "
+    "and by his glorious resurrection "
+    "opened to us the way of everlasting life. "
+    "And so, with all the choirs of angels, "
+    "with the church on earth and the hosts of heaven, "
+    "we praise your name and join their unending hymn:"
+)
+
+GREAT_THANKSGIVING_PREFACE_SHORT = (
+    "It is indeed right, our duty and our joy... "
+    "...we praise your name and join their unending hymn:"
 )
 
 # Sanctus — bold congregation text (from LP reference para 167-171)

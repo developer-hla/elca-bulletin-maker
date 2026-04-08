@@ -85,7 +85,7 @@
 {# ── Canticle of Praise (notation image) ── #}
 {% if canticle_image_uri %}
 <div class="section-heading"><span>*CANTICLE OF PRAISE</span></div>
-<div class="notation-image"><img src="{{ canticle_image_uri }}" alt="Canticle of Praise"></div>
+<div class="notation-image canticle-image"><img src="{{ canticle_image_uri }}" alt="Canticle of Praise"></div>
 {% endif %}
 
 
@@ -197,7 +197,7 @@
     <br><strong>Glory to You, O Lord.</strong>
 </p>
 <div class="two-col reading-text">{{ gospel.text_html | safe }}</div>
-<p>This is the gospel of our Lord. <strong>Praise to you, O Christ.</strong></p>
+<p class="mt-8">This is the gospel of our Lord. <strong>Praise to you, O Christ.</strong></p>
 {% endif %}
 
 
@@ -283,7 +283,7 @@
 </div>
 <p class="instruction">As each petition of the prayers ends:</p>
 <p>
-    <span class="role-label" style="font-style: italic;">Leader: Hear us, O God.</span>
+    <span class="role-label" style="font-style: italic;">Leader: {{ prayers_call }}</span>
     <br><strong>CONGREGATION: {{ prayers_response }}</strong>
 </p>
 </div>

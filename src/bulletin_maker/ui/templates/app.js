@@ -412,10 +412,11 @@ function buildReviewOutline() {
 
     // Prelude
     var pt = $("#prelude-title").value.trim();
+    var pc = $("#prelude-composer").value.trim();
     var pp = $("#prelude-performer").value.trim();
     var preludeVal = "";
-    if (pt || pp) {
-        preludeVal = (pt ? "\u201C" + pt + "\u201D" : "") + (pp ? " \u2014 " + pp : "");
+    if (pt || pc || pp) {
+        preludeVal = (pt ? "\u201C" + pt + "\u201D" : "") + (pc ? " \u2014 " + pc : "") + (pp ? " / " + pp : "");
     }
     items.push({ label: "Prelude", value: preludeVal || "(not set)", empty: !preludeVal });
 
@@ -492,6 +493,16 @@ function buildReviewOutline() {
     // Offering Prayer
     items.push({ label: "Offering Prayer", value: getTextSourceLabel("offering_prayer"), textKey: "offering_prayer" });
 
+    // Offertory
+    var ot = $("#offertory-title").value.trim();
+    var oc = $("#offertory-composer").value.trim();
+    var op = $("#offertory-performer").value.trim();
+    var offVal = "";
+    if (ot || oc || op) {
+        offVal = (ot ? "\u201C" + ot + "\u201D" : "") + (oc ? " \u2014 " + oc : "") + (op ? " / " + op : "");
+    }
+    items.push({ label: "Offertory", value: offVal || "(not set)", empty: !offVal });
+
     // Choral
     var choralTitle = $("#choral-title").value.trim();
     if (choralTitle) {
@@ -515,10 +526,11 @@ function buildReviewOutline() {
 
     // Postlude
     var pot = $("#postlude-title").value.trim();
+    var poc = $("#postlude-composer").value.trim();
     var pop = $("#postlude-performer").value.trim();
     var postVal = "";
-    if (pot || pop) {
-        postVal = (pot ? "\u201C" + pot + "\u201D" : "") + (pop ? " \u2014 " + pop : "");
+    if (pot || poc || pop) {
+        postVal = (pot ? "\u201C" + pot + "\u201D" : "") + (poc ? " \u2014 " + poc : "") + (pop ? " / " + pop : "");
     }
     items.push({ label: "Postlude", value: postVal || "(not set)", empty: !postVal });
 
@@ -810,9 +822,15 @@ function resetFormUI() {
     $$(".hymn-info").forEach(function(el) { hide(el); el.textContent = ""; });
     $$(".hymn-error").forEach(function(el) { hide(el); });
     $$(".hymn-clear-btn").forEach(function(el) { hide(el); });
+    $$(".verse-select").forEach(function(el) { el.innerHTML = ""; hide(el); });
     $("#prelude-title").value = "";
+    $("#prelude-composer").value = "";
     $("#prelude-performer").value = "";
+    $("#offertory-title").value = "";
+    $("#offertory-composer").value = "";
+    $("#offertory-performer").value = "";
     $("#postlude-title").value = "";
+    $("#postlude-composer").value = "";
     $("#postlude-performer").value = "";
     $("#choral-title").value = "";
     $("#cover-image-path").textContent = "None selected";
@@ -1199,6 +1217,42 @@ function setupResetDefaults() {
 
 // ── Hymn Fetching ────────────────────────────────────────────────────
 
+/** Build verse checkbox HTML for a hymn with the given verse count. */
+function buildVerseCheckboxes(slotName, verseCount) {
+    var html = '<span class="verse-label">Verses:</span>';
+    for (var i = 1; i <= verseCount; i++) {
+        var id = "verse-" + slotName + "-" + i;
+        html += '<label class="verse-cb-label" for="' + id + '">' +
+            '<input type="checkbox" id="' + id + '" value="' + i + '" checked> ' + i +
+            '</label>';
+    }
+    return html;
+}
+
+/** Read which verse checkboxes are checked in a slot's .verse-select container. */
+function getSelectedVerses(slot) {
+    var checks = slot.querySelectorAll(".verse-select input[type=checkbox]:checked");
+    var selected = [];
+    checks.forEach(function(cb) { selected.push(parseInt(cb.value, 10)); });
+    return selected;
+}
+
+/** Show verse checkboxes for a hymn slot after successful lyrics fetch. */
+function showVerseSelect(slot, slotName, verseCount) {
+    var container = slot.querySelector(".verse-select");
+    container.innerHTML = buildVerseCheckboxes(slotName, verseCount);
+    show(container);
+    // Wire checkbox changes to update state
+    container.querySelectorAll("input[type=checkbox]").forEach(function(cb) {
+        cb.addEventListener("change", function() {
+            var hymn = state.hymns[slotName];
+            if (hymn) {
+                hymn.selectedVerses = getSelectedVerses(slot);
+            }
+        });
+    });
+}
+
 function clearHymnSlot(slot) {
     var slotName = slot.dataset.slot;
     state.hymns[slotName] = null;
@@ -1207,6 +1261,9 @@ function clearHymnSlot(slot) {
     infoEl.textContent = "";
     hide(infoEl);
     hideError(slot.querySelector(".hymn-error"));
+    var verseEl = slot.querySelector(".verse-select");
+    verseEl.innerHTML = "";
+    hide(verseEl);
     var clearBtn = slot.querySelector(".hymn-clear-btn");
     if (clearBtn) hide(clearBtn);
 }
@@ -1307,12 +1364,19 @@ function setupHymnFetch() {
                         (lyricsResult.has_refrain ? " + refrain" : "");
                     show(infoEl);
                     if (clearBtn) show(clearBtn);
+                    var allVerses = [];
+                    for (var vi = 1; vi <= lyricsResult.verse_count; vi++) allVerses.push(vi);
                     state.hymns[slotName] = {
                         number: number,
                         collection: collection,
                         title: searchResult.title,
                         hasLyrics: true,
+                        verseCount: lyricsResult.verse_count,
+                        selectedVerses: allVerses,
                     };
+                    if (lyricsResult.verse_count > 1) {
+                        showVerseSelect(slot, slotName, lyricsResult.verse_count);
+                    }
                 } else {
                     // Lyrics failed but search succeeded — still usable (title only)
                     infoEl.textContent = searchResult.title + " (title only \u2014 lyrics unavailable)";
@@ -1665,8 +1729,13 @@ function collectFormData() {
         baptism_candidate_names: $("#baptism-names").value.trim(),
         baptism_placement: placementEl ? placementEl.value : "after_welcome",
         prelude_title: $("#prelude-title").value.trim(),
+        prelude_composer: $("#prelude-composer").value.trim(),
         prelude_performer: $("#prelude-performer").value.trim(),
+        offertory_title: $("#offertory-title").value.trim(),
+        offertory_composer: $("#offertory-composer").value.trim(),
+        offertory_performer: $("#offertory-performer").value.trim(),
         postlude_title: $("#postlude-title").value.trim(),
+        postlude_composer: $("#postlude-composer").value.trim(),
         postlude_performer: $("#postlude-performer").value.trim(),
         choral_title: $("#choral-title").value.trim(),
         cover_image: state.coverImage,
@@ -1683,11 +1752,17 @@ function collectFormData() {
     ["gathering", "sermon", "communion", "sending"].forEach(function(slot) {
         const data = state.hymns[slot];
         if (data && data.number) {
-            formData[slot + "_hymn"] = {
+            var hymnEntry = {
                 number: data.number,
                 collection: data.collection,
                 title: data.title,
             };
+            // Include selected_verses only when a subset is chosen
+            if (data.selectedVerses && data.verseCount &&
+                data.selectedVerses.length < data.verseCount) {
+                hymnEntry.selected_verses = data.selectedVerses;
+            }
+            formData[slot + "_hymn"] = hymnEntry;
         } else {
             formData[slot + "_hymn"] = null;
         }

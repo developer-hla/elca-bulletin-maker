@@ -57,6 +57,7 @@ from bulletin_maker.renderer.pdf_engine import (
     render_with_shrink,
 )
 from bulletin_maker.renderer.prayers_parser import (
+    parse_prayers_call,
     parse_prayers_html,
     parse_prayers_response,
 )
@@ -81,12 +82,14 @@ from bulletin_maker.renderer.static_text import (
     EUCHARISTIC_PRAYER_EXTENDED,
     GREAT_THANKSGIVING_DIALOG,
     GREAT_THANKSGIVING_PREFACE,
+    GREAT_THANKSGIVING_PREFACE_SHORT,
     INVITATION_TO_LENT,
     LORDS_PRAYER,
     MEMORIAL_ACCLAMATION,
     NICENE_CREED,
     NUNC_DIMITTIS,
     OFFERTORY_HYMN_VERSES,
+    DEFAULT_PRAYERS_CALL,
     DEFAULT_PRAYERS_RESPONSE,
     PRAYERS_INTRO,
     SANCTUS,
@@ -753,8 +756,10 @@ def _build_common_context(
     day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
 ) -> dict:
     """Build context keys shared by bulletin, large print, and leader guide."""
+    prayers_call = DEFAULT_PRAYERS_CALL
     prayers_response = DEFAULT_PRAYERS_RESPONSE
     if day.prayers_html:
+        prayers_call = parse_prayers_call(day.prayers_html)
         prayers_response = parse_prayers_response(day.prayers_html)
 
     invitation_text = "Taste and see that the Lord is good."
@@ -785,6 +790,7 @@ def _build_common_context(
         "is_lent": season == LiturgicalSeason.LENT,
         "invitation_to_lent_paragraphs": _split_stanzas(INVITATION_TO_LENT),
         "prayer_of_day_html": _clean_html(day.prayer_of_the_day_html),
+        "prayers_call": prayers_call,
         "prayers_response": prayers_response,
         "offertory_hymn_verses": OFFERTORY_HYMN_VERSES,
         "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE,
@@ -813,6 +819,21 @@ def _build_large_print_context(
 
     ctx.update({
         "css": (TEMPLATE_DIR / "large_print.css").read_text(),
+
+        # Large print uses short preface (leader guide overrides with full)
+        "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE_SHORT,
+
+        # Citations
+        "prelude_title": config.prelude_title,
+        "prelude_performer": config.prelude_performer,
+        "prelude_composer": config.prelude_composer,
+        "offertory_title": config.offertory_title,
+        "offertory_performer": config.offertory_performer,
+        "offertory_composer": config.offertory_composer,
+        "postlude_title": config.postlude_title,
+        "postlude_performer": config.postlude_performer,
+        "postlude_composer": config.postlude_composer,
+
         "choral_title": config.choral_title,
         "gathering_hymn": config.gathering_hymn,
         "ga_text_fallback": ga_text,
@@ -886,10 +907,13 @@ def _build_pulpit_prayers_context(
 # ── Bulletin helpers ──────────────────────────────────────────────────
 
 def _hymn_title_str(hymn: HymnLyrics | None) -> str:
-    """Format a hymn as 'ELW 335 — Title' for title-only references."""
+    """Format a hymn as 'ELW 335 — Title' or 'ELW 386 — Title (Verses 1, 3-5)'."""
     if hymn is None:
         return ""
-    return f"{hymn.number} \u2014 {hymn.title}"
+    base = f"{hymn.number} \u2014 {hymn.title}"
+    if hymn.verse_label:
+        return f"{base} ({hymn.verse_label})"
+    return base
 
 
 def _safe_setting_image_uri(piece: str) -> str:
@@ -934,6 +958,9 @@ def _build_bulletin_context(
 
     ctx.update({
         "css": (TEMPLATE_DIR / "bulletin.css").read_text(),
+
+        # Bulletin uses short preface (truncated with ending cue)
+        "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE_SHORT,
 
         # Prelude/postlude
         "prelude_title": config.prelude_title,
@@ -1081,6 +1108,7 @@ def _build_leader_guide_context(
             logger.warning("Pillow not installed — cannot convert preface image")
 
     ctx["preface_image_uri"] = preface_image_uri
+    ctx["great_thanksgiving_preface"] = GREAT_THANKSGIVING_PREFACE
     return ctx
 
 

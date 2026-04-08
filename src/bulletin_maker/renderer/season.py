@@ -237,7 +237,7 @@ def fill_seasonal_defaults(config: ServiceConfig, season: LiturgicalSeason) -> N
     if config.include_memorial_acclamation is None:
         config.include_memorial_acclamation = seasonal.has_memorial_acclamation
     if config.preface is None:
-        config.preface = seasonal.preface
+        config.preface = PrefaceType.SUNDAYS
     if config.show_confession is None:
         config.show_confession = seasonal.show_confession
     if config.show_nunc_dimittis is None:

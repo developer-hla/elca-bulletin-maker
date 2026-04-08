@@ -54,6 +54,43 @@ from bulletin_maker.updater import check_for_update, install_update, is_install_
 logger = logging.getLogger(__name__)
 
 
+def _format_verse_label(selected: list[int]) -> str:
+    """Build a compact verse label like 'Verses 1, 3-5' from sorted indices."""
+    if not selected:
+        return ""
+    nums = sorted(selected)
+    ranges: list[str] = []
+    start = end = nums[0]
+    for n in nums[1:]:
+        if n == end + 1:
+            end = n
+        else:
+            ranges.append(str(start) if start == end else f"{start}-{end}")
+            start = end = n
+    ranges.append(str(start) if start == end else f"{start}-{end}")
+    label = ", ".join(ranges)
+    return f"Verse {label}" if len(nums) == 1 else f"Verses {label}"
+
+
+def _filter_verses(
+    all_verses: list[str],
+    selected: list[int] | None,
+) -> tuple[list[str], str]:
+    """Filter verses by 1-based indices and build a verse label.
+
+    Returns (filtered_verses, verse_label).  If *selected* is None or
+    includes all verses, returns the original list with an empty label.
+    """
+    total = len(all_verses)
+    if not selected or len(selected) >= total:
+        return all_verses, ""
+    valid = sorted(i for i in selected if 1 <= i <= total)
+    if not valid or len(valid) >= total:
+        return all_verses, ""
+    filtered = [all_verses[i - 1] for i in valid]
+    return filtered, _format_verse_label(valid)
+
+
 class BulletinAPI:
     """Bridge between the pywebview JS frontend and the Python backend."""
 
@@ -657,12 +694,16 @@ class BulletinAPI:
         cache_key = f"{collection}_{number}"
         cached = self._hymn_cache.get(cache_key)
         if cached:
+            all_verses = cached["verses"]
+            selected = hymn_data.get("selected_verses")
+            verses, verse_label = _filter_verses(all_verses, selected)
             return HymnLyrics(
                 number=cached["number"],
                 title=cached["title"],
-                verses=cached["verses"],
+                verses=verses,
                 refrain=cached["refrain"],
                 copyright=cached["copyright"],
+                verse_label=verse_label,
             )
         # Minimal fallback — title only (no lyrics fetched)
         logger.warning("Hymn %s %s not in cache — large print will show title only",
@@ -730,8 +771,13 @@ class BulletinAPI:
             communion_hymn=self._build_hymn(form_data, "communion_hymn"),
             sending_hymn=self._build_hymn(form_data, "sending_hymn"),
             prelude_title=form_data.get("prelude_title", ""),
+            prelude_composer=form_data.get("prelude_composer", ""),
             prelude_performer=form_data.get("prelude_performer", ""),
+            offertory_title=form_data.get("offertory_title", ""),
+            offertory_composer=form_data.get("offertory_composer", ""),
+            offertory_performer=form_data.get("offertory_performer", ""),
             postlude_title=form_data.get("postlude_title", ""),
+            postlude_composer=form_data.get("postlude_composer", ""),
             postlude_performer=form_data.get("postlude_performer", ""),
             choral_title=form_data.get("choral_title", ""),
             cover_image=form_data.get("cover_image", ""),

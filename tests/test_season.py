@@ -146,7 +146,7 @@ class TestFillSeasonalDefaults:
         assert config.canticle == "none"
         assert config.eucharistic_form == "extended"
         assert config.include_memorial_acclamation is True
-        assert config.preface is PrefaceType.LENT
+        assert config.preface is PrefaceType.SUNDAYS
         assert config.show_confession is True
         assert config.show_nunc_dimittis is True
 
