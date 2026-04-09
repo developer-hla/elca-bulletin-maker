@@ -9,9 +9,9 @@
 {% set is_leader_guide = is_leader_guide | default(false) %}
 
 {# ── Hymn rendering macro (used for gathering, sermon, communion, sending) ── #}
-{% macro render_hymn(hymn, label, separator=" - ", extra_class="") %}
+{% macro render_hymn(hymn, label, extra_class="") %}
 <div class="liturgy-heading red-heading {{ extra_class }}">
-    <span>{{ label }}: {{ hymn.number }}{{ separator }}{{ hymn.title | upper }}{% if hymn.verse_label %} ({{ hymn.verse_label }}){% endif %}</span>
+    <span>{{ label }}: {{ hymn.number }}{% if hymn.verse_label %} ({{ hymn.verse_label }}){% endif %}</span>
 </div>
 <div class="two-col">
     {% for verse in hymn.verses %}
@@ -47,7 +47,7 @@
     <div class="cover-footer">
         <p class="cover-date">10:00 AM &mdash; {{ date_display }}</p>
         <p class="cover-day-name">The {{ day_name }}</p>
-        {% if not is_leader_guide %}<p class="cover-format-label">Large Print</p>{% endif %}
+        <p class="cover-format-label">{% if is_leader_guide %}Leader Guide{% else %}Large Print{% endif %}</p>
     </div>
 </div>
 
@@ -87,6 +87,7 @@
 {% if show_confession %}
 <div class="liturgy-heading"><span>*CONFESSION AND FORGIVENESS</span></div>
 {% for role, text in confession_entries %}
+{% if loop.index0 == 2 %}<div class="two-col">{% endif %}
 {% if role.value == "instruction" %}
 <p class="instruction mb-6">{{ text }}</p>
 {% elif role.value == "P" %}
@@ -97,6 +98,7 @@
 <p>{{ text }}</p>
 {% endif %}
 {% endfor %}
+{% if confession_entries|length > 2 %}</div>{% endif %}
 {% endif %}
 
 
@@ -411,7 +413,7 @@
 
 {# ── Lord's Prayer ── #}
 <div class="liturgy-heading mt-18"><span>*LORD&rsquo;S PRAYER</span></div>
-<p><span class="role-label" style="font-weight: bold;">P: </span><strong>Gathered into one by the Holy Spirit, let us pray as Jesus taught us.</strong></p>
+<p><span class="role-label" style="font-weight: bold;">P: </span>Gathered into one by the Holy Spirit, let us pray as Jesus taught us.</p>
 <div class="two-col">
 {% for stanza in lords_prayer_stanzas %}
 <p class="lords-prayer-stanza">{{ stanza | nl2br }}</p>
@@ -441,7 +443,7 @@
 
 {# ── Communion Hymn ── #}
 {% if communion_hymn %}
-{{ render_hymn(communion_hymn, "COMMUNION HYMN", separator=" &ndash; ", extra_class="mt-24") }}
+{{ render_hymn(communion_hymn, "COMMUNION HYMN", extra_class="mt-24") }}
 {% endif %}
 
 
@@ -454,8 +456,8 @@
 <p class="instruction-left" style="margin-bottom: 30pt;">*After all have communed, the Congregation STANDS.</p>
 <p class="mt-12 mb-6" style="padding-left: 0.5in;">
     <span class="role-label" style="font-weight: bold;">Pastor: </span>
-    <strong style="color: #C00000;">The body and blood of our Lord Jesus
-    <br>strengthen you and keep you in his grace.</strong>
+    The body and blood of our Lord Jesus
+    <br>strengthen you and keep you in his grace.
 </p>
 <p><strong>Congregation: Amen.</strong></p>
 </div>

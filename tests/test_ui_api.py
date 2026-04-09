@@ -1,6 +1,6 @@
 """Tests for the UI API bridge (bulletin_maker.ui.api).
 
-Tests cover credential management, form data handling, error wrapping,
+Tests cover form data handling, error wrapping,
 progress callbacks, window-dependent methods, and generation error paths
 without requiring a live S&S connection or pywebview window.
 """

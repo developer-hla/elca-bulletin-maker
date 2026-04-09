@@ -226,29 +226,6 @@ class BulletinAPI:
         except Exception:
             logger.debug("Could not write config", exc_info=True)
 
-    def _save_credentials(self, username: str, password: str) -> None:
-        """Save credentials to ~/.bulletin-maker/config.json."""
-        data = self._read_config()
-        data["username"] = username
-        data["password"] = password
-        self._write_config(data)
-
-    def _clear_credentials(self) -> None:
-        """Remove saved credentials from config.json."""
-        data = self._read_config()
-        data.pop("username", None)
-        data.pop("password", None)
-        self._write_config(data)
-
-    def get_saved_credentials(self) -> dict:
-        """Return saved credentials if they exist."""
-        data = self._read_config()
-        username = data.get("username", "")
-        password = data.get("password", "")
-        if username and password:
-            return {"success": True, "username": username, "password": password}
-        return {"success": False}
-
     def save_output_dir(self, path: str) -> dict:
         """Persist output directory preference."""
         data = self._read_config()
@@ -271,7 +248,6 @@ class BulletinAPI:
         try:
             client = self._get_client()
             client.login(username, password)
-            self._save_credentials(username, password)
             return {"success": True, "username": username}
         except AuthError as e:
             return {"success": False, "error": str(e), "error_type": "auth"}
@@ -288,7 +264,6 @@ class BulletinAPI:
         self._day = None
         self._date_str = None
         self._hymn_cache.clear()
-        self._clear_credentials()
         return {"success": True}
 
     # ── Preface Options ─────────────────────────────────────────────

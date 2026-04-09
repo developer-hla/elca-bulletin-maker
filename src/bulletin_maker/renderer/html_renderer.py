@@ -907,13 +907,12 @@ def _build_pulpit_prayers_context(
 # ── Bulletin helpers ──────────────────────────────────────────────────
 
 def _hymn_title_str(hymn: HymnLyrics | None) -> str:
-    """Format a hymn as 'ELW 335 — Title' or 'ELW 386 — Title (Verses 1, 3-5)'."""
+    """Format a hymn as 'ELW 335' or 'ELW 386 (Verses 1, 3-5)'."""
     if hymn is None:
         return ""
-    base = f"{hymn.number} \u2014 {hymn.title}"
     if hymn.verse_label:
-        return f"{base} ({hymn.verse_label})"
-    return base
+        return f"{hymn.number} ({hymn.verse_label})"
+    return hymn.number
 
 
 def _safe_setting_image_uri(piece: str) -> str:
@@ -1262,6 +1261,7 @@ def generate_bulletin(
             try:
                 img_path = fetch_hymn_image(
                     client, parts[1], collection=parts[0],
+                    image_type="harmony",
                 )
                 communion_hymn_image_uri = _image_to_data_uri(img_path)
             except (BulletinError, OSError):

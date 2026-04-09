@@ -413,10 +413,9 @@ function buildReviewOutline() {
     // Prelude
     var pt = $("#prelude-title").value.trim();
     var pc = $("#prelude-composer").value.trim();
-    var pp = $("#prelude-performer").value.trim();
     var preludeVal = "";
-    if (pt || pc || pp) {
-        preludeVal = (pt ? "\u201C" + pt + "\u201D" : "") + (pc ? " \u2014 " + pc : "") + (pp ? " / " + pp : "");
+    if (pt || pc) {
+        preludeVal = (pt ? "\u201C" + pt + "\u201D" : "") + (pc ? " \u2014 " + pc : "");
     }
     items.push({ label: "Prelude", value: preludeVal || "(not set)", empty: !preludeVal });
 
@@ -496,10 +495,9 @@ function buildReviewOutline() {
     // Offertory
     var ot = $("#offertory-title").value.trim();
     var oc = $("#offertory-composer").value.trim();
-    var op = $("#offertory-performer").value.trim();
     var offVal = "";
-    if (ot || oc || op) {
-        offVal = (ot ? "\u201C" + ot + "\u201D" : "") + (oc ? " \u2014 " + oc : "") + (op ? " / " + op : "");
+    if (ot || oc) {
+        offVal = (ot ? "\u201C" + ot + "\u201D" : "") + (oc ? " \u2014 " + oc : "");
     }
     items.push({ label: "Offertory", value: offVal || "(not set)", empty: !offVal });
 
@@ -527,10 +525,9 @@ function buildReviewOutline() {
     // Postlude
     var pot = $("#postlude-title").value.trim();
     var poc = $("#postlude-composer").value.trim();
-    var pop = $("#postlude-performer").value.trim();
     var postVal = "";
-    if (pot || poc || pop) {
-        postVal = (pot ? "\u201C" + pot + "\u201D" : "") + (poc ? " \u2014 " + poc : "") + (pop ? " / " + pop : "");
+    if (pot || poc) {
+        postVal = (pot ? "\u201C" + pot + "\u201D" : "") + (poc ? " \u2014 " + poc : "");
     }
     items.push({ label: "Postlude", value: postVal || "(not set)", empty: !postVal });
 
@@ -718,33 +715,6 @@ async function initLogin() {
         }
     } catch (_) {}
 
-    // Try auto-login with saved credentials
-    try {
-        var saved = await window.pywebview.api.get_saved_credentials();
-        if (saved.success && saved.username && saved.password) {
-            // Show a subtle spinner while auto-logging in
-            hide($("#login-form"));
-            show($("#login-spinner"));
-            $("#login-spinner").querySelector("span").textContent = "Signing in...";
-
-            var result = await window.pywebview.api.login(saved.username, saved.password);
-            if (result && result.success) {
-                hide($("#login-overlay"));
-                show($("#app"));
-                $("#user-display").textContent = result.username;
-                checkForUpdate();
-                return;
-            }
-            // Auto-login failed — fall through to manual login with pre-filled username
-            hide($("#login-spinner"));
-            show($("#login-form"));
-            $("#login-username").value = saved.username;
-        }
-    } catch (e) {
-        // Saved credentials unavailable — show normal login
-        hide($("#login-spinner"));
-        show($("#login-form"));
-    }
 }
 
 function setupLogin() {
@@ -825,13 +795,10 @@ function resetFormUI() {
     $$(".verse-select").forEach(function(el) { el.innerHTML = ""; hide(el); });
     $("#prelude-title").value = "";
     $("#prelude-composer").value = "";
-    $("#prelude-performer").value = "";
     $("#offertory-title").value = "";
     $("#offertory-composer").value = "";
-    $("#offertory-performer").value = "";
     $("#postlude-title").value = "";
     $("#postlude-composer").value = "";
-    $("#postlude-performer").value = "";
     $("#choral-title").value = "";
     $("#cover-image-path").textContent = "None selected";
     hide($("#cover-image-clear"));
@@ -1730,13 +1697,10 @@ function collectFormData() {
         baptism_placement: placementEl ? placementEl.value : "after_welcome",
         prelude_title: $("#prelude-title").value.trim(),
         prelude_composer: $("#prelude-composer").value.trim(),
-        prelude_performer: $("#prelude-performer").value.trim(),
         offertory_title: $("#offertory-title").value.trim(),
         offertory_composer: $("#offertory-composer").value.trim(),
-        offertory_performer: $("#offertory-performer").value.trim(),
         postlude_title: $("#postlude-title").value.trim(),
         postlude_composer: $("#postlude-composer").value.trim(),
-        postlude_performer: $("#postlude-performer").value.trim(),
         choral_title: $("#choral-title").value.trim(),
         cover_image: state.coverImage,
         output_dir: state.outputDir || "output",

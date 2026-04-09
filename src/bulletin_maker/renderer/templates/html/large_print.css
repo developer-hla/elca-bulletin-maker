@@ -1,12 +1,12 @@
 /* Large Print Styles — Ascension Lutheran Church
-   Matches reference DOCX: letter portrait, Arial 18pt body, Cambria cover */
+   Matches reference DOCX: letter portrait, Arial 16.5pt body, Cambria cover */
 
 /* ── Reset ── */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 18pt;
+    font-size: 16.5pt;
     line-height: 1.5;
     color: #000;
     orphans: 4;
