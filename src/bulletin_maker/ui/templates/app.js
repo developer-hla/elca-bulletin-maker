@@ -225,11 +225,6 @@ function showStep(n) {
     window.scrollTo(0, 0);
 }
 
-/** Returns true if any extras (baptism, etc.) are enabled. */
-function hasExtras() {
-    return $("#include-baptism").checked;
-}
-
 /** Validates whether the user can leave the given step. */
 function validateStep(n) {
     if (n === 1) {
@@ -252,12 +247,7 @@ function setupWizardNav() {
                 return;
             }
             if (currentIdx < STEP_IDS.length - 1) {
-                var nextStep = currentIdx + 2;
-                // Auto-skip Extras step when nothing is enabled
-                if (currentIdx === 1 && !hasExtras()) {
-                    nextStep = 4;
-                }
-                showStep(nextStep);
+                showStep(currentIdx + 2);
             }
         });
     });
@@ -770,6 +760,7 @@ function setupNewBulletin() {
 function setupLogout() {
     $("#logout-link").addEventListener("click", async function(e) {
         e.preventDefault();
+        if (!confirm("Log out? Any unsaved work will be lost.")) return;
         await window.pywebview.api.logout();
         // Show login overlay again
         show($("#login-overlay"));
@@ -1048,6 +1039,13 @@ function setupDateFetch() {
         const dateVal = new Date(dateStr + "T12:00:00");
         if (isNaN(dateVal.getTime())) {
             showError($("#date-error"), "Invalid date format.");
+            return;
+        }
+
+        // Warn if changing date will lose existing work
+        var hasWork = Object.values(state.hymns).some(function(h) { return h; }) ||
+            Object.keys(state.textChoices).some(function(k) { return state.textChoices[k] && state.textChoices[k].isCustom; });
+        if (hasWork && !confirm("Changing the date will clear all hymns and text edits. Continue?")) {
             return;
         }
 
@@ -1777,6 +1775,16 @@ function findOptionData(options, key) {
     return null;
 }
 
+function confirmSourceChange(key, radioEls) {
+    var choice = state.textChoices[key];
+    if (choice.isCustom && !confirm("This will replace your custom edits. Continue?")) {
+        var prev = radioEls.find(function(r) { return r.value === choice.source; });
+        if (prev) prev.checked = true;
+        return false;
+    }
+    return true;
+}
+
 /** Loads liturgical texts from the API and builds the review panels. */
 async function loadLiturgicalTexts() {
     var spinner = $("#texts-spinner");
@@ -1886,6 +1894,7 @@ async function loadLiturgicalTexts() {
                 // Wire radio changes — rebuild editor with selected option's data
                 radioEls.forEach(function(radio) {
                     radio.addEventListener("change", function() {
+                        if (!confirmSourceChange(key, radioEls)) return;
                         var choice = state.textChoices[key];
                         choice.source = this.value;
                         choice.isCustom = false;
@@ -1909,6 +1918,7 @@ async function loadLiturgicalTexts() {
                 // Wire radio changes
                 radioEls.forEach(function(radio) {
                     radio.addEventListener("change", function() {
+                        if (!confirmSourceChange(key, radioEls)) return;
                         var choice = state.textChoices[key];
                         choice.source = this.value;
                         choice.isCustom = false;
