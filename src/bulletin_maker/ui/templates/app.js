@@ -715,6 +715,7 @@ async function initLogin() {
         }
     } catch (_) {}
 
+    loadPastRuns();
 }
 
 function setupLogin() {
@@ -848,6 +849,192 @@ function resetAll() {
 
 // ── Date & Season Fetch ──────────────────────────────────────────────
 
+async function handleDateFetchResult(result) {
+    state.season = result.season;
+    state.defaults = result.defaults;
+
+    // Reset hymns and service details for the new date
+    state.hymns = { gathering: null, sermon: null, communion: null, sending: null };
+    state.coverImage = "";
+    resetFormUI();
+
+    // Display day info + apply season theme
+    $("#day-name").textContent = result.day_name;
+    applySeasonTheme(result.season);
+    var seasonBar = $("#season-bar");
+    if (seasonBar) $("#season-bar-day").textContent = "\u2014 " + result.day_name;
+
+    const readingsEl = $("#readings-list");
+    readingsEl.innerHTML = "";
+    state.readingOverrides = {};
+    (result.readings || []).forEach(function(r) {
+        var slot = readingSlotKey(r.label);
+        var div = document.createElement("div");
+        div.className = "reading-item";
+        div.dataset.slot = slot;
+
+        // Header row: label + citation + action links
+        var header = document.createElement("div");
+        header.className = "reading-header";
+
+        var labelSpan = document.createElement("span");
+        labelSpan.className = "reading-label";
+        labelSpan.textContent = r.label + ":";
+        header.appendChild(labelSpan);
+
+        var citationSpan = document.createElement("span");
+        citationSpan.className = "reading-citation-text";
+        citationSpan.textContent = " " + r.citation;
+        header.appendChild(citationSpan);
+
+        var editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "btn-link reading-edit-btn";
+        editBtn.textContent = "Edit";
+        editBtn.addEventListener("click", function() {
+            var editArea = div.querySelector(".reading-edit-area");
+            if (editArea) {
+                editArea.hidden = !editArea.hidden;
+                editBtn.textContent = editArea.hidden ? "Edit" : "Cancel";
+                return;
+            }
+            editBtn.textContent = "Cancel";
+            var area = document.createElement("div");
+            area.className = "reading-edit-area";
+            var input = document.createElement("input");
+            input.type = "text";
+            input.className = "reading-citation-input";
+            input.value = r.citation;
+            input.placeholder = "Enter citation (e.g. Genesis 2:15-25)";
+            area.appendChild(input);
+
+            var fetchBtn = document.createElement("button");
+            fetchBtn.type = "button";
+            fetchBtn.className = "btn secondary reading-fetch-btn";
+            fetchBtn.textContent = "Fetch";
+            fetchBtn.addEventListener("click", async function() {
+                var citation = input.value.trim();
+                if (!citation) return;
+                showBtnSpinner(fetchBtn);
+                var result = await window.pywebview.api.fetch_custom_reading(citation);
+                hideBtnSpinner(fetchBtn, "Fetch");
+                var msg = area.querySelector(".reading-edit-msg");
+                if (!msg) {
+                    msg = document.createElement("div");
+                    msg.className = "reading-edit-msg";
+                    area.appendChild(msg);
+                }
+                if (result.success) {
+                    msg.innerHTML = '<span class="reading-edit-ok">Fetched. Will use custom citation.</span>';
+                    state.readingOverrides[slot] = {
+                        label: r.label,
+                        citation: citation,
+                        intro: "",
+                        text_html: result.text_html,
+                    };
+                    citationSpan.textContent = " " + citation + " (custom)";
+                    // Invalidate any cached preview
+                    var oldPreview = div.querySelector(".reading-content-preview");
+                    if (oldPreview) oldPreview.remove();
+                    previewBtn.textContent = "Preview";
+                } else {
+                    msg.innerHTML = '<span class="error-msg">' + escapeHtml(result.error || "Failed to fetch") + '</span>';
+                }
+            });
+            area.appendChild(fetchBtn);
+
+            var resetBtn = document.createElement("button");
+            resetBtn.type = "button";
+            resetBtn.className = "btn-link reading-reset-btn";
+            resetBtn.textContent = "Reset";
+            resetBtn.addEventListener("click", function() {
+                delete state.readingOverrides[slot];
+                input.value = r.citation;
+                citationSpan.textContent = " " + r.citation;
+                var msg = area.querySelector(".reading-edit-msg");
+                if (msg) msg.innerHTML = "";
+                // Invalidate any cached preview
+                var oldPreview = div.querySelector(".reading-content-preview");
+                if (oldPreview) oldPreview.remove();
+                previewBtn.textContent = "Preview";
+            });
+            area.appendChild(resetBtn);
+
+            div.appendChild(area);
+        });
+        header.appendChild(editBtn);
+
+        // Preview button
+        var previewBtn = document.createElement("button");
+        previewBtn.type = "button";
+        previewBtn.className = "btn-link reading-preview-btn";
+        previewBtn.textContent = "Preview";
+        previewBtn.addEventListener("click", async function() {
+            var existing = div.querySelector(".reading-content-preview");
+            if (existing) {
+                existing.hidden = !existing.hidden;
+                previewBtn.textContent = existing.hidden ? "Preview" : "Hide";
+                return;
+            }
+            showBtnSpinner(previewBtn);
+            try {
+                var res = await window.pywebview.api.get_reading_preview(slot);
+                hideBtnSpinner(previewBtn, "Preview");
+                if (!res.success) {
+                    return;
+                }
+                var preview = document.createElement("div");
+                preview.className = "reading-content-preview";
+                if (res.intro) {
+                    var intro = document.createElement("p");
+                    intro.className = "reading-intro";
+                    intro.textContent = res.intro;
+                    preview.appendChild(intro);
+                }
+                var content = document.createElement("div");
+                content.className = "reading-content";
+                content.innerHTML = res.preview_html;
+                preview.appendChild(content);
+                div.appendChild(preview);
+                previewBtn.textContent = "Hide";
+            } catch (_) {
+                hideBtnSpinner(previewBtn, "Preview");
+            }
+        });
+        header.appendChild(previewBtn);
+
+        div.appendChild(header);
+
+        readingsEl.appendChild(div);
+    });
+
+    show($("#day-info"));
+
+    // Show filename preview
+    try {
+        var prefixResult = await window.pywebview.api.get_file_prefix();
+        if (prefixResult.success) {
+            $("#filename-prefix").textContent = "[Document] - " + prefixResult.prefix + ".pdf";
+            show($("#filename-preview"));
+        } else {
+            hide($("#filename-preview"));
+        }
+    } catch (_) {
+        hide($("#filename-preview"));
+    }
+
+    // Fetch liturgical texts for the review step
+    await loadLiturgicalTexts();
+
+    // Pre-fill liturgical settings
+    applyDefaults(result.defaults);
+
+    // Reset generate area
+    hide($("#progress-area"));
+    hide($("#results-area"));
+    hideError($("#generate-error"));
+}
+
 function setupDateFetch() {
     $("#fetch-btn").addEventListener("click", async function() {
         const dateInput = $("#date-input");
@@ -892,189 +1079,7 @@ function setupDateFetch() {
             return;
         }
 
-        state.season = result.season;
-        state.defaults = result.defaults;
-
-        // Reset hymns and service details for the new date
-        state.hymns = { gathering: null, sermon: null, communion: null, sending: null };
-        state.coverImage = "";
-        resetFormUI();
-
-        // Display day info + apply season theme
-        $("#day-name").textContent = result.day_name;
-        applySeasonTheme(result.season);
-        var seasonBar = $("#season-bar");
-        if (seasonBar) $("#season-bar-day").textContent = "\u2014 " + result.day_name;
-
-        const readingsEl = $("#readings-list");
-        readingsEl.innerHTML = "";
-        state.readingOverrides = {};
-        (result.readings || []).forEach(function(r) {
-            var slot = readingSlotKey(r.label);
-            var div = document.createElement("div");
-            div.className = "reading-item";
-            div.dataset.slot = slot;
-
-            // Header row: label + citation + action links
-            var header = document.createElement("div");
-            header.className = "reading-header";
-
-            var labelSpan = document.createElement("span");
-            labelSpan.className = "reading-label";
-            labelSpan.textContent = r.label + ":";
-            header.appendChild(labelSpan);
-
-            var citationSpan = document.createElement("span");
-            citationSpan.className = "reading-citation-text";
-            citationSpan.textContent = " " + r.citation;
-            header.appendChild(citationSpan);
-
-            var editBtn = document.createElement("button");
-            editBtn.type = "button";
-            editBtn.className = "btn-link reading-edit-btn";
-            editBtn.textContent = "Edit";
-            editBtn.addEventListener("click", function() {
-                var editArea = div.querySelector(".reading-edit-area");
-                if (editArea) {
-                    editArea.hidden = !editArea.hidden;
-                    editBtn.textContent = editArea.hidden ? "Edit" : "Cancel";
-                    return;
-                }
-                editBtn.textContent = "Cancel";
-                var area = document.createElement("div");
-                area.className = "reading-edit-area";
-                var input = document.createElement("input");
-                input.type = "text";
-                input.className = "reading-citation-input";
-                input.value = r.citation;
-                input.placeholder = "Enter citation (e.g. Genesis 2:15-25)";
-                area.appendChild(input);
-
-                var fetchBtn = document.createElement("button");
-                fetchBtn.type = "button";
-                fetchBtn.className = "btn secondary reading-fetch-btn";
-                fetchBtn.textContent = "Fetch";
-                fetchBtn.addEventListener("click", async function() {
-                    var citation = input.value.trim();
-                    if (!citation) return;
-                    showBtnSpinner(fetchBtn);
-                    var result = await window.pywebview.api.fetch_custom_reading(citation);
-                    hideBtnSpinner(fetchBtn, "Fetch");
-                    var msg = area.querySelector(".reading-edit-msg");
-                    if (!msg) {
-                        msg = document.createElement("div");
-                        msg.className = "reading-edit-msg";
-                        area.appendChild(msg);
-                    }
-                    if (result.success) {
-                        msg.innerHTML = '<span class="reading-edit-ok">Fetched. Will use custom citation.</span>';
-                        state.readingOverrides[slot] = {
-                            label: r.label,
-                            citation: citation,
-                            intro: "",
-                            text_html: result.text_html,
-                        };
-                        citationSpan.textContent = " " + citation + " (custom)";
-                        // Invalidate any cached preview
-                        var oldPreview = div.querySelector(".reading-content-preview");
-                        if (oldPreview) oldPreview.remove();
-                        previewBtn.textContent = "Preview";
-                    } else {
-                        msg.innerHTML = '<span class="error-msg">' + escapeHtml(result.error || "Failed to fetch") + '</span>';
-                    }
-                });
-                area.appendChild(fetchBtn);
-
-                var resetBtn = document.createElement("button");
-                resetBtn.type = "button";
-                resetBtn.className = "btn-link reading-reset-btn";
-                resetBtn.textContent = "Reset";
-                resetBtn.addEventListener("click", function() {
-                    delete state.readingOverrides[slot];
-                    input.value = r.citation;
-                    citationSpan.textContent = " " + r.citation;
-                    var msg = area.querySelector(".reading-edit-msg");
-                    if (msg) msg.innerHTML = "";
-                    // Invalidate any cached preview
-                    var oldPreview = div.querySelector(".reading-content-preview");
-                    if (oldPreview) oldPreview.remove();
-                    previewBtn.textContent = "Preview";
-                });
-                area.appendChild(resetBtn);
-
-                div.appendChild(area);
-            });
-            header.appendChild(editBtn);
-
-            // Preview button
-            var previewBtn = document.createElement("button");
-            previewBtn.type = "button";
-            previewBtn.className = "btn-link reading-preview-btn";
-            previewBtn.textContent = "Preview";
-            previewBtn.addEventListener("click", async function() {
-                var existing = div.querySelector(".reading-content-preview");
-                if (existing) {
-                    existing.hidden = !existing.hidden;
-                    previewBtn.textContent = existing.hidden ? "Preview" : "Hide";
-                    return;
-                }
-                showBtnSpinner(previewBtn);
-                try {
-                    var res = await window.pywebview.api.get_reading_preview(slot);
-                    hideBtnSpinner(previewBtn, "Preview");
-                    if (!res.success) {
-                        return;
-                    }
-                    var preview = document.createElement("div");
-                    preview.className = "reading-content-preview";
-                    if (res.intro) {
-                        var intro = document.createElement("p");
-                        intro.className = "reading-intro";
-                        intro.textContent = res.intro;
-                        preview.appendChild(intro);
-                    }
-                    var content = document.createElement("div");
-                    content.className = "reading-content";
-                    content.innerHTML = res.preview_html;
-                    preview.appendChild(content);
-                    div.appendChild(preview);
-                    previewBtn.textContent = "Hide";
-                } catch (_) {
-                    hideBtnSpinner(previewBtn, "Preview");
-                }
-            });
-            header.appendChild(previewBtn);
-
-            div.appendChild(header);
-
-            readingsEl.appendChild(div);
-        });
-
-        show($("#day-info"));
-
-        // Show filename preview
-        try {
-            var prefixResult = await window.pywebview.api.get_file_prefix();
-            if (prefixResult.success) {
-                $("#filename-prefix").textContent = "[Document] - " + prefixResult.prefix + ".pdf";
-                show($("#filename-preview"));
-            } else {
-                hide($("#filename-preview"));
-            }
-        } catch (_) {
-            hide($("#filename-preview"));
-        }
-
-        // Fetch liturgical texts for the review step
-        loadLiturgicalTexts();
-
-        // Pre-fill liturgical settings
-        applyDefaults(result.defaults);
-
-        // Reset generate area
-        hide($("#progress-area"));
-        hide($("#results-area"));
-        hideError($("#generate-error"));
+        await handleDateFetchResult(result);
     });
 }
 
@@ -1362,6 +1367,273 @@ function setupHymnFetch() {
                 showError(errorEl, "Failed to fetch hymn: " + (err.message || "unknown error"));
             }
         });
+    });
+}
+
+// ── Past Runs ────────────────────────────────────────────────────────
+
+async function loadPastRuns() {
+    var container = $("#past-runs-list");
+    if (!container) return;
+    container.innerHTML = "";
+
+    try {
+        var result = await window.pywebview.api.get_past_runs();
+        if (!result.success || !result.runs.length) {
+            hide($("#past-runs-section"));
+            return;
+        }
+
+        show($("#past-runs-section"));
+
+        result.runs.forEach(function(run) {
+            var item = document.createElement("div");
+            item.className = "past-run-item";
+
+            var info = document.createElement("button");
+            info.type = "button";
+            info.className = "past-run-load-btn";
+            var meta = run.metadata || {};
+            var label = meta.date_display || run.date || "Unknown";
+            if (meta.day_name) label += " \u2014 " + meta.day_name;
+            info.textContent = label;
+            info.addEventListener("click", function() {
+                restorePastRun(run.id);
+            });
+            item.appendChild(info);
+
+            if (meta.hymn_summary) {
+                var hymns = document.createElement("span");
+                hymns.className = "past-run-hymns";
+                hymns.textContent = meta.hymn_summary;
+                item.appendChild(hymns);
+            }
+
+            var deleteBtn = document.createElement("button");
+            deleteBtn.type = "button";
+            deleteBtn.className = "btn-link past-run-delete";
+            deleteBtn.textContent = "Delete";
+            deleteBtn.addEventListener("click", function(e) {
+                e.stopPropagation();
+                deletePastRun(run.id);
+            });
+            item.appendChild(deleteBtn);
+
+            container.appendChild(item);
+        });
+    } catch (_) {
+        hide($("#past-runs-section"));
+    }
+}
+
+async function deletePastRun(runId) {
+    try {
+        await window.pywebview.api.delete_past_run(runId);
+        loadPastRuns();
+    } catch (_) {}
+}
+
+async function savePastRun(formData) {
+    var saveData = Object.assign({}, formData);
+    delete saveData.output_dir;
+    delete saveData.selected_docs;
+    delete saveData.cover_image;
+
+    var hymnSummary = ["gathering", "sermon", "communion", "sending"]
+        .map(function(slot) {
+            var h = state.hymns[slot];
+            return h && h.number ? h.collection + " " + h.number : "";
+        })
+        .filter(Boolean)
+        .join(", ");
+
+    var metadata = {
+        date_display: state.dateDisplay,
+        season: state.season,
+        day_name: $("#day-name") ? $("#day-name").textContent : "",
+        hymn_summary: hymnSummary,
+    };
+
+    try {
+        await window.pywebview.api.save_past_run(saveData, metadata);
+        loadPastRuns();
+    } catch (_) {}
+}
+
+async function restorePastRun(runId) {
+    try {
+        var result = await window.pywebview.api.get_past_run(runId);
+        if (!result.success) return;
+    } catch (_) {
+        showError($("#date-error"), "Failed to load past run.");
+        return;
+    }
+
+    var fd = result.form_data;
+
+    // Set the date and trigger content fetch
+    $("#date-input").value = fd.date;
+    state.dateStr = fd.date;
+    state.dateDisplay = formatDate(fd.date);
+
+    hideError($("#date-error"));
+    hideWarning($("#date-warning"));
+    hide($("#day-info"));
+    var spinner = $("#date-spinner");
+    show(spinner);
+    $("#fetch-btn").disabled = true;
+
+    var fetchResult = await window.pywebview.api.fetch_day_content(fd.date, state.dateDisplay);
+
+    hide(spinner);
+    $("#fetch-btn").disabled = false;
+
+    if (!fetchResult.success) {
+        showError($("#date-error"), fetchResult.error || "Failed to fetch content for this date.");
+        return;
+    }
+
+    await handleDateFetchResult(fetchResult);
+
+    // Overlay saved settings
+    applyRestoredSettings(fd);
+
+    // Restore hymns
+    await restoreHymns(fd);
+
+    // Restore liturgical text choices after texts have loaded
+    restoreLiturgicalTextChoices(fd);
+
+    showStep(1);
+}
+
+function applyRestoredSettings(fd) {
+    // Liturgical settings
+    var creedRadio = document.querySelector('input[name="creed_type"][value="' + fd.creed_type + '"]');
+    if (creedRadio) creedRadio.checked = true;
+
+    $("#include-kyrie").checked = !!fd.include_kyrie;
+
+    var canticleRadio = document.querySelector('input[name="canticle"][value="' + fd.canticle + '"]');
+    if (canticleRadio) canticleRadio.checked = true;
+
+    var epRadio = document.querySelector('input[name="eucharistic_form"][value="' + fd.eucharistic_form + '"]');
+    if (epRadio) epRadio.checked = true;
+
+    $("#include-memorial").checked = !!fd.include_memorial_acclamation;
+
+    if (fd.preface) {
+        var prefSelect = $("#preface-select");
+        if (prefSelect) prefSelect.value = fd.preface;
+    }
+
+    if (fd.show_confession !== undefined) $("#show-confession").checked = fd.show_confession;
+    if (fd.show_nunc_dimittis !== undefined) $("#show-nunc-dimittis").checked = fd.show_nunc_dimittis;
+
+    // Baptism
+    $("#include-baptism").checked = !!fd.include_baptism;
+    var baptismDetails = $("#baptism-details");
+    if (fd.include_baptism) {
+        show(baptismDetails);
+        $("#baptism-names").value = fd.baptism_candidate_names || "";
+        var placementEl = $("#baptism-placement");
+        if (placementEl && fd.baptism_placement) placementEl.value = fd.baptism_placement;
+    } else {
+        hide(baptismDetails);
+    }
+
+    // Service music
+    $("#prelude-title").value = fd.prelude_title || "";
+    $("#prelude-composer").value = fd.prelude_composer || "";
+    $("#offertory-title").value = fd.offertory_title || "";
+    $("#offertory-composer").value = fd.offertory_composer || "";
+    $("#postlude-title").value = fd.postlude_title || "";
+    $("#postlude-composer").value = fd.postlude_composer || "";
+    $("#choral-title").value = fd.choral_title || "";
+}
+
+async function restoreHymns(fd) {
+    var slots = ["gathering", "sermon", "communion", "sending"];
+    for (var i = 0; i < slots.length; i++) {
+        var slot = slots[i];
+        var hymnData = fd[slot + "_hymn"];
+        if (!hymnData || !hymnData.number) continue;
+
+        var slotEl = document.querySelector('.hymn-slot[data-slot="' + slot + '"]');
+        if (!slotEl) continue;
+
+        slotEl.querySelector(".hymn-number").value = hymnData.number;
+        var collectionSelect = slotEl.querySelector(".hymn-collection");
+        if (collectionSelect && hymnData.collection) {
+            collectionSelect.value = hymnData.collection;
+        }
+
+        var fetchBtn = slotEl.querySelector(".hymn-fetch-btn");
+        if (fetchBtn) fetchBtn.click();
+
+        // Wait for the fetch to complete (30s timeout)
+        await new Promise(function(resolve) {
+            var attempts = 0;
+            var check = setInterval(function() {
+                attempts++;
+                if (!fetchBtn.disabled || attempts > 300) { clearInterval(check); resolve(); }
+            }, 100);
+        });
+
+        // Restore verse selection if applicable
+        if (hymnData.selected_verses && state.hymns[slot] && state.hymns[slot].verseCount) {
+            var verseChecks = slotEl.querySelectorAll(".verse-select input[type=checkbox]");
+            verseChecks.forEach(function(cb) {
+                var v = parseInt(cb.value, 10);
+                cb.checked = hymnData.selected_verses.indexOf(v) !== -1;
+            });
+            state.hymns[slot].selectedVerses = hymnData.selected_verses.slice();
+        }
+    }
+}
+
+function restoreLiturgicalTextChoices(fd) {
+    // Structured texts: confession, dismissal
+    ["confession", "dismissal"].forEach(function(key) {
+        var entries = fd[key + "_entries"];
+        if (!entries || !entries.length) return;
+        var editorEl = document.querySelector('.structured-editor[data-key="' + key + '"]');
+        if (!editorEl) return;
+        var rowsContainer = editorEl.querySelector(".entry-rows");
+        if (!rowsContainer) return;
+        rowsContainer.innerHTML = "";
+        entries.forEach(function(entry) {
+            rowsContainer.appendChild(buildEntryRow(entry));
+        });
+    });
+
+    // Plain texts: offering_prayer, prayer_after_communion, blessing
+    ["offering_prayer", "prayer_after_communion", "blessing"].forEach(function(key) {
+        var savedText = fd[key + "_text"];
+        if (savedText === undefined) return;
+        var textarea = document.querySelector('.text-textarea[data-key="' + key + '"]');
+        if (textarea) {
+            textarea.value = savedText;
+            if (state.textChoices && state.textChoices[key]) {
+                state.textChoices[key].value = savedText;
+            }
+        }
+    });
+}
+
+function setupPastRuns() {
+    var toggle = $("#past-runs-toggle");
+    if (!toggle) return;
+    toggle.addEventListener("click", function() {
+        var list = $("#past-runs-list");
+        var isOpen = !list.hidden;
+        if (isOpen) {
+            hide(list);
+            toggle.innerHTML = "Past Runs &#9654;";
+        } else {
+            show(list);
+            toggle.innerHTML = "Past Runs &#9660;";
+        }
     });
 }
 
@@ -1893,6 +2165,11 @@ async function runGeneration() {
     }
 
     show($("#results-area"));
+
+    // Save this run for Past Runs recall
+    if (Object.keys(result.results || {}).length > 0) {
+        savePastRun(formData);
+    }
 }
 
 /** Regenerate a single document by key, then restore all checkboxes. */
@@ -1958,6 +2235,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setupFilePickers();
     setupGenerate();
     setupBaptismToggle();
+    setupPastRuns();
     setupWizardNav();
     initLogin();
 });

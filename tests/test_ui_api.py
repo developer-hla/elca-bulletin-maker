@@ -493,3 +493,81 @@ class TestFetchDayContentErrors:
         result = api.fetch_day_content("2026-12-24", "December 24, 2026")
         assert result["success"] is True
         assert result["day_name"] == "Christmas Eve"
+
+
+class TestPastRuns:
+    @pytest.fixture()
+    def api(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(
+            BulletinAPI, "_past_runs_path", staticmethod(lambda: tmp_path / "past_runs.json")
+        )
+        return BulletinAPI()
+
+    def test_save_and_retrieve(self, api):
+        form_data = {"date": "2026-03-01", "creed_type": "nicene"}
+        metadata = {"date_display": "March 1, 2026", "season": "lent"}
+
+        result = api.save_past_run(form_data, metadata)
+        assert result["success"] is True
+
+        runs = api.get_past_runs()
+        assert len(runs["runs"]) == 1
+        assert runs["runs"][0]["date"] == "2026-03-01"
+
+    def test_get_past_run_returns_form_data(self, api):
+        form_data = {"date": "2026-03-01", "creed_type": "nicene"}
+        result = api.save_past_run(form_data, {})
+        run_id = result["id"]
+
+        detail = api.get_past_run(run_id)
+        assert detail["success"] is True
+        assert detail["form_data"]["creed_type"] == "nicene"
+
+    def test_deduplication_by_date(self, api):
+        api.save_past_run({"date": "2026-03-01"}, {"date_display": "v1"})
+        api.save_past_run({"date": "2026-03-01"}, {"date_display": "v2"})
+
+        runs = api.get_past_runs()
+        assert len(runs["runs"]) == 1
+        assert runs["runs"][0]["metadata"]["date_display"] == "v2"
+
+    def test_cap_at_max(self, api):
+        for i in range(25):
+            api.save_past_run({"date": f"2026-01-{i + 1:02d}"}, {})
+
+        runs = api.get_past_runs()
+        assert len(runs["runs"]) == 20
+
+    def test_most_recent_first(self, api):
+        api.save_past_run({"date": "2026-03-01"}, {})
+        api.save_past_run({"date": "2026-03-08"}, {})
+
+        runs = api.get_past_runs()
+        assert runs["runs"][0]["date"] == "2026-03-08"
+
+    def test_get_past_run_not_found(self, api):
+        result = api.get_past_run("nonexistent")
+        assert result["success"] is False
+
+    def test_delete_past_run(self, api):
+        result = api.save_past_run({"date": "2026-03-01"}, {})
+        run_id = result["id"]
+
+        del_result = api.delete_past_run(run_id)
+        assert del_result["success"] is True
+        assert len(api.get_past_runs()["runs"]) == 0
+
+    def test_delete_not_found(self, api):
+        result = api.delete_past_run("nonexistent")
+        assert result["success"] is False
+
+    def test_corrupted_file_returns_empty(self, api):
+        api._past_runs_path().write_text("not json")
+        runs = api.get_past_runs()
+        assert runs["runs"] == []
+
+    def test_corrupted_file_recovers_on_save(self, api):
+        api._past_runs_path().write_text("{}")
+        api.save_past_run({"date": "2026-03-01"}, {})
+        runs = api.get_past_runs()
+        assert len(runs["runs"]) == 1

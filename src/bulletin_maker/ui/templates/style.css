@@ -1196,6 +1196,65 @@ main {
     overflow-wrap: break-word;
 }
 
+/* ── Past Runs ───────────────────────────────────────────── */
+
+.past-runs-toggle {
+    color: var(--primary);
+    font-size: 13px;
+    margin-top: 14px;
+    display: inline-block;
+}
+
+.past-runs-list {
+    margin-top: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.past-run-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+.past-run-item:last-child {
+    border-bottom: none;
+}
+
+.past-run-load-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--primary);
+    text-align: left;
+    padding: 0;
+    flex: 1;
+}
+
+.past-run-load-btn:hover {
+    text-decoration: underline;
+}
+
+.past-run-hymns {
+    color: var(--text-light);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.past-run-delete {
+    flex-shrink: 0;
+    font-size: 11px;
+}
+
 /* ── Readiness Summary ────────────────────────────────────── */
 
 .readiness-summary {

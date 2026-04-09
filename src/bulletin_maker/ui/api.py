@@ -241,6 +241,74 @@ class BulletinAPI:
             return {"success": True, "path": output_dir}
         return {"success": False}
 
+    # ── Past Runs ─────────────────────────────────────────────────────
+
+    MAX_PAST_RUNS = 20
+
+    @staticmethod
+    def _past_runs_path() -> Path:
+        return Path.home() / ".bulletin-maker" / "past_runs.json"
+
+    def _read_past_runs(self) -> list:
+        try:
+            path = self._past_runs_path()
+            if path.exists():
+                data = json.loads(path.read_text())
+                if isinstance(data, list):
+                    return data
+        except Exception:
+            logger.debug("Could not read past runs", exc_info=True)
+        return []
+
+    def _write_past_runs(self, runs: list) -> None:
+        try:
+            path = self._past_runs_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(runs[: self.MAX_PAST_RUNS], indent=2))
+        except Exception:
+            logger.debug("Could not write past runs", exc_info=True)
+
+    def save_past_run(self, form_data: dict, metadata: dict) -> dict:
+        now = datetime.now()
+        run = {
+            "id": now.strftime("%Y%m%d%H%M%S"),
+            "timestamp": now.isoformat(),
+            "metadata": metadata,
+            "form_data": form_data,
+        }
+        runs = self._read_past_runs()
+        runs = [r for r in runs if r.get("form_data", {}).get("date") != form_data.get("date")]
+        runs.insert(0, run)
+        self._write_past_runs(runs)
+        return {"success": True, "id": run["id"]}
+
+    def get_past_runs(self) -> dict:
+        runs = self._read_past_runs()
+        summaries = [
+            {
+                "id": r.get("id", ""),
+                "timestamp": r.get("timestamp", ""),
+                "metadata": r.get("metadata", {}),
+                "date": r.get("form_data", {}).get("date", ""),
+            }
+            for r in runs
+        ]
+        return {"success": True, "runs": summaries}
+
+    def get_past_run(self, run_id: str) -> dict:
+        for r in self._read_past_runs():
+            if r.get("id") == run_id:
+                return {"success": True, "form_data": r.get("form_data", {}), "metadata": r.get("metadata", {})}
+        return {"success": False, "error": "Run not found.", "error_type": "validation"}
+
+    def delete_past_run(self, run_id: str) -> dict:
+        runs = self._read_past_runs()
+        filtered = [r for r in runs if r.get("id") != run_id]
+        if len(filtered) == len(runs):
+            return {"success": False, "error": "Run not found.", "error_type": "validation"}
+        self._write_past_runs(filtered)
+        return {"success": True}
+
     # ── Credentials ───────────────────────────────────────────────────
 
     def login(self, username: str, password: str) -> dict:
