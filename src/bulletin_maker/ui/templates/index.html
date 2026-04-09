@@ -83,7 +83,7 @@
                 </li>
                 <li class="wizard-step" data-step="2">
                     <span class="wizard-step-number">2</span>
-                    <span class="wizard-step-label">Liturgy &amp; Texts</span>
+                    <span class="wizard-step-label">Service Settings</span>
                 </li>
                 <li class="wizard-step" data-step="3">
                     <span class="wizard-step-number">3</span>
@@ -143,6 +143,7 @@
 
                 <div class="hymn-slot" data-slot="gathering">
                     <h3>Gathering Hymn</h3>
+                    <p class="impact-text">Sung at the start of the service. Printed as title only in the bulletin; full lyrics in Large Print.</p>
                     <div class="form-row">
                         <div class="field field-sm">
                             <label>Number</label>
@@ -151,8 +152,8 @@
                         <div class="field field-xs">
                             <label>Collection</label>
                             <select class="hymn-collection">
-                                <option value="ELW" selected>ELW</option>
-                                <option value="ACS">ACS</option>
+                                <option value="ELW" selected>ELW (Evangelical Lutheran Worship)</option>
+                                <option value="ACS">ACS (All Creation Sings)</option>
                             </select>
                         </div>
                         <div class="field field-btn">
@@ -167,6 +168,7 @@
 
                 <div class="hymn-slot" data-slot="sermon">
                     <h3>Sermon Hymn</h3>
+                    <p class="impact-text">Sung after the sermon. Printed as title only in the bulletin; full lyrics in Large Print.</p>
                     <div class="form-row">
                         <div class="field field-sm">
                             <label>Number</label>
@@ -175,8 +177,8 @@
                         <div class="field field-xs">
                             <label>Collection</label>
                             <select class="hymn-collection">
-                                <option value="ELW" selected>ELW</option>
-                                <option value="ACS">ACS</option>
+                                <option value="ELW" selected>ELW (Evangelical Lutheran Worship)</option>
+                                <option value="ACS">ACS (All Creation Sings)</option>
                             </select>
                         </div>
                         <div class="field field-btn">
@@ -191,6 +193,7 @@
 
                 <div class="hymn-slot" data-slot="communion">
                     <h3>Communion Hymn</h3>
+                    <p class="impact-text">Sung during communion. Sheet music is included in the bulletin; full lyrics in Large Print.</p>
                     <div class="form-row">
                         <div class="field field-sm">
                             <label>Number</label>
@@ -199,8 +202,8 @@
                         <div class="field field-xs">
                             <label>Collection</label>
                             <select class="hymn-collection">
-                                <option value="ELW" selected>ELW</option>
-                                <option value="ACS">ACS</option>
+                                <option value="ELW" selected>ELW (Evangelical Lutheran Worship)</option>
+                                <option value="ACS">ACS (All Creation Sings)</option>
                             </select>
                         </div>
                         <div class="field field-btn">
@@ -215,6 +218,7 @@
 
                 <div class="hymn-slot" data-slot="sending">
                     <h3>Sending Hymn</h3>
+                    <p class="impact-text">Sung at the end of the service. Printed as title only in the bulletin; full lyrics in Large Print.</p>
                     <div class="form-row">
                         <div class="field field-sm">
                             <label>Number</label>
@@ -223,8 +227,8 @@
                         <div class="field field-xs">
                             <label>Collection</label>
                             <select class="hymn-collection">
-                                <option value="ELW" selected>ELW</option>
-                                <option value="ACS">ACS</option>
+                                <option value="ELW" selected>ELW (Evangelical Lutheran Worship)</option>
+                                <option value="ACS">ACS (All Creation Sings)</option>
                             </select>
                         </div>
                         <div class="field field-btn">
@@ -243,31 +247,31 @@
                 <p class="section-hint">All fields are optional.</p>
                 <div class="details-grid">
                     <div class="field">
-                        <label for="prelude-title">Prelude Title</label>
+                        <label for="prelude-title">Prelude Title (Opening Music)</label>
                         <input type="text" id="prelude-title" placeholder="e.g. Prelude on AZMON" maxlength="100">
                     </div>
                     <div class="field">
-                        <label for="prelude-composer">Prelude Composer</label>
+                        <label for="prelude-composer">Prelude Composer (Opening Music)</label>
                         <input type="text" id="prelude-composer" placeholder="e.g. J.S. Bach" maxlength="100">
                     </div>
                     <div class="field">
-                        <label for="offertory-title">Offertory Title</label>
+                        <label for="offertory-title">Offertory Title (Offering Music)</label>
                         <input type="text" id="offertory-title" maxlength="100">
                     </div>
                     <div class="field">
-                        <label for="offertory-composer">Offertory Composer</label>
+                        <label for="offertory-composer">Offertory Composer (Offering Music)</label>
                         <input type="text" id="offertory-composer" maxlength="100">
                     </div>
                     <div class="field">
-                        <label for="postlude-title">Postlude Title</label>
+                        <label for="postlude-title">Postlude Title (Closing Music)</label>
                         <input type="text" id="postlude-title" maxlength="100">
                     </div>
                     <div class="field">
-                        <label for="postlude-composer">Postlude Composer</label>
+                        <label for="postlude-composer">Postlude Composer (Closing Music)</label>
                         <input type="text" id="postlude-composer" maxlength="100">
                     </div>
                     <div class="field">
-                        <label for="choral-title">Choral Title</label>
+                        <label for="choral-title">Choral Title (Choir Selection)</label>
                         <input type="text" id="choral-title" placeholder="e.g. Create in Me a Clean Heart" maxlength="100">
                     </div>
                 </div>
@@ -289,6 +293,7 @@
                 <div class="settings-grid">
                     <div class="setting-group">
                         <label class="setting-label">Creed</label>
+                        <p class="impact-text">A statement of faith read by the congregation. Apostles' is shorter.</p>
                         <div class="radio-group">
                             <label><input type="radio" name="creed_type" value="apostles"> Apostles' Creed</label>
                             <label><input type="radio" name="creed_type" value="nicene"> Nicene Creed</label>
@@ -298,14 +303,16 @@
 
                     <div class="setting-group">
                         <label class="setting-label">Kyrie</label>
+                        <p class="impact-text">Adds a page of sheet music ("Lord, have mercy") to the bulletin.</p>
                         <label class="checkbox-label">
-                            <input type="checkbox" id="include-kyrie"> Include Kyrie ("Lord, have mercy")
+                            <input type="checkbox" id="include-kyrie"> Include Kyrie
                         </label>
                         <span class="default-hint" id="hint-kyrie"></span>
                     </div>
 
                     <div class="setting-group">
-                        <label class="setting-label" title="Song of praise sung after the greeting">Canticle</label>
+                        <label class="setting-label">Canticle</label>
+                        <p class="impact-text">Adds a page of sheet music (song of praise) to the bulletin. "None" removes it.</p>
                         <div class="radio-group">
                             <label><input type="radio" name="canticle" value="glory_to_god"> Glory to God</label>
                             <label><input type="radio" name="canticle" value="this_is_the_feast"> This Is the Feast</label>
@@ -315,7 +322,8 @@
                     </div>
 
                     <div class="setting-group">
-                        <label class="setting-label" title="Communion prayer form">Eucharistic Prayer</label>
+                        <label class="setting-label">Eucharistic Prayer</label>
+                        <p class="impact-text">The communion prayer printed in the bulletin. Extended adds a sung congregational response.</p>
                         <div class="radio-group">
                             <label><input type="radio" name="eucharistic_form" value="short"> Short</label>
                             <label><input type="radio" name="eucharistic_form" value="poetic"> Poetic</label>
@@ -326,14 +334,16 @@
 
                     <div class="setting-group">
                         <label class="setting-label">Memorial Acclamation</label>
+                        <p class="impact-text">Adds a sung response ("Christ has died...") during communion.</p>
                         <label class="checkbox-label">
-                            <input type="checkbox" id="include-memorial"> Include Memorial Acclamation ("Christ has died...")
+                            <input type="checkbox" id="include-memorial"> Include Memorial Acclamation
                         </label>
                         <span class="default-hint" id="hint-memorial"></span>
                     </div>
 
                     <div class="setting-group">
-                        <label class="setting-label" title="Seasonal introduction before 'Holy, Holy, Holy'">Preface</label>
+                        <label class="setting-label">Preface</label>
+                        <p class="impact-text">The pastor's spoken introduction before "Holy, Holy, Holy." Changes by season.</p>
                         <select id="preface-select">
                             <!-- populated by JS from API -->
                         </select>
@@ -342,6 +352,7 @@
 
                     <div class="setting-group">
                         <label class="setting-label">Confession</label>
+                        <p class="impact-text">Adds the opening confession and forgiveness section to all documents.</p>
                         <label class="checkbox-label">
                             <input type="checkbox" id="show-confession"> Include Confession and Forgiveness
                         </label>
@@ -350,6 +361,7 @@
 
                     <div class="setting-group">
                         <label class="setting-label">Song of Simeon</label>
+                        <p class="impact-text">Adds a post-communion song ("Lord, now you let your servant go in peace").</p>
                         <label class="checkbox-label">
                             <input type="checkbox" id="show-nunc-dimittis"> Include Song of Simeon (Nunc Dimittis)
                         </label>
@@ -387,6 +399,7 @@
 
                 <div class="setting-group">
                     <label class="setting-label">Holy Baptism</label>
+                    <p class="impact-text">Adds the baptism liturgy to all documents. The service order will change based on placement.</p>
                     <label class="checkbox-label">
                         <input type="checkbox" id="include-baptism"> Include Holy Baptism
                     </label>
@@ -454,11 +467,26 @@
                 <h2>Generate Documents</h2>
 
                 <div class="doc-checkboxes">
-                    <label class="checkbox-label"><input type="checkbox" name="doc_select" value="bulletin" checked> Bulletin for Congregation</label>
-                    <label class="checkbox-label"><input type="checkbox" name="doc_select" value="prayers" checked> Pulpit Prayers</label>
-                    <label class="checkbox-label"><input type="checkbox" name="doc_select" value="scripture" checked> Pulpit Scripture</label>
-                    <label class="checkbox-label"><input type="checkbox" name="doc_select" value="large_print" checked> Large Print</label>
-                    <label class="checkbox-label"><input type="checkbox" name="doc_select" value="leader_guide" checked> Leader Guide</label>
+                    <div class="doc-option">
+                        <label class="checkbox-label"><input type="checkbox" name="doc_select" value="bulletin" checked> Bulletin for Congregation</label>
+                        <p class="doc-description">Folded booklet with readings, prayers, and sheet music</p>
+                    </div>
+                    <div class="doc-option">
+                        <label class="checkbox-label"><input type="checkbox" name="doc_select" value="prayers" checked> Pulpit Prayers</label>
+                        <p class="doc-description">Sheet for the prayer leader at the lectern</p>
+                    </div>
+                    <div class="doc-option">
+                        <label class="checkbox-label"><input type="checkbox" name="doc_select" value="scripture" checked> Pulpit Scripture</label>
+                        <p class="doc-description">Reading sheet for the scripture reader at the lectern</p>
+                    </div>
+                    <div class="doc-option">
+                        <label class="checkbox-label"><input type="checkbox" name="doc_select" value="large_print" checked> Large Print</label>
+                        <p class="doc-description">Full-text version with complete hymn lyrics, no sheet music</p>
+                    </div>
+                    <div class="doc-option">
+                        <label class="checkbox-label"><input type="checkbox" name="doc_select" value="leader_guide" checked> Leader Guide</label>
+                        <p class="doc-description">Pastor's copy, same as Large Print but with sung notation</p>
+                    </div>
                 </div>
 
                 <button id="generate-btn" class="btn primary generate-btn">Generate Selected Documents</button>

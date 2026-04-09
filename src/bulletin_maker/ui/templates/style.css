@@ -362,6 +362,22 @@ main {
     margin-bottom: 12px;
 }
 
+.impact-text {
+    font-size: 12px;
+    color: var(--text-light);
+    margin: -2px 0 6px;
+}
+
+.doc-option {
+    margin-bottom: 8px;
+}
+
+.doc-description {
+    font-size: 12px;
+    color: var(--text-light);
+    margin: 1px 0 0 24px;
+}
+
 /* ── Wizard Navigation ────────────────────────────────────── */
 
 .wizard-nav {

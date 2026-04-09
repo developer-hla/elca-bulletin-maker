@@ -1284,7 +1284,7 @@ function setupHymnFetch() {
             const number = numberInput.value.trim();
 
             if (!number) {
-                showError(errorEl, "Enter a hymn number.");
+                showError(errorEl, "Enter a hymn number from the hymnal's index.");
                 hide(infoEl);
                 return;
             }
@@ -1304,7 +1304,7 @@ function setupHymnFetch() {
 
                 if (!searchResult.success) {
                     hideBtnSpinner(this, "Fetch");
-                    showError(errorEl, searchResult.error || "Hymn not found.");
+                    showError(errorEl, searchResult.error || "Hymn not found. Check the number and make sure the right hymnal is selected.");
                     return;
                 }
 
