@@ -344,12 +344,19 @@
 
 
 {# ── Offertory Hymn ── #}
+{% if offertory_image_uri %}
+<div class="hymn-notation-page">
+    <div class="scripture-heading"><span>*HYMN</span></div>
+    <div class="notation-image"><img src="{{ offertory_image_uri }}" alt="Offertory Hymn"></div>
+</div>
+{% else %}
 <div class="scripture-heading"><span>*HYMN</span></div>
 <div class="two-col">
-{% for verse_text in offertory_hymn_verses %}
-<p class="bold-block">{{ verse_text | hymn_text }}</p>
-{% endfor %}
+    {% for verse_text in offertory_hymn_verses %}
+    <p class="bold-block">{{ verse_text | hymn_text }}</p>
+    {% endfor %}
 </div>
+{% endif %}
 
 
 {# ── Offering Prayer ── #}

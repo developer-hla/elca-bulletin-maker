@@ -36,6 +36,7 @@ from bulletin_maker.renderer.season import LiturgicalSeason
 from bulletin_maker.renderer.image_manager import (
     fetch_hymn_image,
     get_gospel_acclamation_image,
+    get_offertory_image,
     get_preface_image,
     get_setting_image,
 )
@@ -176,6 +177,15 @@ def _fetch_all_hymn_image_uris(
         "communion_hymn_image_uri": _fetch_hymn_image_uri(client, config.communion_hymn),
         "sending_hymn_image_uri": _fetch_hymn_image_uri(client, config.sending_hymn),
     }
+
+
+def _load_offertory_image_uri() -> str:
+    """Load the bundled offertory hymn notation as a data URI, or "" if missing."""
+    try:
+        return _image_to_data_uri(get_offertory_image())
+    except FileNotFoundError:
+        logger.warning("Offertory hymn image not bundled; offertory section incomplete")
+        return ""
 
 
 # ── Text helpers ──────────────────────────────────────────────────────
@@ -898,6 +908,7 @@ def _build_large_print_context(
         "nunc_dimittis_lines": NUNC_DIMITTIS.split("\n"),
         "sending_hymn": config.sending_hymn,
         "sending_hymn_image_uri": sending_hymn_image_uri,
+        "offertory_image_uri": _load_offertory_image_uri(),
     })
     return ctx
 
@@ -1031,7 +1042,7 @@ def _build_bulletin_context(
         "nunc_dimittis_image_uri": nunc_dimittis_uri,
         "memorial_acclamation_image_uri": memorial_acc_uri,
         "amen_image_uri": amen_uri,
-        "offertory_image_uri": "",
+        "offertory_image_uri": _load_offertory_image_uri(),
 
         # Hymn titles (bulletin shows title only, not full lyrics)
         "gathering_hymn_title": _hymn_title_str(config.gathering_hymn),

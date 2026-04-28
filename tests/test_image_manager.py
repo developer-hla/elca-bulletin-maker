@@ -7,6 +7,7 @@ import pytest
 from bulletin_maker.renderer.image_manager import (
     get_setting_image,
     get_gospel_acclamation_image,
+    get_offertory_image,
     get_preface_image,
     load_asset_catalog,
     SETTING_TWO_DIR,
@@ -70,6 +71,14 @@ class TestGetPrefaceImage:
     def test_sundays_returns_sundays_image(self):
         path = get_preface_image(PrefaceType.SUNDAYS)
         assert "preface_sundays" in path.stem
+
+
+class TestGetOffertoryImage:
+
+    def test_resolves_to_existing_file(self):
+        path = get_offertory_image()
+        assert path.exists()
+        assert path.stem == "offertory"
 
 
 class TestAssetCatalog:

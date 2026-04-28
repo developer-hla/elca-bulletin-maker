@@ -28,6 +28,7 @@ from bulletin_maker.renderer.html_renderer import (
     _get_reading,
     _get_reading_with_override,
     _inject_css,
+    _load_offertory_image_uri,
 )
 from bulletin_maker.renderer.season import LiturgicalSeason
 
@@ -427,3 +428,17 @@ class TestFetchHymnImageUri:
     def test_oserror_falls_through(self, mock_fetch):
         mock_fetch.side_effect = OSError("disk full")
         assert _fetch_hymn_image_uri(MagicMock(), self._hymn()) == ""
+
+
+class TestLoadOffertoryImageUri:
+    """_load_offertory_image_uri loads bundled asset, returns "" on missing."""
+
+    def test_returns_data_uri_when_bundled(self):
+        result = _load_offertory_image_uri()
+        assert result.startswith("data:image/")
+        assert ";base64," in result
+
+    @patch("bulletin_maker.renderer.html_renderer.get_offertory_image")
+    def test_returns_empty_when_missing(self, mock_get):
+        mock_get.side_effect = FileNotFoundError("not bundled")
+        assert _load_offertory_image_uri() == ""

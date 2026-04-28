@@ -168,6 +168,17 @@ def get_gospel_acclamation_image(season: LiturgicalSeason) -> Path:
     return found
 
 
+def get_offertory_image() -> Path:
+    """Return the path to the bundled offertory hymn notation image."""
+    found = _find_image(ASSETS_DIR, "offertory")
+    if found is None:
+        raise FileNotFoundError(
+            f"Offertory image not found in {ASSETS_DIR}\n"
+            f"Run scripts/download_offertory_asset.py to fetch it."
+        )
+    return found
+
+
 def get_preface_image(preface: PrefaceType) -> Path:
     """Return the path to the sung preface notation image.
 
