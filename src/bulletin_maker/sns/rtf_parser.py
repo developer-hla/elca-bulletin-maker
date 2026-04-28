@@ -129,6 +129,8 @@ def _strip_rtf(rtf: str) -> str:
                     i += 2
                     continue
                 if nch in "\r\n":
+                    # RTF 1.9.1: backslash + CR/LF is equivalent to \par
+                    result.append("\n")
                     i += 2
                     continue
                 # Control word
