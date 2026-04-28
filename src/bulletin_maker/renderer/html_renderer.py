@@ -34,10 +34,12 @@ from bulletin_maker.sns.models import (
 )
 from bulletin_maker.renderer.season import LiturgicalSeason
 from bulletin_maker.renderer.image_manager import (
+    fetch_hymn_image,
     get_gospel_acclamation_image,
     get_preface_image,
     get_setting_image,
 )
+from bulletin_maker.sns.client import SundaysClient
 from bulletin_maker.renderer.text_utils import (
     clean_sns_html,
     extract_book_name,
@@ -131,6 +133,49 @@ def _image_to_data_uri(path: Path) -> str:
 
     data = base64.b64encode(path.read_bytes()).decode()
     return f"data:{mime};base64,{data}"
+
+
+def _fetch_hymn_image_uri(
+    client: SundaysClient | None, hymn: HymnLyrics | None,
+) -> str:
+    """Fetch hymn notation as a data URI, preferring harmony over melody.
+
+    Many hymns (especially unison settings) have no harmony arrangement
+    in S&S and return HTTP 500 for the harmony URL. Fall back to melody
+    so the hymn still gets a notation page rather than dropping to lyrics.
+
+    Returns "" if no client, no hymn, malformed number, or both fetches fail.
+    """
+    if client is None or hymn is None:
+        return ""
+    parts = hymn.number.split()
+    if len(parts) != 2:
+        logger.warning("Unexpected hymn number format: %s", hymn.number)
+        return ""
+    collection, number = parts
+    for image_type in ("harmony", "melody"):
+        try:
+            path = fetch_hymn_image(
+                client, number, collection=collection, image_type=image_type,
+            )
+            return _image_to_data_uri(path)
+        except (BulletinError, OSError):
+            continue
+    logger.warning("Could not fetch hymn image for %s (tried harmony and melody)",
+                   hymn.number)
+    return ""
+
+
+def _fetch_all_hymn_image_uris(
+    client: SundaysClient | None, config: ServiceConfig,
+) -> dict[str, str]:
+    """Fetch notation URIs for all four hymns, keyed by template variable name."""
+    return {
+        "gathering_hymn_image_uri": _fetch_hymn_image_uri(client, config.gathering_hymn),
+        "sermon_hymn_image_uri": _fetch_hymn_image_uri(client, config.sermon_hymn),
+        "communion_hymn_image_uri": _fetch_hymn_image_uri(client, config.communion_hymn),
+        "sending_hymn_image_uri": _fetch_hymn_image_uri(client, config.sending_hymn),
+    }
 
 
 # ── Text helpers ──────────────────────────────────────────────────────
@@ -809,6 +854,11 @@ def _build_common_context(
 
 def _build_large_print_context(
     day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
+    *,
+    gathering_hymn_image_uri: str = "",
+    sermon_hymn_image_uri: str = "",
+    communion_hymn_image_uri: str = "",
+    sending_hymn_image_uri: str = "",
 ) -> dict:
     """Build the full template context for the Large Print document."""
     ctx = _build_common_context(day, config, season)
@@ -836,14 +886,18 @@ def _build_large_print_context(
 
         "choral_title": config.choral_title,
         "gathering_hymn": config.gathering_hymn,
+        "gathering_hymn_image_uri": gathering_hymn_image_uri,
         "ga_text_fallback": ga_text,
         "sermon_hymn": config.sermon_hymn,
+        "sermon_hymn_image_uri": sermon_hymn_image_uri,
         "great_thanksgiving_dialog": GREAT_THANKSGIVING_DIALOG,
         "sanctus_stanzas": _split_stanzas(SANCTUS),
         "agnus_dei_stanzas": _split_agnus_dei(),
         "communion_hymn": config.communion_hymn,
+        "communion_hymn_image_uri": communion_hymn_image_uri,
         "nunc_dimittis_lines": NUNC_DIMITTIS.split("\n"),
         "sending_hymn": config.sending_hymn,
+        "sending_hymn_image_uri": sending_hymn_image_uri,
     })
     return ctx
 
@@ -1067,6 +1121,7 @@ def generate_large_print(
     output_path: Path,
     *,
     season: LiturgicalSeason,
+    client: SundaysClient | None = None,
     keep_intermediates: bool = False,
 ) -> Path:
     """Generate the Full with Hymns LARGE PRINT PDF via HTML + Playwright.
@@ -1076,13 +1131,18 @@ def generate_large_print(
         config: User-provided service configuration (already resolved).
         output_path: Where to save the final PDF (suffix forced to .pdf).
         season: The detected liturgical season.
+        client: Optional authenticated SundaysClient. When provided, harmony
+            notation (with melody fallback) is fetched for each hymn and
+            replaces the lyrics on its own page.
         keep_intermediates: If True, save debug HTML alongside the PDF.
 
     Returns:
         Path to the saved PDF file.
     """
     resolve_text_defaults(config, day)
-    ctx = _build_large_print_context(day, config, season)
+    ctx = _build_large_print_context(
+        day, config, season, **_fetch_all_hymn_image_uris(client, config),
+    )
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
         label="Large Print",
@@ -1091,9 +1151,20 @@ def generate_large_print(
 
 def _build_leader_guide_context(
     day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
+    *,
+    gathering_hymn_image_uri: str = "",
+    sermon_hymn_image_uri: str = "",
+    communion_hymn_image_uri: str = "",
+    sending_hymn_image_uri: str = "",
 ) -> dict:
     """Build template context for the Leader Guide (large print + notation)."""
-    ctx = _build_large_print_context(day, config, season)
+    ctx = _build_large_print_context(
+        day, config, season,
+        gathering_hymn_image_uri=gathering_hymn_image_uri,
+        sermon_hymn_image_uri=sermon_hymn_image_uri,
+        communion_hymn_image_uri=communion_hymn_image_uri,
+        sending_hymn_image_uri=sending_hymn_image_uri,
+    )
     ctx["is_leader_guide"] = True
 
     preface_image_uri = ""
@@ -1117,6 +1188,7 @@ def generate_leader_guide(
     output_path: Path,
     *,
     season: LiturgicalSeason,
+    client: SundaysClient | None = None,
     keep_intermediates: bool = False,
 ) -> Path:
     """Generate the Leader Guide PDF — large print with sung notation.
@@ -1129,13 +1201,18 @@ def generate_leader_guide(
         config: User-provided service configuration (already resolved).
         output_path: Where to save the final PDF (suffix forced to .pdf).
         season: The detected liturgical season.
+        client: Optional authenticated SundaysClient. When provided, harmony
+            notation (with melody fallback) is fetched for each hymn and
+            replaces the lyrics on its own page.
         keep_intermediates: If True, save debug HTML alongside the PDF.
 
     Returns:
         Path to the saved PDF file.
     """
     resolve_text_defaults(config, day)
-    ctx = _build_leader_guide_context(day, config, season)
+    ctx = _build_leader_guide_context(
+        day, config, season, **_fetch_all_hymn_image_uris(client, config),
+    )
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
         label="Leader Guide",
@@ -1225,7 +1302,7 @@ def generate_bulletin(
     output_path: Path,
     *,
     season: LiturgicalSeason,
-    client: object | None = None,
+    client: SundaysClient | None = None,
     keep_intermediates: bool = False,
     on_progress: Optional[Callable[[str], None]] = None,
 ) -> tuple[Path, int | None]:
@@ -1247,28 +1324,9 @@ def generate_bulletin(
     Returns:
         Tuple of (path to booklet PDF, creed page number or None).
     """
-    from bulletin_maker.renderer.image_manager import fetch_hymn_image
-
     resolve_text_defaults(config, day)
 
-    # Fetch communion hymn notation image if client provided
-    communion_hymn_image_uri = ""
-    if client is not None and config.communion_hymn is not None:
-        hymn_num = config.communion_hymn.number
-        # Parse "ELW 512" -> collection="ELW", number="512"
-        parts = hymn_num.split()
-        if len(parts) == 2:
-            try:
-                img_path = fetch_hymn_image(
-                    client, parts[1], collection=parts[0],
-                    image_type="harmony",
-                )
-                communion_hymn_image_uri = _image_to_data_uri(img_path)
-            except (BulletinError, OSError):
-                logger.warning("Could not fetch communion hymn image for %s",
-                               hymn_num)
-        else:
-            logger.warning("Unexpected hymn number format: %s", hymn_num)
+    communion_hymn_image_uri = _fetch_hymn_image_uri(client, config.communion_hymn)
 
     env = setup_jinja_env()
     template = env.get_template("bulletin.html")

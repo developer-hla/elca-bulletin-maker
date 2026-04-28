@@ -186,6 +186,7 @@ def main():
             day, config,
             output_path=OUTPUT_DIR / "Full with Hymns LARGE PRINT.pdf",
             season=season,
+            client=client,
         )
         print(f"   Saved: {lp_path}")
 
@@ -194,6 +195,7 @@ def main():
             day, config,
             output_path=OUTPUT_DIR / "Leader Guide.pdf",
             season=season,
+            client=client,
         )
         print(f"   Saved: {lg_path}")
 

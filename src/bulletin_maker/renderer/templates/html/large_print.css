@@ -272,6 +272,13 @@ p { margin: 0; }
     max-height: 9in;
 }
 
+/* Each hymn notation occupies its own page */
+.hymn-notation-page {
+    page-break-before: always;
+    page-break-after: always;
+    break-inside: avoid;
+}
+
 /* ── Dialog Lines ── */
 .dialog-line {
     margin: 0;

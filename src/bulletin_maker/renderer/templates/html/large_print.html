@@ -9,7 +9,18 @@
 {% set is_leader_guide = is_leader_guide | default(false) %}
 
 {# ── Hymn rendering macro (used for gathering, sermon, communion, sending) ── #}
-{% macro render_hymn(hymn, label, extra_class="") %}
+{% macro render_hymn(hymn, label, extra_class="", image_uri="") %}
+{% if image_uri %}
+<div class="hymn-notation-page {{ extra_class }}">
+    <div class="liturgy-heading red-heading">
+        <span>{{ label }}: {{ hymn.number }}{% if hymn.verse_label %} ({{ hymn.verse_label }}){% endif %}</span>
+    </div>
+    <div class="notation-image"><img src="{{ image_uri }}" alt="{{ label }}"></div>
+    {% if hymn.copyright %}
+    <p class="hymn-citation">{{ hymn.copyright | nl2br }}</p>
+    {% endif %}
+</div>
+{% else %}
 <div class="liturgy-heading red-heading {{ extra_class }}">
     <span>{{ label }}: {{ hymn.number }}{% if hymn.verse_label %} ({{ hymn.verse_label }}){% endif %}</span>
 </div>
@@ -25,6 +36,7 @@
 </div>
 {% if hymn.copyright %}
 <p class="hymn-citation">{{ hymn.copyright | nl2br }}</p>
+{% endif %}
 {% endif %}
 {% endmacro %}
 
@@ -104,7 +116,7 @@
 
 {# ── Gathering Hymn ── #}
 {% if gathering_hymn %}
-{{ render_hymn(gathering_hymn, "*GATHERING HYMN") }}
+{{ render_hymn(gathering_hymn, "*GATHERING HYMN", image_uri=gathering_hymn_image_uri) }}
 {% endif %}
 
 
@@ -223,7 +235,7 @@
 
 {# ── Sermon Hymn ── #}
 {% if sermon_hymn %}
-{{ render_hymn(sermon_hymn, "*SERMON HYMN") }}
+{{ render_hymn(sermon_hymn, "*SERMON HYMN", image_uri=sermon_hymn_image_uri) }}
 {% endif %}
 
 
@@ -443,7 +455,7 @@
 
 {# ── Communion Hymn ── #}
 {% if communion_hymn %}
-{{ render_hymn(communion_hymn, "COMMUNION HYMN", extra_class="mt-24") }}
+{{ render_hymn(communion_hymn, "COMMUNION HYMN", extra_class="mt-24", image_uri=communion_hymn_image_uri) }}
 {% endif %}
 
 
@@ -503,7 +515,7 @@
 <div class="spacer"></div>
 
 {% if sending_hymn %}
-{{ render_hymn(sending_hymn, "*SENDING HYMN") }}
+{{ render_hymn(sending_hymn, "*SENDING HYMN", image_uri=sending_hymn_image_uri) }}
 {% endif %}
 <div class="liturgy-heading">
     <span>SENDING</span>

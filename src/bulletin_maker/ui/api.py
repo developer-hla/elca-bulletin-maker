@@ -939,7 +939,8 @@ class BulletinAPI:
                     lambda: generate_large_print(
                         self._day, config,
                         output_path=output_dir / self._build_filename("Full with Hymns LARGE PRINT"),
-                        season=season, keep_intermediates=self._debug,
+                        season=season, client=self._client,
+                        keep_intermediates=self._debug,
                     ),
                     results, errors, step, total,
                 )
@@ -952,7 +953,8 @@ class BulletinAPI:
                     lambda: generate_leader_guide(
                         self._day, config,
                         output_path=output_dir / self._build_filename("Leader Guide"),
-                        season=season, keep_intermediates=self._debug,
+                        season=season, client=self._client,
+                        keep_intermediates=self._debug,
                     ),
                     results, errors, step, total,
                 )

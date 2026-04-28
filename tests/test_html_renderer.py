@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+from bulletin_maker.exceptions import ContentNotFoundError, NetworkError
 from bulletin_maker.sns.models import (
     SLOT_FIRST,
     SLOT_GOSPEL,
     SLOT_SECOND,
     DayContent,
+    HymnLyrics,
     Reading,
     ServiceConfig,
 )
@@ -22,6 +24,7 @@ from bulletin_maker.renderer.html_renderer import (
     _booklet_blanks,
     _build_baptism_context,
     _build_common_context,
+    _fetch_hymn_image_uri,
     _get_reading,
     _get_reading_with_override,
     _inject_css,
@@ -361,3 +364,66 @@ class TestAdjustProfileDataclass:
     def test_custom_scale(self):
         p = AdjustProfile(name="test", css=".foo { bar: baz; }", scale=0.95)
         assert p.scale == 0.95
+
+
+class TestFetchHymnImageUri:
+    """_fetch_hymn_image_uri returns harmony notation URI or "" on failure."""
+
+    def _hymn(self, number: str = "ELW 504") -> HymnLyrics:
+        return HymnLyrics(number=number, title="A Mighty Fortress", verses=[])
+
+    def test_no_client_returns_empty(self):
+        assert _fetch_hymn_image_uri(None, self._hymn()) == ""
+
+    def test_no_hymn_returns_empty(self):
+        assert _fetch_hymn_image_uri(MagicMock(), None) == ""
+
+    def test_malformed_number_returns_empty(self):
+        result = _fetch_hymn_image_uri(MagicMock(), self._hymn(number="ELW"))
+        assert result == ""
+
+    @patch("bulletin_maker.renderer.html_renderer.fetch_hymn_image")
+    @patch("bulletin_maker.renderer.html_renderer._image_to_data_uri")
+    def test_success_prefers_harmony(self, mock_uri, mock_fetch):
+        mock_fetch.return_value = "/tmp/x.jpg"
+        mock_uri.return_value = "data:image/jpeg;base64,XXXX"
+
+        result = _fetch_hymn_image_uri(MagicMock(), self._hymn())
+
+        assert result == "data:image/jpeg;base64,XXXX"
+        mock_fetch.assert_called_once()
+        kwargs = mock_fetch.call_args.kwargs
+        assert kwargs["collection"] == "ELW"
+        assert kwargs["image_type"] == "harmony"
+
+    @patch("bulletin_maker.renderer.html_renderer.fetch_hymn_image")
+    @patch("bulletin_maker.renderer.html_renderer._image_to_data_uri")
+    def test_falls_back_to_melody_when_harmony_fails(self, mock_uri, mock_fetch):
+        mock_fetch.side_effect = [
+            ContentNotFoundError("no harmony"),
+            "/tmp/x.jpg",
+        ]
+        mock_uri.return_value = "data:image/jpeg;base64,YYYY"
+
+        result = _fetch_hymn_image_uri(MagicMock(), self._hymn())
+
+        assert result == "data:image/jpeg;base64,YYYY"
+        assert mock_fetch.call_count == 2
+        assert mock_fetch.call_args_list[0].kwargs["image_type"] == "harmony"
+        assert mock_fetch.call_args_list[1].kwargs["image_type"] == "melody"
+
+    @patch("bulletin_maker.renderer.html_renderer.fetch_hymn_image")
+    def test_both_fetches_fail_returns_empty(self, mock_fetch):
+        mock_fetch.side_effect = ContentNotFoundError("missing")
+        assert _fetch_hymn_image_uri(MagicMock(), self._hymn()) == ""
+        assert mock_fetch.call_count == 2
+
+    @patch("bulletin_maker.renderer.html_renderer.fetch_hymn_image")
+    def test_network_error_falls_through(self, mock_fetch):
+        mock_fetch.side_effect = NetworkError("timeout")
+        assert _fetch_hymn_image_uri(MagicMock(), self._hymn()) == ""
+
+    @patch("bulletin_maker.renderer.html_renderer.fetch_hymn_image")
+    def test_oserror_falls_through(self, mock_fetch):
+        mock_fetch.side_effect = OSError("disk full")
+        assert _fetch_hymn_image_uri(MagicMock(), self._hymn()) == ""
