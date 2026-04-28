@@ -129,9 +129,22 @@ class TestOffertoryHymn:
         assert OFFERTORY_HYMN_VERSES[0].startswith("1\t")
         assert OFFERTORY_HYMN_VERSES[1].startswith("2\t")
 
-    def test_verses_end_with_amen(self):
+    def test_no_amen_in_verses(self):
         for verse in OFFERTORY_HYMN_VERSES:
-            assert verse.strip().endswith("Amen.")
+            assert "Amen" not in verse
+
+    def test_verse_one_canonical_text(self):
+        v1 = OFFERTORY_HYMN_VERSES[0]
+        assert "Oh, come, Lord Jesus" in v1
+        assert "be our guest" in v1
+        assert "in your sight" in v1
+        assert "be our joy" in v1
+        assert v1.strip().endswith("delight.")
+
+    def test_verse_two_canonical_text(self):
+        v2 = OFFERTORY_HYMN_VERSES[1]
+        assert "goodly share" in v2
+        assert v2.strip().endswith("every table everywhere.")
 
 
 class TestConfession:

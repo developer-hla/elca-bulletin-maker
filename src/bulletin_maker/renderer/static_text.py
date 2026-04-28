@@ -267,17 +267,16 @@ AARONIC_BLESSING = (
     f"The Lord look upon you with favor and {CROSS} give you peace."
 )
 
-# Offertory Hymn — "Oh, come, Lord Jesus" (always the same)
+# Offertory Hymn: LS 97 "Come, Lord Jesus" (Tallis' Canon), verses 1-2
 OFFERTORY_HYMN_VERSES = [
     (
         "1\tOh, come, Lord Jesus,\n"
         "\tbe our guest,\n"
         "\tand let your gifts to us \n"
         "\tbe blest.\n"
-        "  Keep us forever in your care,\n"
-        "\tand save us from \n"
-        "\tall harm and sorrow. \n"
-        "\tAmen."
+        "  Keep us forever in your sight,\n"
+        "\tand be our joy, \n"
+        f"\tour hearts{APOSTROPHE} delight."
     ),
     (
         "2\tOh, come, Lord Jesus, \n"
@@ -286,8 +285,7 @@ OFFERTORY_HYMN_VERSES = [
         "\tbe blest.\n"
         "  Oh, may there be \n"
         "\ta goodly share \n"
-        "\ton every table, everywhere.\n"
-        "\tAmen."
+        "\ton every table everywhere."
     ),
 ]
 
