@@ -251,6 +251,92 @@ class TestCleanup:
         api = BulletinAPI()
         api.cleanup()  # Should not raise
 
+    def test_destroys_open_help_window(self):
+        api = BulletinAPI()
+        mock_window = MagicMock()
+        api._help_window = mock_window
+
+        api.cleanup()
+        mock_window.destroy.assert_called_once()
+        assert api._help_window is None
+
+    def test_swallows_help_destroy_error(self):
+        api = BulletinAPI()
+        mock_window = MagicMock()
+        mock_window.destroy.side_effect = RuntimeError("already destroyed")
+        api._help_window = mock_window
+
+        api.cleanup()  # Should not raise
+        assert api._help_window is None
+
+
+class TestOpenHelpWindow:
+    def test_creates_window_on_first_call(self):
+        api = BulletinAPI()
+        mock_window = MagicMock()
+        with patch("bulletin_maker.ui.api.webview.create_window",
+                   return_value=mock_window) as mock_create, \
+             patch("bulletin_maker.ui.api._help_html_path") as mock_path:
+            mock_path.return_value.exists.return_value = True
+
+            result = api.open_help_window()
+
+        assert result["success"] is True
+        assert "already_open" not in result
+        mock_create.assert_called_once()
+        assert api._help_window is mock_window
+
+    def test_second_call_returns_already_open(self):
+        api = BulletinAPI()
+        api._help_window = MagicMock()
+
+        with patch("bulletin_maker.ui.api.webview.create_window") as mock_create:
+            result = api.open_help_window()
+
+        assert result == {"success": True, "already_open": True}
+        mock_create.assert_not_called()
+
+    def test_missing_help_file_returns_error(self):
+        api = BulletinAPI()
+        with patch("bulletin_maker.ui.api._help_html_path") as mock_path, \
+             patch("bulletin_maker.ui.api.webview.create_window") as mock_create:
+            mock_path.return_value.exists.return_value = False
+
+            result = api.open_help_window()
+
+        assert result["success"] is False
+        assert "Help file not found" in result["error"]
+        mock_create.assert_not_called()
+        assert api._help_window is None
+
+    def test_on_help_closed_clears_reference(self):
+        api = BulletinAPI()
+        api._help_window = MagicMock()
+
+        api._on_help_closed()
+        assert api._help_window is None
+
+    def test_on_help_closed_accepts_extra_args(self):
+        api = BulletinAPI()
+        api._help_window = MagicMock()
+
+        api._on_help_closed("some-window-arg")  # pywebview version compatibility
+        assert api._help_window is None
+
+    def test_reopens_after_close(self):
+        api = BulletinAPI()
+        with patch("bulletin_maker.ui.api.webview.create_window",
+                   return_value=MagicMock()), \
+             patch("bulletin_maker.ui.api._help_html_path") as mock_path:
+            mock_path.return_value.exists.return_value = True
+
+            api.open_help_window()
+            api._on_help_closed()
+            result = api.open_help_window()
+
+        assert result["success"] is True
+        assert "already_open" not in result
+
 
 # ── H14: Error path tests for generate_all() ────────────────────────
 

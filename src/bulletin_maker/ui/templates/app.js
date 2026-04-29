@@ -757,6 +757,25 @@ function setupNewBulletin() {
     });
 }
 
+function setupHelp() {
+    async function openHelp(e) {
+        e.preventDefault();
+        const api = window.pywebview && window.pywebview.api;
+        if (!api || !api.open_help_window) {
+            alert("Help is still loading — please wait a moment and try again.");
+            return;
+        }
+        const result = await api.open_help_window();
+        if (result && result.success === false) {
+            alert("Could not open help: " + (result.error || "unknown error"));
+        }
+    }
+    const helpLink = $("#help-link");
+    if (helpLink) helpLink.addEventListener("click", openHelp);
+    const loginHelpLink = $("#login-help-link");
+    if (loginHelpLink) loginHelpLink.addEventListener("click", openHelp);
+}
+
 function setupLogout() {
     $("#logout-link").addEventListener("click", async function(e) {
         e.preventDefault();
@@ -2237,6 +2256,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setupLogin();
     setupLogout();
     setupNewBulletin();
+    setupHelp();
     setupUpdateBanner();
     setupDateFetch();
     setupResetDefaults();

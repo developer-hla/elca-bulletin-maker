@@ -122,6 +122,22 @@ h1, h2, h3, .login-card h1 {
     text-align: center;
 }
 
+.login-help {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 12px;
+}
+
+.login-help a {
+    color: var(--text-light);
+    text-decoration: none;
+}
+
+.login-help a:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
 /* ── Update Banner ─────────────────────────────────────── */
 
 .update-banner {

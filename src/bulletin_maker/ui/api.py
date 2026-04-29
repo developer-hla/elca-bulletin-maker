@@ -13,6 +13,7 @@ import logging
 import platform
 import re
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
@@ -52,6 +53,12 @@ from bulletin_maker.sns.models import DayContent, HymnLyrics, ServiceConfig
 from bulletin_maker.updater import check_for_update, install_update, is_install_writable
 
 logger = logging.getLogger(__name__)
+
+
+def _help_html_path() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS) / "bulletin_maker" / "ui" / "templates" / "help.html"
+    return Path(__file__).resolve().parent / "templates" / "help.html"
 
 
 def _format_verse_label(selected: list[int]) -> str:
@@ -99,6 +106,7 @@ class BulletinAPI:
         self._day: Optional[DayContent] = None
         self._date_str: Optional[str] = None  # "YYYY-MM-DD" from last fetch
         self._window: Optional[webview.Window] = None
+        self._help_window: Optional[webview.Window] = None
         self._hymn_cache: dict[str, dict] = {}
         self._debug: bool = debug
 
@@ -1036,8 +1044,39 @@ class BulletinAPI:
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
 
+    def open_help_window(self) -> dict:
+        """Open the user help guide in a separate window."""
+        if self._help_window is not None:
+            return {"success": True, "already_open": True}
+
+        help_path = _help_html_path()
+        if not help_path.exists():
+            logger.error("Help file not found at %s", help_path)
+            return {"success": False, "error": "Help file not found."}
+
+        window = webview.create_window(
+            title="Bulletin Maker — Help",
+            url=str(help_path),
+            width=720,
+            height=820,
+            min_size=(500, 600),
+            text_select=True,
+        )
+        window.events.closed += self._on_help_closed
+        self._help_window = window
+        return {"success": True}
+
+    def _on_help_closed(self, *_args) -> None:
+        self._help_window = None
+
     def cleanup(self) -> None:
-        """Close the S&S client session."""
+        """Close the S&S client session and any open child windows."""
+        if self._help_window:
+            try:
+                self._help_window.destroy()
+            except Exception:
+                logger.warning("Help window already destroyed at cleanup")
+            self._help_window = None
         if self._client:
             self._client.close()
             self._client = None
