@@ -25,6 +25,9 @@ venv/
 # PyInstaller
 *.spec.bak
 
+# Inno Setup output
+installer/dist/
+
 # Project
 examples/
 output/
