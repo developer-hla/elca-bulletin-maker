@@ -167,18 +167,6 @@ def _fetch_hymn_image_uri(
     return ""
 
 
-def _fetch_all_hymn_image_uris(
-    client: SundaysClient | None, config: ServiceConfig,
-) -> dict[str, str]:
-    """Fetch notation URIs for all four hymns, keyed by template variable name."""
-    return {
-        "gathering_hymn_image_uri": _fetch_hymn_image_uri(client, config.gathering_hymn),
-        "sermon_hymn_image_uri": _fetch_hymn_image_uri(client, config.sermon_hymn),
-        "communion_hymn_image_uri": _fetch_hymn_image_uri(client, config.communion_hymn),
-        "sending_hymn_image_uri": _fetch_hymn_image_uri(client, config.sending_hymn),
-    }
-
-
 def _load_offertory_image_uri() -> str:
     """Load the bundled offertory hymn notation as a data URI, or "" if missing."""
     try:
@@ -1143,8 +1131,9 @@ def generate_large_print(
         output_path: Where to save the final PDF (suffix forced to .pdf).
         season: The detected liturgical season.
         client: Optional authenticated SundaysClient. When provided, harmony
-            notation (with melody fallback) is fetched for each hymn and
-            replaces the lyrics on its own page.
+            notation (with melody fallback) is fetched for the communion hymn
+            and replaces its lyrics on its own page. Gathering, sermon, and
+            sending hymns always render as text lyrics in large print.
         keep_intermediates: If True, save debug HTML alongside the PDF.
 
     Returns:
@@ -1152,7 +1141,8 @@ def generate_large_print(
     """
     resolve_text_defaults(config, day)
     ctx = _build_large_print_context(
-        day, config, season, **_fetch_all_hymn_image_uris(client, config),
+        day, config, season,
+        communion_hymn_image_uri=_fetch_hymn_image_uri(client, config.communion_hymn),
     )
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
@@ -1222,7 +1212,11 @@ def generate_leader_guide(
     """
     resolve_text_defaults(config, day)
     ctx = _build_leader_guide_context(
-        day, config, season, **_fetch_all_hymn_image_uris(client, config),
+        day, config, season,
+        gathering_hymn_image_uri=_fetch_hymn_image_uri(client, config.gathering_hymn),
+        sermon_hymn_image_uri=_fetch_hymn_image_uri(client, config.sermon_hymn),
+        communion_hymn_image_uri=_fetch_hymn_image_uri(client, config.communion_hymn),
+        sending_hymn_image_uri=_fetch_hymn_image_uri(client, config.sending_hymn),
     )
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
