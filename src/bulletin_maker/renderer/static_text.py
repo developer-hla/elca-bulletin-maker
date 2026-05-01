@@ -343,6 +343,81 @@ CONFESSION_AND_FORGIVENESS = [
 ]
 
 
+# ── Greeting (after Gathering Hymn, before Kyrie) ────────────────
+GREETING = [
+    (DialogRole.PASTOR,
+     "The grace of our Lord Jesus Christ, the love of God, "
+     "and the communion of the Holy Spirit be with you all."),
+    (DialogRole.CONGREGATION, "And also with you."),
+]
+
+
+# ── Kyrie (ELW Setting 2) — text form for Large Print ────────────
+KYRIE_DIALOG = [
+    (DialogRole.PASTOR, "In peace, let us pray to the Lord."),
+    (DialogRole.CONGREGATION, "Lord, have mercy."),
+    (DialogRole.PASTOR,
+     "For the peace from above, and for our salvation, "
+     "let us pray to the Lord."),
+    (DialogRole.CONGREGATION, "Lord, have mercy."),
+    (DialogRole.PASTOR,
+     "For the peace of the whole world, "
+     "for the well-being of the church of God, "
+     "and for the unity of all, let us pray to the Lord."),
+    (DialogRole.CONGREGATION, "Lord, have mercy."),
+    (DialogRole.PASTOR,
+     "For this holy house, and for all who offer here their worship and praise, "
+     "let us pray to the Lord."),
+    (DialogRole.CONGREGATION, "Lord, have mercy."),
+    (DialogRole.PASTOR, "Help, save, comfort, and defend us, gracious Lord."),
+    (DialogRole.CONGREGATION, "Amen."),
+]
+
+
+# ── Canticle of Praise — text form for Large Print ────────────────
+# Two seasonal variants. Structure: refrain repeats between verses;
+# final_refrain (if set) replaces the closing refrain.
+GLORY_TO_GOD_TEXT = {
+    "refrain": (
+        f"Glory to God in the highest, and peace to God{APOSTROPHE}s people on earth."
+    ),
+    "verses": [
+        "Lord God, heavenly King, almighty God and Father, "
+        "we worship you, we give you thanks, "
+        "we praise you for your glory.",
+        "Lord Jesus Christ, only Son of the Father, Lord God, Lamb of God, "
+        "you take away the sin of the world: have mercy on us; "
+        "you are seated at the right hand of the Father: receive our prayer.",
+        "For you alone are the Holy One, you alone are the Lord, "
+        "you alone are the Most High, Jesus Christ, "
+        "with the Holy Spirit, in the glory of God the Father. Amen.",
+    ],
+    "final_refrain": None,
+}
+
+THIS_IS_THE_FEAST_TEXT = {
+    "refrain": (
+        "This is the feast of victory for our God. "
+        "Alleluia, alleluia, alleluia."
+    ),
+    "verses": [
+        "Worthy is Christ, the Lamb who was slain, "
+        "whose blood set us free to be people of God. "
+        "Power, riches, wisdom, and strength, "
+        "and honor, blessing, and glory are his.",
+        "Sing with all the people of God, "
+        "and join in the hymn of all creation: "
+        "Blessing, honor, glory, and might "
+        "be to God and the Lamb forever. Amen.",
+    ],
+    "final_refrain": (
+        "This is the feast of victory for our God, "
+        "for the Lamb who was slain has begun his reign. "
+        "Alleluia, alleluia, alleluia."
+    ),
+}
+
+
 # Standard dismissal (Ascension always uses this, not S&S seasonal variant)
 DISMISSAL = (
     "Go in peace to love and serve the Lord.\n"

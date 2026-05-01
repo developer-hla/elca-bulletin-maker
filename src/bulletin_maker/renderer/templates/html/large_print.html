@@ -120,6 +120,56 @@
 {% endif %}
 
 
+{# ── Greeting (P/C dialog, no heading) ── #}
+{% if greeting_entries %}
+{% for role, text in greeting_entries %}
+{% if role.value == "P" %}
+<p><span class="role-label">P: </span>{{ text }}</p>
+{% elif role.value == "C" %}
+<p><strong>{{ text }}</strong></p>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+
+{# ── Kyrie: image (Leader Guide) or text dialog (Large Print) ── #}
+{% if kyrie_image_uri %}
+<div class="liturgy-heading"><span>*KYRIE</span></div>
+<div class="notation-image"><img src="{{ kyrie_image_uri }}" alt="Kyrie"></div>
+{% elif kyrie_entries %}
+<div class="liturgy-heading"><span>*KYRIE</span></div>
+<div class="two-col">
+{% for role, text in kyrie_entries %}
+{% if role.value == "P" %}
+<p><span class="role-label">P: </span>{{ text }}</p>
+{% elif role.value == "C" %}
+<p><strong>{{ text }}</strong></p>
+{% endif %}
+{% endfor %}
+</div>
+{% endif %}
+
+
+{# ── Canticle of Praise: image (Leader Guide) or text (Large Print) ── #}
+{% if canticle_image_uri %}
+<div class="liturgy-heading"><span>*CANTICLE OF PRAISE</span></div>
+<div class="notation-image"><img src="{{ canticle_image_uri }}" alt="Canticle of Praise"></div>
+{% elif canticle_text %}
+<div class="liturgy-heading"><span>*CANTICLE OF PRAISE</span></div>
+<div class="two-col">
+<p><strong>{{ canticle_text.refrain }}</strong></p>
+{% for verse in canticle_text.verses %}
+<p><strong>{{ verse }}</strong></p>
+{% if loop.last and canticle_text.final_refrain %}
+<p><strong>{{ canticle_text.final_refrain }}</strong></p>
+{% else %}
+<p><strong>{{ canticle_text.refrain }}</strong></p>
+{% endif %}
+{% endfor %}
+</div>
+{% endif %}
+
+
 {# ── Invitation to Lent (Lent only) ── #}
 {% if is_lent %}
 <div class="liturgy-heading"><span>Invitation to Lent</span></div>

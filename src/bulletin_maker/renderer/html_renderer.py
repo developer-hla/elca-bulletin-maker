@@ -23,6 +23,8 @@ from typing import Callable, Optional
 
 from bulletin_maker.exceptions import BulletinError, ContentNotFoundError
 from bulletin_maker.sns.models import (
+    CANTICLE_GLORY_TO_GOD,
+    CANTICLE_THIS_IS_THE_FEAST,
     SLOT_FIRST,
     SLOT_GOSPEL,
     SLOT_PSALM,
@@ -83,15 +85,19 @@ from bulletin_maker.renderer.static_text import (
     DISMISSAL_ENTRIES,
     EUCHARISTIC_PRAYER_CLOSING,
     EUCHARISTIC_PRAYER_EXTENDED,
+    GLORY_TO_GOD_TEXT,
     GREAT_THANKSGIVING_DIALOG,
     GREAT_THANKSGIVING_PREFACE,
     GREAT_THANKSGIVING_PREFACE_SHORT,
+    GREETING,
     INVITATION_TO_LENT,
+    KYRIE_DIALOG,
     LORDS_PRAYER,
     MEMORIAL_ACCLAMATION,
     NICENE_CREED,
     NUNC_DIMITTIS,
     OFFERTORY_HYMN_VERSES,
+    THIS_IS_THE_FEAST_TEXT,
     DEFAULT_PRAYERS_CALL,
     DEFAULT_PRAYERS_RESPONSE,
     PRAYERS_INTRO,
@@ -830,6 +836,7 @@ def _build_common_context(
         "standing_instructions": STANDING_INSTRUCTIONS,
         "show_confession": config.show_confession,
         "confession_entries": config.confession_entries,
+        "greeting_entries": GREETING if config.show_greeting else None,
         "is_lent": season == LiturgicalSeason.LENT,
         "invitation_to_lent_paragraphs": _split_stanzas(INVITATION_TO_LENT),
         "prayer_of_day_html": _clean_html(day.prayer_of_the_day_html),
@@ -885,6 +892,8 @@ def _build_large_print_context(
         "choral_title": config.choral_title,
         "gathering_hymn": config.gathering_hymn,
         "gathering_hymn_image_uri": gathering_hymn_image_uri,
+        "kyrie_entries": KYRIE_DIALOG if config.include_kyrie else None,
+        "canticle_text": _canticle_text_for_config(config),
         "ga_text_fallback": ga_text,
         "sermon_hymn": config.sermon_hymn,
         "sermon_hymn_image_uri": sermon_hymn_image_uri,
@@ -978,6 +987,22 @@ def _safe_setting_image_uri(piece: str) -> str:
         return ""
 
 
+def _canticle_text_for_config(config: ServiceConfig) -> dict | None:
+    """Return the canticle text dict for the configured canticle, or None."""
+    if config.canticle == CANTICLE_GLORY_TO_GOD:
+        return GLORY_TO_GOD_TEXT
+    if config.canticle == CANTICLE_THIS_IS_THE_FEAST:
+        return THIS_IS_THE_FEAST_TEXT
+    return None
+
+
+def _canticle_image_uri_for_config(config: ServiceConfig) -> str:
+    """Return the notation image URI for the configured canticle, or ''."""
+    if config.canticle in (CANTICLE_GLORY_TO_GOD, CANTICLE_THIS_IS_THE_FEAST):
+        return _safe_setting_image_uri(config.canticle)
+    return ""
+
+
 def _build_bulletin_context(
     day: DayContent,
     config: ServiceConfig,
@@ -990,12 +1015,7 @@ def _build_bulletin_context(
 
     # Notation images for liturgical setting pieces
     kyrie_uri = _safe_setting_image_uri("kyrie") if config.include_kyrie else ""
-
-    canticle_uri = ""
-    if config.canticle == "glory_to_god":
-        canticle_uri = _safe_setting_image_uri("glory_to_god")
-    elif config.canticle == "this_is_the_feast":
-        canticle_uri = _safe_setting_image_uri("this_is_the_feast")
+    canticle_uri = _canticle_image_uri_for_config(config)
 
     great_thanksgiving_uri = _safe_setting_image_uri("great_thanksgiving")
     sanctus_uri = _safe_setting_image_uri("sanctus")
@@ -1180,6 +1200,10 @@ def _build_leader_guide_context(
 
     ctx["preface_image_uri"] = preface_image_uri
     ctx["great_thanksgiving_preface"] = GREAT_THANKSGIVING_PREFACE
+    ctx["kyrie_image_uri"] = (
+        _safe_setting_image_uri("kyrie") if config.include_kyrie else ""
+    )
+    ctx["canticle_image_uri"] = _canticle_image_uri_for_config(config)
     return ctx
 
 

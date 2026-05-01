@@ -12,7 +12,10 @@ from bulletin_maker.renderer.season import (
     get_preface_options,
     get_seasonal_config,
 )
-from bulletin_maker.sns.models import ServiceConfig
+from bulletin_maker.sns.models import (
+    CANTICLE_GLORY_TO_GOD,
+    ServiceConfig,
+)
 
 
 class TestDetectSeason:
@@ -148,7 +151,17 @@ class TestFillSeasonalDefaults:
         assert config.include_memorial_acclamation is True
         assert config.preface is PrefaceType.SUNDAYS
         assert config.show_confession is True
+        assert config.show_greeting is True
         assert config.show_nunc_dimittis is True
+
+    def test_preserves_explicit_show_greeting_override(self):
+        config = ServiceConfig(
+            date="2025-12-24",
+            date_display="December 24, 2025",
+            show_greeting=False,
+        )
+        fill_seasonal_defaults(config, LiturgicalSeason.CHRISTMAS_EVE)
+        assert config.show_greeting is False
 
     def test_preserves_explicit_values(self):
         config = ServiceConfig(
@@ -156,7 +169,7 @@ class TestFillSeasonalDefaults:
             date_display="February 22, 2026",
             creed_type="apostles",
             include_kyrie=True,
-            canticle="glory_to_god",
+            canticle=CANTICLE_GLORY_TO_GOD,
             eucharistic_form="short",
             include_memorial_acclamation=False,
             preface=PrefaceType.SUNDAYS,
@@ -165,7 +178,7 @@ class TestFillSeasonalDefaults:
         # All values should be preserved, not overwritten by Lent defaults
         assert config.creed_type == "apostles"
         assert config.include_kyrie is True
-        assert config.canticle == "glory_to_god"
+        assert config.canticle == CANTICLE_GLORY_TO_GOD
         assert config.eucharistic_form == "short"
         assert config.include_memorial_acclamation is False
         assert config.preface is PrefaceType.SUNDAYS
@@ -180,7 +193,7 @@ class TestFillSeasonalDefaults:
         fill_seasonal_defaults(config, LiturgicalSeason.PENTECOST)
         assert config.creed_type == "nicene"  # Preserved
         assert config.include_kyrie is True   # From Pentecost
-        assert config.canticle == "glory_to_god"  # From Pentecost
+        assert config.canticle == CANTICLE_GLORY_TO_GOD  # From Pentecost
         assert config.eucharistic_form == "short"  # From Pentecost
 
     def test_all_seasons_fill(self):

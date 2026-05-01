@@ -75,6 +75,25 @@
 {% endif %}
 
 
+{# ── Gathering Hymn (title only) ── #}
+{% if gathering_hymn_title %}
+<div class="section-heading"><span>*GATHERING HYMN: {{ gathering_hymn_title }}</span></div>
+<div class="spacer"></div>
+{% endif %}
+
+
+{# ── Greeting (P/C dialog, no heading) ── #}
+{% if greeting_entries %}
+{% for role, text in greeting_entries %}
+{% if role.value == "P" %}
+<p><span class="role-label">P: </span>{{ text }}</p>
+{% elif role.value == "C" %}
+<p><strong>{{ text }}</strong></p>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+
 {# ── Kyrie (notation image) ── #}
 {% if kyrie_image_uri %}
 <div class="section-heading"><span>*KYRIE</span></div>
@@ -86,13 +105,6 @@
 {% if canticle_image_uri %}
 <div class="section-heading"><span>*CANTICLE OF PRAISE</span></div>
 <div class="notation-image"><img src="{{ canticle_image_uri }}" alt="Canticle of Praise"></div>
-{% endif %}
-
-
-{# ── Gathering Hymn (title only) ── #}
-{% if gathering_hymn_title %}
-<div class="section-heading"><span>*GATHERING HYMN: {{ gathering_hymn_title }}</span></div>
-<div class="spacer"></div>
 {% endif %}
 
 

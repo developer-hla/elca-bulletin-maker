@@ -24,13 +24,31 @@ from bulletin_maker.renderer.html_renderer import (
     _booklet_blanks,
     _build_baptism_context,
     _build_common_context,
+    _canticle_image_uri_for_config,
+    _canticle_text_for_config,
     _fetch_hymn_image_uri,
     _get_reading,
     _get_reading_with_override,
     _inject_css,
     _load_offertory_image_uri,
 )
+from bulletin_maker.renderer.static_text import (
+    GLORY_TO_GOD_TEXT,
+    THIS_IS_THE_FEAST_TEXT,
+)
+from bulletin_maker.sns.models import (
+    CANTICLE_GLORY_TO_GOD,
+    CANTICLE_NONE,
+    CANTICLE_THIS_IS_THE_FEAST,
+)
 from bulletin_maker.renderer.season import LiturgicalSeason
+
+
+def _canticle_config(canticle: str | None) -> ServiceConfig:
+    """Minimal ServiceConfig for canticle helper tests."""
+    return ServiceConfig(
+        date="2026-01-01", date_display="January 1, 2026", canticle=canticle,
+    )
 
 
 def _make_day() -> DayContent:
@@ -442,3 +460,34 @@ class TestLoadOffertoryImageUri:
     def test_returns_empty_when_missing(self, mock_get):
         mock_get.side_effect = FileNotFoundError("not bundled")
         assert _load_offertory_image_uri() == ""
+
+
+class TestCanticleTextForConfig:
+    """_canticle_text_for_config maps config.canticle to the right text dict."""
+
+    @pytest.mark.parametrize("canticle, expected", [
+        (CANTICLE_GLORY_TO_GOD, GLORY_TO_GOD_TEXT),
+        (CANTICLE_THIS_IS_THE_FEAST, THIS_IS_THE_FEAST_TEXT),
+        (CANTICLE_NONE, None),
+        (None, None),
+    ])
+    def test_dispatch(self, canticle, expected):
+        assert _canticle_text_for_config(_canticle_config(canticle)) is expected
+
+
+class TestCanticleImageUriForConfig:
+    """_canticle_image_uri_for_config maps config.canticle to a notation image URI."""
+
+    @pytest.mark.parametrize("canticle", [CANTICLE_GLORY_TO_GOD, CANTICLE_THIS_IS_THE_FEAST])
+    @patch("bulletin_maker.renderer.html_renderer._safe_setting_image_uri")
+    def test_named_canticle_fetches_image(self, mock_safe, canticle):
+        mock_safe.return_value = f"data:image/jpeg;base64,{canticle}"
+        result = _canticle_image_uri_for_config(_canticle_config(canticle))
+        assert result == f"data:image/jpeg;base64,{canticle}"
+        mock_safe.assert_called_once_with(canticle)
+
+    @pytest.mark.parametrize("canticle", [CANTICLE_NONE, None])
+    @patch("bulletin_maker.renderer.html_renderer._safe_setting_image_uri")
+    def test_none_or_unset_skips_fetch(self, mock_safe, canticle):
+        assert _canticle_image_uri_for_config(_canticle_config(canticle)) == ""
+        mock_safe.assert_not_called()

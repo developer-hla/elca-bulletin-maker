@@ -17,6 +17,15 @@ SLOT_PSALM = "psalm"
 SLOT_GOSPEL = "gospel"
 
 
+# ── Canticle slug constants ──────────────────────────────────────────
+# Values for ServiceConfig.canticle. Also used as image_manager keys.
+# UI radio values (index.html) and asset catalog (catalog.json) match
+# these strings as the contract.
+CANTICLE_GLORY_TO_GOD = "glory_to_god"
+CANTICLE_THIS_IS_THE_FEAST = "this_is_the_feast"
+CANTICLE_NONE = "none"
+
+
 @dataclass
 class Reading:
     label: str        # e.g. "First Reading", "Psalm", "Gospel"
@@ -87,7 +96,7 @@ class ServiceConfig:
     # ── Liturgical choices (None = use seasonal default) ──
     creed_type: Optional[str] = None            # "apostles" or "nicene"
     include_kyrie: Optional[bool] = None        # Show Kyrie?
-    canticle: Optional[str] = None              # "glory_to_god", "this_is_the_feast", or "none"
+    canticle: Optional[str] = None              # CANTICLE_GLORY_TO_GOD, CANTICLE_THIS_IS_THE_FEAST, or CANTICLE_NONE
     eucharistic_form: Optional[str] = None      # "short", "poetic", or "extended"
     include_memorial_acclamation: Optional[bool] = None  # Memorial Acclamation in EP?
     preface: Optional[PrefaceType] = None       # None = Sundays/Ordinary Time (not seasonal)
@@ -107,6 +116,7 @@ class ServiceConfig:
 
     # ── Section toggles (None = use seasonal default) ──
     show_confession: Optional[bool] = None      # Show Confession section?
+    show_greeting: Optional[bool] = None        # Show Greeting (P/C dialog after Gathering Hymn)?
     show_nunc_dimittis: Optional[bool] = None   # Show Nunc Dimittis?
 
     # ── Reading overrides — custom passages fetched via PassageSearch ──

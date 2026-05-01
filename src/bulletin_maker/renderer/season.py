@@ -12,6 +12,12 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from bulletin_maker.sns.models import (
+    CANTICLE_GLORY_TO_GOD,
+    CANTICLE_NONE,
+    CANTICLE_THIS_IS_THE_FEAST,
+)
+
 if TYPE_CHECKING:
     from bulletin_maker.sns.models import ServiceConfig
 
@@ -96,12 +102,13 @@ _SEASONAL_PREFACES: frozenset[PrefaceType] = frozenset({
 class SeasonalConfig:
     """What liturgical elements are present/which forms are used for a season."""
     has_kyrie: bool                # Kyrie present (omitted in Large Print regardless)
-    canticle: str                  # "glory_to_god", "this_is_the_feast", or "none"
+    canticle: str                  # CANTICLE_GLORY_TO_GOD, CANTICLE_THIS_IS_THE_FEAST, or CANTICLE_NONE
     creed_default: str             # "apostles" or "nicene"
     eucharistic_form: str          # "short", "poetic", or "extended"
     has_memorial_acclamation: bool # Memorial Acclamation in eucharistic prayer
     preface: PrefaceType           # Default preface for this season
     show_confession: bool = True   # False for Christmas Eve
+    show_greeting: bool = True     # True for all current seasons (override per-service)
     show_nunc_dimittis: bool = True  # True always (user can override)
 
 
@@ -109,7 +116,7 @@ class SeasonalConfig:
 _SEASON_CONFIGS = {
     LiturgicalSeason.ADVENT: SeasonalConfig(
         has_kyrie=True,
-        canticle="glory_to_god",
+        canticle=CANTICLE_GLORY_TO_GOD,
         creed_default="apostles",
         eucharistic_form="poetic",
         has_memorial_acclamation=False,
@@ -117,7 +124,7 @@ _SEASON_CONFIGS = {
     ),
     LiturgicalSeason.CHRISTMAS: SeasonalConfig(
         has_kyrie=True,
-        canticle="this_is_the_feast",
+        canticle=CANTICLE_THIS_IS_THE_FEAST,
         creed_default="apostles",
         eucharistic_form="extended",
         has_memorial_acclamation=True,
@@ -125,7 +132,7 @@ _SEASON_CONFIGS = {
     ),
     LiturgicalSeason.EPIPHANY: SeasonalConfig(
         has_kyrie=True,
-        canticle="this_is_the_feast",
+        canticle=CANTICLE_THIS_IS_THE_FEAST,
         creed_default="apostles",
         eucharistic_form="extended",
         has_memorial_acclamation=True,
@@ -133,7 +140,7 @@ _SEASON_CONFIGS = {
     ),
     LiturgicalSeason.LENT: SeasonalConfig(
         has_kyrie=False,
-        canticle="none",
+        canticle=CANTICLE_NONE,
         creed_default="nicene",
         eucharistic_form="extended",
         has_memorial_acclamation=True,
@@ -141,7 +148,7 @@ _SEASON_CONFIGS = {
     ),
     LiturgicalSeason.EASTER: SeasonalConfig(
         has_kyrie=True,
-        canticle="this_is_the_feast",
+        canticle=CANTICLE_THIS_IS_THE_FEAST,
         creed_default="nicene",
         eucharistic_form="extended",
         has_memorial_acclamation=True,
@@ -149,7 +156,7 @@ _SEASON_CONFIGS = {
     ),
     LiturgicalSeason.PENTECOST: SeasonalConfig(
         has_kyrie=True,
-        canticle="glory_to_god",
+        canticle=CANTICLE_GLORY_TO_GOD,
         creed_default="apostles",
         eucharistic_form="short",
         has_memorial_acclamation=False,
@@ -157,7 +164,7 @@ _SEASON_CONFIGS = {
     ),
     LiturgicalSeason.CHRISTMAS_EVE: SeasonalConfig(
         has_kyrie=False,
-        canticle="none",
+        canticle=CANTICLE_NONE,
         creed_default="apostles",
         eucharistic_form="short",
         has_memorial_acclamation=False,
@@ -240,5 +247,7 @@ def fill_seasonal_defaults(config: ServiceConfig, season: LiturgicalSeason) -> N
         config.preface = PrefaceType.SUNDAYS
     if config.show_confession is None:
         config.show_confession = seasonal.show_confession
+    if config.show_greeting is None:
+        config.show_greeting = seasonal.show_greeting
     if config.show_nunc_dimittis is None:
         config.show_nunc_dimittis = seasonal.show_nunc_dimittis

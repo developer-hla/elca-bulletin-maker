@@ -26,9 +26,12 @@ from bulletin_maker.renderer.static_text import (
     DISMISSAL,
     EUCHARISTIC_PRAYER_CLOSING,
     EUCHARISTIC_PRAYER_EXTENDED,
+    GLORY_TO_GOD_TEXT,
     GREAT_THANKSGIVING_DIALOG,
     GREAT_THANKSGIVING_PREFACE,
+    GREETING,
     INVITATION_TO_LENT,
+    KYRIE_DIALOG,
     LORDS_PRAYER,
     MEMORIAL_ACCLAMATION,
     NICENE_CREED,
@@ -37,6 +40,7 @@ from bulletin_maker.renderer.static_text import (
     PRAYERS_INTRO,
     SANCTUS,
     STANDING_INSTRUCTIONS,
+    THIS_IS_THE_FEAST_TEXT,
     WELCOME_MESSAGE,
     WORDS_OF_INSTITUTION,
 )
@@ -255,3 +259,86 @@ class TestBaptismTexts:
 
     def test_welcome_response_nonempty(self):
         assert len(BAPTISM_WELCOME_RESPONSE) > 50
+
+
+class TestGreeting:
+    def test_has_two_entries(self):
+        assert len(GREETING) == 2
+
+    def test_pastor_then_congregation(self):
+        roles = [role for role, _ in GREETING]
+        assert roles == [DialogRole.PASTOR, DialogRole.CONGREGATION]
+
+    def test_pastor_text_canonical(self):
+        pastor_text = GREETING[0][1]
+        assert "grace of our Lord Jesus Christ" in pastor_text
+        assert "love of God" in pastor_text
+        assert "communion of the Holy Spirit" in pastor_text
+
+    def test_congregation_response(self):
+        assert GREETING[1][1] == "And also with you."
+
+
+class TestKyrieDialog:
+    def test_has_ten_entries(self):
+        # Five exchanges: 5 P + 5 C
+        assert len(KYRIE_DIALOG) == 10
+
+    def test_alternates_p_and_c(self):
+        roles = [role for role, _ in KYRIE_DIALOG]
+        P, C = DialogRole.PASTOR, DialogRole.CONGREGATION
+        assert roles == [P, C, P, C, P, C, P, C, P, C]
+
+    def test_first_petition(self):
+        assert "In peace, let us pray to the Lord." == KYRIE_DIALOG[0][1]
+
+    def test_lord_have_mercy_responses(self):
+        c_responses = [t for r, t in KYRIE_DIALOG if r is DialogRole.CONGREGATION]
+        # First four responses are "Lord, have mercy.", last is "Amen."
+        assert c_responses[:4] == ["Lord, have mercy."] * 4
+        assert c_responses[4] == "Amen."
+
+    def test_final_petition(self):
+        assert "Help, save, comfort, and defend us, gracious Lord." == KYRIE_DIALOG[8][1]
+
+
+class TestCanticleTexts:
+    def test_glory_to_god_has_three_verses(self):
+        assert len(GLORY_TO_GOD_TEXT["verses"]) == 3
+
+    def test_glory_to_god_no_final_refrain(self):
+        assert GLORY_TO_GOD_TEXT["final_refrain"] is None
+
+    def test_glory_to_god_refrain_text(self):
+        assert "Glory to God in the highest" in GLORY_TO_GOD_TEXT["refrain"]
+
+    def test_glory_to_god_verse_one_starts_lord_god(self):
+        assert GLORY_TO_GOD_TEXT["verses"][0].startswith("Lord God, heavenly King")
+
+    def test_glory_to_god_verse_three_ends_amen(self):
+        assert GLORY_TO_GOD_TEXT["verses"][2].rstrip().endswith("Amen.")
+
+    def test_this_is_the_feast_has_two_verses(self):
+        assert len(THIS_IS_THE_FEAST_TEXT["verses"]) == 2
+
+    def test_this_is_the_feast_has_final_refrain(self):
+        assert THIS_IS_THE_FEAST_TEXT["final_refrain"] is not None
+
+    def test_this_is_the_feast_refrain_has_alleluia(self):
+        assert "Alleluia" in THIS_IS_THE_FEAST_TEXT["refrain"]
+
+    def test_this_is_the_feast_final_refrain_mentions_reign(self):
+        assert "begun his reign" in THIS_IS_THE_FEAST_TEXT["final_refrain"]
+
+    def test_this_is_the_feast_verse_two_ends_amen(self):
+        assert THIS_IS_THE_FEAST_TEXT["verses"][1].rstrip().endswith("Amen.")
+
+    @pytest.mark.parametrize("canticle", [GLORY_TO_GOD_TEXT, THIS_IS_THE_FEAST_TEXT])
+    def test_canticle_has_required_keys(self, canticle):
+        assert set(canticle.keys()) == {"refrain", "verses", "final_refrain"}
+
+    @pytest.mark.parametrize("canticle", [GLORY_TO_GOD_TEXT, THIS_IS_THE_FEAST_TEXT])
+    def test_canticle_verses_are_strings(self, canticle):
+        for verse in canticle["verses"]:
+            assert isinstance(verse, str)
+            assert len(verse) > 20

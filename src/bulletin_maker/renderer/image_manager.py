@@ -23,6 +23,10 @@ if TYPE_CHECKING:
 
 from bulletin_maker.exceptions import ContentNotFoundError
 from bulletin_maker.renderer.season import LiturgicalSeason, PrefaceType
+from bulletin_maker.sns.models import (
+    CANTICLE_GLORY_TO_GOD,
+    CANTICLE_THIS_IS_THE_FEAST,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +43,8 @@ GOSPEL_ACCLAMATION_DIR = ASSETS_DIR / "gospel_acclamation"
 # These are used with /File/GetImage?atomCode={code} to download images.
 _SETTING_TWO_ATOM_CODES = {
     "kyrie":              "elw_hc2_kyrie_m",
-    "glory_to_god":       "elw_hc2_glory_m",
-    "this_is_the_feast":  "elw_hc2_feast_m",
+    CANTICLE_GLORY_TO_GOD:       "elw_hc2_glory_m",
+    CANTICLE_THIS_IS_THE_FEAST:  "elw_hc2_feast_m",
     "great_thanksgiving": "elw_hc2_dialogue_m",
     "sanctus":            "elw_hc2_holy_m",
     "agnus_dei":          "elw_hc2_lamb_m",
