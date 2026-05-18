@@ -126,6 +126,55 @@ function hideWarning(el) {
     hide(el);
 }
 
+function getMemorialAcclamationMode() {
+    var selected = document.querySelector('input[name="memorial_acclamation_mode"]:checked');
+    return selected ? selected.value : null;
+}
+
+function setMemorialAcclamationMode(mode) {
+    $$('input[name="memorial_acclamation_mode"]').forEach(function(el) {
+        el.checked = !!mode && el.value === mode;
+    });
+}
+
+function getOffertoryType() {
+    var selected = document.querySelector('input[name="offertory_type"]:checked');
+    return selected ? selected.value : "offertory";
+}
+
+function setOffertoryType(type) {
+    var value = type === "choral_anthem" ? "choral_anthem" : "offertory";
+    $$('input[name="offertory_type"]').forEach(function(el) {
+        el.checked = el.value === value;
+    });
+}
+
+function offertoryTypeLabel(type) {
+    return type === "choral_anthem" ? "Choral Anthem" : "Offertory";
+}
+
+function updateMemorialAcclamationModeControls() {
+    var include = $("#include-memorial").checked;
+    $$('input[name="memorial_acclamation_mode"]').forEach(function(el) {
+        el.disabled = !include;
+    });
+    var group = $("#memorial-format-group");
+    if (group) group.classList.toggle("disabled", !include);
+    if (!include) {
+        var settingsError = $("#settings-error");
+        if (settingsError) hideError(settingsError);
+    }
+}
+
+function validateMemorialAcclamationMode(errorEl) {
+    if ($("#include-memorial").checked && !getMemorialAcclamationMode()) {
+        showError(errorEl, "Choose whether Memorial Acclamation is sung music or spoken text.");
+        return false;
+    }
+    hideError(errorEl);
+    return true;
+}
+
 /** Formats "2026-02-22" as "February 22, 2026". */
 function formatDate(dateStr) {
     const d = new Date(dateStr + "T12:00:00");
@@ -230,6 +279,9 @@ function validateStep(n) {
     if (n === 1) {
         return !!state.dateStr && !!state.season;
     }
+    if (n === 2) {
+        return validateMemorialAcclamationMode($("#settings-error"));
+    }
     return true;
 }
 
@@ -286,12 +338,21 @@ function buildReadinessSummary() {
     }).length;
 
     var docCount = $$('input[name="doc_select"]:checked').length;
+    var memorialIncluded = $("#include-memorial").checked;
+    var memorialMode = getMemorialAcclamationMode();
 
     var items = [
         { label: "Date", ok: !!state.dateStr, detail: state.dateStr ? state.dateDisplay : "Not set" },
         { label: "Hymns", ok: hymnCount > 0, detail: hymnCount + " of 4 set" },
         { label: "Output", ok: !!state.outputDir, detail: state.outputDir ? state.outputDir.split("/").pop().split("\\").pop() : "Not set" },
         { label: "Docs", ok: docCount > 0, detail: docCount + " selected" },
+        {
+            label: "Memorial Acc.",
+            ok: !memorialIncluded || !!memorialMode,
+            detail: memorialIncluded
+                ? (memorialMode === "sung" ? "Sung music" : memorialMode === "spoken" ? "Spoken text" : "Choose sung or spoken")
+                : "Omitted",
+        },
     ];
 
     items.forEach(function(item) {
@@ -483,19 +544,36 @@ function buildReviewOutline() {
     items.push({ label: "Offering Prayer", value: getTextSourceLabel("offering_prayer"), textKey: "offering_prayer" });
 
     // Offertory
+    var offertoryType = getOffertoryType();
     var ot = $("#offertory-title").value.trim();
     var oc = $("#offertory-composer").value.trim();
+    var op = $("#offertory-performer").value.trim();
     var offVal = "";
-    if (ot || oc) {
-        offVal = (ot ? "\u201C" + ot + "\u201D" : "") + (oc ? " \u2014 " + oc : "");
+    if (ot || oc || op) {
+        offVal = (ot ? "\u201C" + ot + "\u201D" : "") + (oc ? " \u2014 " + oc : "") + (op ? " / " + op : "");
     }
-    items.push({ label: "Offertory", value: offVal || "(not set)", empty: !offVal });
+    items.push({ label: offertoryTypeLabel(offertoryType), value: offVal || "(not set)", empty: !offVal });
 
     // Choral
     var choralTitle = $("#choral-title").value.trim();
+    var choralComposer = $("#choral-composer").value.trim();
     if (choralTitle) {
-        items.push({ label: "Choral", value: "\u201C" + choralTitle + "\u201D" });
+        items.push({
+            label: "Choral Call",
+            value: "\u201C" + choralTitle + "\u201D" + (choralComposer ? " \u2014 " + choralComposer : ""),
+        });
     }
+
+    // Memorial Acclamation
+    var memorialIncluded = $("#include-memorial").checked;
+    var memorialMode = getMemorialAcclamationMode();
+    items.push({
+        label: "Memorial Acc.",
+        value: memorialIncluded
+            ? (memorialMode === "sung" ? "Sung music" : memorialMode === "spoken" ? "Spoken text" : "(choose sung or spoken)")
+            : "(omitted)",
+        empty: memorialIncluded && !memorialMode,
+    });
 
     // Communion Hymn
     items.push(hymnOutlineItem("Communion Hymn", "communion"));
@@ -806,11 +884,14 @@ function resetFormUI() {
     $$(".verse-select").forEach(function(el) { el.innerHTML = ""; hide(el); });
     $("#prelude-title").value = "";
     $("#prelude-composer").value = "";
+    setOffertoryType("offertory");
     $("#offertory-title").value = "";
     $("#offertory-composer").value = "";
+    $("#offertory-performer").value = "";
     $("#postlude-title").value = "";
     $("#postlude-composer").value = "";
     $("#choral-title").value = "";
+    $("#choral-composer").value = "";
     $("#cover-image-path").textContent = "None selected";
     hide($("#cover-image-clear"));
     hide($("#cover-image-preview"));
@@ -1125,7 +1206,13 @@ function applyDefaults(defaults) {
 
     // Memorial acclamation
     $("#include-memorial").checked = defaults.include_memorial_acclamation;
-    $("#hint-memorial").textContent = "Default: " + (defaults.include_memorial_acclamation ? "Yes" : "No");
+    setMemorialAcclamationMode(defaults.memorial_acclamation_mode || null);
+    updateMemorialAcclamationModeControls();
+    $("#hint-memorial").textContent = defaults.include_memorial_acclamation
+        ? "Default: Yes; choose sung or spoken"
+        : "Default: No";
+    var settingsError = $("#settings-error");
+    if (settingsError) hideError(settingsError);
 
     // Preface
     if (defaults.preface) {
@@ -1538,6 +1625,8 @@ function applyRestoredSettings(fd) {
     if (epRadio) epRadio.checked = true;
 
     $("#include-memorial").checked = !!fd.include_memorial_acclamation;
+    setMemorialAcclamationMode(fd.memorial_acclamation_mode || null);
+    updateMemorialAcclamationModeControls();
 
     if (fd.preface) {
         var prefSelect = $("#preface-select");
@@ -1562,11 +1651,14 @@ function applyRestoredSettings(fd) {
     // Service music
     $("#prelude-title").value = fd.prelude_title || "";
     $("#prelude-composer").value = fd.prelude_composer || "";
+    setOffertoryType(fd.offertory_type || "offertory");
     $("#offertory-title").value = fd.offertory_title || "";
     $("#offertory-composer").value = fd.offertory_composer || "";
+    $("#offertory-performer").value = fd.offertory_performer || "";
     $("#postlude-title").value = fd.postlude_title || "";
     $("#postlude-composer").value = fd.postlude_composer || "";
     $("#choral-title").value = fd.choral_title || "";
+    $("#choral-composer").value = fd.choral_composer || "";
 }
 
 async function restoreHymns(fd) {
@@ -1979,6 +2071,7 @@ function collectFormData() {
     const creedEl = document.querySelector('input[name="creed_type"]:checked');
     const canticleEl = document.querySelector('input[name="canticle"]:checked');
     const epEl = document.querySelector('input[name="eucharistic_form"]:checked');
+    const includeMemorial = $("#include-memorial").checked;
 
     var placementEl = $("#baptism-placement");
 
@@ -1989,7 +2082,8 @@ function collectFormData() {
         include_kyrie: $("#include-kyrie").checked,
         canticle: canticleEl ? canticleEl.value : null,
         eucharistic_form: epEl ? epEl.value : null,
-        include_memorial_acclamation: $("#include-memorial").checked,
+        include_memorial_acclamation: includeMemorial,
+        memorial_acclamation_mode: includeMemorial ? getMemorialAcclamationMode() : null,
         preface: $("#preface-select").value || null,
         show_confession: $("#show-confession").checked,
         show_nunc_dimittis: $("#show-nunc-dimittis").checked,
@@ -1998,11 +2092,14 @@ function collectFormData() {
         baptism_placement: placementEl ? placementEl.value : "after_welcome",
         prelude_title: $("#prelude-title").value.trim(),
         prelude_composer: $("#prelude-composer").value.trim(),
+        offertory_type: getOffertoryType(),
         offertory_title: $("#offertory-title").value.trim(),
         offertory_composer: $("#offertory-composer").value.trim(),
+        offertory_performer: $("#offertory-performer").value.trim(),
         postlude_title: $("#postlude-title").value.trim(),
         postlude_composer: $("#postlude-composer").value.trim(),
         choral_title: $("#choral-title").value.trim(),
+        choral_composer: $("#choral-composer").value.trim(),
         cover_image: state.coverImage,
         output_dir: state.outputDir || "output",
         selected_docs: Array.from($$('input[name="doc_select"]:checked')).map(function(el) { return el.value; }),
@@ -2077,6 +2174,9 @@ async function runGeneration() {
     var selectedDocs = $$('input[name="doc_select"]:checked');
     if (selectedDocs.length === 0) {
         showError(errorEl, "Select at least one document to generate.");
+        return;
+    }
+    if (!validateMemorialAcclamationMode(errorEl)) {
         return;
     }
 
@@ -2249,6 +2349,19 @@ function setupBaptismToggle() {
     });
 }
 
+function setupMemorialAcclamationModeToggle() {
+    $("#include-memorial").addEventListener("change", function() {
+        updateMemorialAcclamationModeControls();
+    });
+    $$('input[name="memorial_acclamation_mode"]').forEach(function(el) {
+        el.addEventListener("change", function() {
+            var settingsError = $("#settings-error");
+            if (settingsError) hideError(settingsError);
+        });
+    });
+    updateMemorialAcclamationModeControls();
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     // Pre-fill date with next Sunday
     $("#date-input").value = getNextSunday();
@@ -2265,6 +2378,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setupFilePickers();
     setupGenerate();
     setupBaptismToggle();
+    setupMemorialAcclamationModeToggle();
     setupPastRuns();
     setupWizardNav();
     initLogin();

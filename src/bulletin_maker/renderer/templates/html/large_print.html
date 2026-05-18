@@ -80,7 +80,7 @@
 
 {% if choral_title %}
 <div class="liturgy-heading"><span>CHORAL CALL TO WORSHIP</span></div>
-<div class="spacer"></div>
+<p class="music-citation">{{ choral_title }}{% if choral_composer %} &mdash; {{ choral_composer }}{% endif %}</p>
 {% endif %}
 
 <div class="liturgy-heading"><span>PRELUDE</span></div>
@@ -103,11 +103,11 @@
 {% if role.value == "instruction" %}
 <p class="instruction mb-6">{{ text }}</p>
 {% elif role.value == "P" %}
-<p><span class="role-label">P: </span>{{ text }}</p>
+<p><span class="role-label">P: </span>{{ text | terminal_amen }}</p>
 {% elif role.value == "C" %}
-<p><strong>{{ text }}</strong></p>
+<p><strong>{{ text | terminal_amen(false) }}</strong></p>
 {% else %}
-<p>{{ text }}</p>
+<p>{{ text | terminal_amen }}</p>
 {% endif %}
 {% endfor %}
 {% if confession_entries|length > 2 %}</div>{% endif %}
@@ -384,7 +384,7 @@
     <br>So, in response to God&rsquo;s goodness, we give with cheerful hearts.
 </p>
 
-<div class="liturgy-heading"><span>OFFERTORY</span></div>
+<div class="liturgy-heading"><span>{% if offertory_type == "choral_anthem" %}CHORAL ANTHEM{% else %}OFFERTORY{% endif %}</span></div>
 {% if offertory_title %}
 <p class="music-citation">{{ offertory_title }}{% if offertory_composer %} &mdash; {{ offertory_composer }}{% endif %}{% if offertory_performer %} / {{ offertory_performer }}{% endif %}</p>
 {% else %}
@@ -561,7 +561,7 @@
     <span class="heading-role" style="padding-left: 2em;">Pastor</span>
 </div>
 {% for line in blessing_lines %}
-<p class="blessing-line">{{ line }}</p>
+<p class="blessing-line">{{ line | terminal_amen }}</p>
 {% endfor %}
 </div>
 

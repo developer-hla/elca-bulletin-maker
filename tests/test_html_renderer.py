@@ -23,17 +23,22 @@ from bulletin_maker.renderer.html_renderer import (
     _best_direction,
     _booklet_blanks,
     _build_baptism_context,
+    _build_bulletin_context,
     _build_common_context,
+    _build_large_print_context,
     _canticle_image_uri_for_config,
     _canticle_text_for_config,
     _fetch_hymn_image_uri,
     _get_reading,
     _get_reading_with_override,
+    _hymn_title_str,
     _inject_css,
     _load_offertory_image_uri,
 )
+from bulletin_maker.renderer.filters import setup_jinja_env
 from bulletin_maker.renderer.static_text import (
     GLORY_TO_GOD_TEXT,
+    MEMORIAL_ACCLAMATION,
     THIS_IS_THE_FEAST_TEXT,
 )
 from bulletin_maker.sns.models import (
@@ -42,6 +47,7 @@ from bulletin_maker.sns.models import (
     CANTICLE_THIS_IS_THE_FEAST,
 )
 from bulletin_maker.renderer.season import LiturgicalSeason
+from bulletin_maker.renderer.text_utils import DialogRole
 
 
 def _canticle_config(canticle: str | None) -> ServiceConfig:
@@ -207,7 +213,8 @@ class TestBuildCommonContext:
             "great_thanksgiving_preface",
             "eucharistic_form", "eucharistic_prayer_first_line",
             "eucharistic_prayer_lines", "words_of_institution_paragraphs",
-            "has_memorial_acclamation", "memorial_acclamation",
+            "has_memorial_acclamation", "memorial_acclamation_mode",
+            "memorial_acclamation",
             "eucharistic_prayer_closing_stanzas", "come_holy_spirit",
             "lords_prayer_stanzas",
             "invitation_to_communion_text",
@@ -253,6 +260,196 @@ class TestBuildCommonContext:
         assert ctx["first_reading"]["citation"] == "Genesis 2:15-17"
         assert ctx["gospel"] is not None
         assert ctx["gospel"]["citation"] == "Matthew 4:1-11"
+
+
+class TestBulletinTemplate:
+    """Template behavior for congregation bulletin-specific rendering."""
+
+    def _render_memorial_acclamation(self, image_uri: str, mode: str) -> str:
+        env = setup_jinja_env()
+        template = env.get_template("bulletin.html")
+        return template.render(
+            css="",
+            church_address="",
+            eucharistic_form="extended",
+            eucharistic_prayer_first_line="",
+            eucharistic_prayer_lines=[],
+            words_of_institution_paragraphs=[],
+            has_memorial_acclamation=True,
+            memorial_acclamation_mode=mode,
+            memorial_acclamation=MEMORIAL_ACCLAMATION,
+            memorial_acclamation_image_uri=image_uri,
+            eucharistic_prayer_closing_stanzas=[],
+            lords_prayer_stanzas=[],
+            dismissal_entries=[],
+        )
+
+    def test_memorial_acclamation_uses_image_instead_of_text(self):
+        html = self._render_memorial_acclamation(
+            "data:image/jpeg;base64,test", "sung",
+        )
+
+        assert 'alt="Memorial Acclamation"' in html
+        assert "Christ has died" not in html
+
+    def test_spoken_memorial_acclamation_uses_text_instead_of_image(self):
+        html = self._render_memorial_acclamation(
+            "data:image/jpeg;base64,test", "spoken",
+        )
+
+        assert 'alt="Memorial Acclamation"' not in html
+        assert "Christ has died" in html
+
+    def test_memorial_acclamation_text_fallback_without_image(self):
+        html = self._render_memorial_acclamation("", "sung")
+
+        assert 'alt="Memorial Acclamation"' not in html
+        assert "Christ has died" in html
+
+    def test_bulletin_choral_call_includes_composer(self):
+        env = setup_jinja_env()
+        template = env.get_template("bulletin.html")
+        html = template.render(
+            css="",
+            church_address="",
+            choral_title="Create in Me a Clean Heart",
+            choral_composer="Carl Mueller",
+            eucharistic_form="short",
+            lords_prayer_stanzas=[],
+            dismissal_entries=[],
+        )
+
+        assert "Create in Me a Clean Heart" in html
+        assert "Carl Mueller" in html
+
+    def test_large_print_choral_call_includes_composer(self):
+        env = setup_jinja_env()
+        template = env.get_template("large_print.html")
+        html = template.render(
+            css="",
+            church_address="",
+            choral_title="Create in Me a Clean Heart",
+            choral_composer="Carl Mueller",
+            eucharistic_form="short",
+            lords_prayer_stanzas=[],
+            dismissal_entries=[],
+        )
+
+        assert "Create in Me a Clean Heart" in html
+        assert "Carl Mueller" in html
+
+    @patch("bulletin_maker.renderer.html_renderer._safe_setting_image_uri", return_value="")
+    @patch("bulletin_maker.renderer.html_renderer._load_offertory_image_uri", return_value="")
+    @patch("bulletin_maker.renderer.html_renderer.get_gospel_acclamation_image",
+           side_effect=FileNotFoundError)
+    def test_bulletin_offering_music_can_be_choral_anthem(self, *_mocks):
+        env = setup_jinja_env()
+        template = env.get_template("bulletin.html")
+        config = ServiceConfig(
+            date="2026-05-10",
+            date_display="May 10, 2026",
+            offertory_type="choral_anthem",
+            offertory_title="God Is Still Speaking",
+            offertory_composer="Marty Haugen",
+            offertory_performer="Emery Lewis, soloist",
+        )
+        ctx = _build_bulletin_context(_make_day(), config, LiturgicalSeason.EASTER)
+        html = template.render(**ctx)
+
+        assert "<span>CHORAL ANTHEM</span>" in html
+        assert "God Is Still Speaking" in html
+        assert "Marty Haugen" in html
+        assert "Emery Lewis, soloist" in html
+
+    @patch("bulletin_maker.renderer.html_renderer._load_offertory_image_uri", return_value="")
+    @patch("bulletin_maker.renderer.html_renderer.get_gospel_acclamation_image",
+           side_effect=FileNotFoundError)
+    def test_large_print_offering_music_can_be_choral_anthem(self, *_mocks):
+        env = setup_jinja_env()
+        template = env.get_template("large_print.html")
+        config = ServiceConfig(
+            date="2026-05-10",
+            date_display="May 10, 2026",
+            offertory_type="choral_anthem",
+            offertory_title="God Is Still Speaking",
+            offertory_composer="Marty Haugen",
+            offertory_performer="Emery Lewis, soloist",
+        )
+        ctx = _build_large_print_context(_make_day(), config, LiturgicalSeason.EASTER)
+        html = template.render(**ctx)
+
+        assert "<span>CHORAL ANTHEM</span>" in html
+        assert "God Is Still Speaking" in html
+        assert "Marty Haugen" in html
+        assert "Emery Lewis, soloist" in html
+
+    def test_bulletin_confession_splits_terminal_amen(self):
+        env = setup_jinja_env()
+        template = env.get_template("bulletin.html")
+        html = template.render(
+            css="",
+            church_address="",
+            show_confession=True,
+            confession_entries=[
+                (DialogRole.PASTOR, "In the name of the Holy Spirit. Amen."),
+                (DialogRole.CONGREGATION, "to the glory of your holy name. Amen."),
+            ],
+            eucharistic_form="short",
+            lords_prayer_stanzas=[],
+            dismissal_entries=[],
+        )
+
+        assert "Holy Spirit.<br>\n<strong>Amen.</strong>" in html
+        assert "holy name.<br>\nAmen." in html
+
+    def test_blessing_splits_terminal_amen(self):
+        env = setup_jinja_env()
+        template = env.get_template("bulletin.html")
+        html = template.render(
+            css="",
+            church_address="",
+            show_confession=False,
+            blessing_lines=["The Lord give you peace. Amen."],
+            eucharistic_form="short",
+            lords_prayer_stanzas=[],
+            dismissal_entries=[],
+        )
+
+        assert "The Lord give you peace.<br>\n<strong>Amen.</strong>" in html
+
+
+class TestHymnTitleStr:
+    """Congregation bulletin hymn heading formatting."""
+
+    def test_none_returns_empty(self):
+        assert _hymn_title_str(None) == ""
+
+    def test_includes_number_and_title(self):
+        hymn = HymnLyrics(
+            number="ELW 335",
+            title="Jesus, Keep Me Near the Cross",
+            verses=[],
+        )
+
+        assert _hymn_title_str(hymn) == "ELW 335 - Jesus, Keep Me Near the Cross"
+
+    def test_preserves_number_when_title_missing(self):
+        hymn = HymnLyrics(number="ELW 335", title="", verses=[])
+
+        assert _hymn_title_str(hymn) == "ELW 335"
+
+    def test_appends_verse_label_after_title(self):
+        hymn = HymnLyrics(
+            number="ELW 386",
+            title="O Sons and Daughters, Let Us Sing",
+            verses=[],
+            verse_label="Verses 1, 3-5",
+        )
+
+        assert (
+            _hymn_title_str(hymn)
+            == "ELW 386 - O Sons and Daughters, Let Us Sing (Verses 1, 3-5)"
+        )
 
 
 # ── Auto-adjust tests ────────────────────────────────────────────────
@@ -353,6 +550,10 @@ class TestLoosenProfiles:
     def test_all_have_css(self):
         for p in BULLETIN_LOOSEN_PROFILES:
             assert len(p.css) > 0, f"{p.name} has empty CSS"
+
+    def test_profiles_do_not_force_cover_overflow(self):
+        for p in BULLETIN_LOOSEN_PROFILES:
+            assert "cover { min-height: 8" not in p.css
 
 
 class TestInjectCss:

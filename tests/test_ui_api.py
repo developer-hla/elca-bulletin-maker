@@ -181,10 +181,17 @@ class TestGenerateAll:
             "canticle": "none",
             "eucharistic_form": "extended",
             "include_memorial_acclamation": True,
+            "memorial_acclamation_mode": "sung",
             "gathering_hymn": {"number": "335", "collection": "ELW", "title": "Jesus, Keep Me Near the Cross"},
             "sermon_hymn": None,
             "communion_hymn": None,
             "sending_hymn": None,
+            "offertory_type": "choral_anthem",
+            "offertory_title": "God Is Still Speaking",
+            "offertory_composer": "Marty Haugen",
+            "offertory_performer": "Emery Lewis, soloist",
+            "choral_title": "Create in Me a Clean Heart",
+            "choral_composer": "Carl Mueller",
             "output_dir": "/tmp/test_output",
         }
 
@@ -217,6 +224,12 @@ class TestGenerateAll:
         config = call_args[1].get("config") if "config" in (call_args[1] or {}) else call_args[0][1]
         assert config.creed_type == "nicene"
         assert config.include_kyrie is False
+        assert config.memorial_acclamation_mode == "sung"
+        assert config.offertory_type == "choral_anthem"
+        assert config.offertory_title == "God Is Still Speaking"
+        assert config.offertory_composer == "Marty Haugen"
+        assert config.offertory_performer == "Emery Lewis, soloist"
+        assert config.choral_composer == "Carl Mueller"
         assert config.gathering_hymn is not None
         assert config.gathering_hymn.title == "Jesus, Keep Me Near the Cross"
         assert len(config.gathering_hymn.verses) == 2

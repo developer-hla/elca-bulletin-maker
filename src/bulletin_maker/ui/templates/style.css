@@ -692,6 +692,11 @@ main {
     cursor: pointer;
 }
 
+.memorial-format-group.disabled label {
+    cursor: default;
+    opacity: 0.55;
+}
+
 .setting-group select {
     padding: 5px 8px;
     border: 1px solid var(--border);

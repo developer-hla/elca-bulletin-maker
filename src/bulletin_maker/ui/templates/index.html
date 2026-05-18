@@ -259,12 +259,23 @@
                         <input type="text" id="prelude-composer" placeholder="e.g. J.S. Bach" maxlength="100">
                     </div>
                     <div class="field">
-                        <label for="offertory-title">Offertory Title (Offering Music)</label>
-                        <input type="text" id="offertory-title" maxlength="100">
+                        <label>Offering Music Type</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="offertory_type" value="offertory" checked> Offertory</label>
+                            <label><input type="radio" name="offertory_type" value="choral_anthem"> Choral Anthem</label>
+                        </div>
                     </div>
                     <div class="field">
-                        <label for="offertory-composer">Offertory Composer (Offering Music)</label>
-                        <input type="text" id="offertory-composer" maxlength="100">
+                        <label for="offertory-performer">Soloist / Performer (Offering Music)</label>
+                        <input type="text" id="offertory-performer" placeholder="e.g. Emery Lewis, soloist" maxlength="100">
+                    </div>
+                    <div class="field">
+                        <label for="offertory-title">Offering Music Title</label>
+                        <input type="text" id="offertory-title" placeholder="e.g. God Is Still Speaking" maxlength="100">
+                    </div>
+                    <div class="field">
+                        <label for="offertory-composer">Offering Music Composer</label>
+                        <input type="text" id="offertory-composer" placeholder="e.g. Marty Haugen" maxlength="100">
                     </div>
                     <div class="field">
                         <label for="postlude-title">Postlude Title (Closing Music)</label>
@@ -275,8 +286,12 @@
                         <input type="text" id="postlude-composer" maxlength="100">
                     </div>
                     <div class="field">
-                        <label for="choral-title">Choral Title (Choir Selection)</label>
+                        <label for="choral-title">Choral Call Title</label>
                         <input type="text" id="choral-title" placeholder="e.g. Create in Me a Clean Heart" maxlength="100">
+                    </div>
+                    <div class="field">
+                        <label for="choral-composer">Choral Call Composer</label>
+                        <input type="text" id="choral-composer" maxlength="100">
                     </div>
                 </div>
             </section>
@@ -338,10 +353,14 @@
 
                     <div class="setting-group">
                         <label class="setting-label">Memorial Acclamation</label>
-                        <p class="impact-text">Adds a sung response ("Christ has died...") during communion.</p>
+                        <p class="impact-text">Adds "Christ has died..." during communion. Choose music or spoken text.</p>
                         <label class="checkbox-label">
                             <input type="checkbox" id="include-memorial"> Include Memorial Acclamation
                         </label>
+                        <div class="radio-group memorial-format-group" id="memorial-format-group">
+                            <label><input type="radio" name="memorial_acclamation_mode" value="sung"> Sung music</label>
+                            <label><input type="radio" name="memorial_acclamation_mode" value="spoken"> Spoken text</label>
+                        </div>
                         <span class="default-hint" id="hint-memorial"></span>
                     </div>
 
@@ -373,6 +392,7 @@
                     </div>
                 </div>
 
+                <div id="settings-error" class="error-msg" hidden></div>
                 <button id="reset-defaults-btn" class="btn secondary">Reset to Seasonal Defaults</button>
             </section>
 

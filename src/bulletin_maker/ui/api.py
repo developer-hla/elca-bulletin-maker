@@ -801,6 +801,7 @@ class BulletinAPI:
             canticle=form_data.get("canticle"),
             eucharistic_form=form_data.get("eucharistic_form"),
             include_memorial_acclamation=form_data.get("include_memorial_acclamation"),
+            memorial_acclamation_mode=form_data.get("memorial_acclamation_mode"),
             preface=self._parse_preface(form_data.get("preface")),
             show_confession=form_data.get("show_confession"),
             show_nunc_dimittis=form_data.get("show_nunc_dimittis"),
@@ -824,6 +825,7 @@ class BulletinAPI:
             prelude_title=form_data.get("prelude_title", ""),
             prelude_composer=form_data.get("prelude_composer", ""),
             prelude_performer=form_data.get("prelude_performer", ""),
+            offertory_type=form_data.get("offertory_type", "offertory"),
             offertory_title=form_data.get("offertory_title", ""),
             offertory_composer=form_data.get("offertory_composer", ""),
             offertory_performer=form_data.get("offertory_performer", ""),
@@ -831,6 +833,7 @@ class BulletinAPI:
             postlude_composer=form_data.get("postlude_composer", ""),
             postlude_performer=form_data.get("postlude_performer", ""),
             choral_title=form_data.get("choral_title", ""),
+            choral_composer=form_data.get("choral_composer", ""),
             cover_image=form_data.get("cover_image", ""),
         )
 

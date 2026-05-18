@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -43,6 +44,21 @@ def creed_line(text: str) -> str:
     return "<br>\n".join(result)
 
 
+def terminal_amen(text: str, bold_amen: bool = True) -> str:
+    """Put a terminal Amen on its own line, optionally wrapping it in strong."""
+    if not text:
+        return ""
+    match = re.match(r"^(?P<body>.*?)(?:\s+)?(?P<amen>\bAmen\.?)\s*$", text)
+    if not match:
+        return text
+    body = match.group("body").rstrip()
+    amen = match.group("amen")
+    amen_html = f"<strong>{amen}</strong>" if bold_amen else amen
+    if not body:
+        return amen_html
+    return f"{body}<br>\n{amen_html}"
+
+
 def setup_jinja_env() -> Environment:
     """Create and configure the Jinja2 template environment."""
     env = Environment(
@@ -52,4 +68,5 @@ def setup_jinja_env() -> Environment:
     env.filters["nl2br"] = nl2br
     env.filters["hymn_text"] = hymn_text
     env.filters["creed_line"] = creed_line
+    env.filters["terminal_amen"] = terminal_amen
     return env

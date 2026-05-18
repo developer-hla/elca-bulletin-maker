@@ -99,6 +99,7 @@ class ServiceConfig:
     canticle: Optional[str] = None              # CANTICLE_GLORY_TO_GOD, CANTICLE_THIS_IS_THE_FEAST, or CANTICLE_NONE
     eucharistic_form: Optional[str] = None      # "short", "poetic", or "extended"
     include_memorial_acclamation: Optional[bool] = None  # Memorial Acclamation in EP?
+    memorial_acclamation_mode: Optional[str] = None       # "sung" or "spoken"
     preface: Optional[PrefaceType] = None       # None = Sundays/Ordinary Time (not seasonal)
 
     # ── Liturgical texts (None = use S&S default from DayContent) ──
@@ -132,6 +133,7 @@ class ServiceConfig:
     prelude_title: str = ""
     prelude_performer: str = ""
     prelude_composer: str = ""
+    offertory_type: str = "offertory"              # "offertory" or "choral_anthem"
     offertory_title: str = ""
     offertory_performer: str = ""
     offertory_composer: str = ""
@@ -139,4 +141,5 @@ class ServiceConfig:
     postlude_performer: str = ""
     postlude_composer: str = ""
     choral_title: str = ""
+    choral_composer: str = ""
     cover_image: str = ""                   # Path to seasonal logo image

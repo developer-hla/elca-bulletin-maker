@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from bulletin_maker.renderer.filters import creed_line, hymn_text, nl2br, setup_jinja_env
+from bulletin_maker.renderer.filters import (
+    creed_line,
+    hymn_text,
+    nl2br,
+    setup_jinja_env,
+    terminal_amen,
+)
 
 
 class TestNl2br:
@@ -65,12 +71,36 @@ class TestCreedLine:
         assert creed_line(None) == ""
 
 
+class TestTerminalAmen:
+    def test_splits_terminal_amen_to_bold_new_line(self):
+        result = terminal_amen("The Holy Spirit. Amen.")
+        assert result == "The Holy Spirit.<br>\n<strong>Amen.</strong>"
+
+    def test_can_skip_inner_bold_when_wrapped_by_template(self):
+        result = terminal_amen("to your holy name. Amen.", bold_amen=False)
+        assert result == "to your holy name.<br>\nAmen."
+
+    def test_standalone_amen_is_bold_without_blank_line(self):
+        assert terminal_amen("Amen.") == "<strong>Amen.</strong>"
+
+    def test_text_without_terminal_amen_is_unchanged(self):
+        text = "Amen is not at the end of this sentence."
+        assert terminal_amen(text) == text
+
+    def test_empty(self):
+        assert terminal_amen("") == ""
+
+    def test_none(self):
+        assert terminal_amen(None) == ""
+
+
 class TestSetupJinjaEnv:
     def test_env_has_filters(self):
         env = setup_jinja_env()
         assert "nl2br" in env.filters
         assert "hymn_text" in env.filters
         assert "creed_line" in env.filters
+        assert "terminal_amen" in env.filters
 
     def test_env_loads_templates(self):
         env = setup_jinja_env()

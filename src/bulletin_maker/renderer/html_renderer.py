@@ -428,13 +428,12 @@ BULLETIN_LOOSEN_PROFILES = [
         ".section-heading { margin-top: 16pt; } "
         ".ep-break { height: 14pt; }"
     )),
-    # L3 — max spacing + taller cover
+    # L3 — max spacing
     AdjustProfile(name="L3", css=(
         ".spacer { height: 24pt; } "
         ".spacer-sm { height: 14pt; } "
         ".section-heading { margin-top: 20pt; } "
-        ".ep-break { height: 18pt; } "
-        ".cover { min-height: 8in; }"
+        ".ep-break { height: 18pt; }"
     )),
     # L4 — add typography: larger font, looser line-height
     AdjustProfile(name="L4", css=(
@@ -442,7 +441,6 @@ BULLETIN_LOOSEN_PROFILES = [
         ".spacer-sm { height: 14pt; } "
         ".section-heading { margin-top: 20pt; } "
         ".ep-break { height: 18pt; } "
-        ".cover { min-height: 8in; } "
         "body { font-size: 11.5pt; line-height: 1.4; } "
         ".reading-text { line-height: 1.4; } "
         ".psalm-verse { line-height: 1.35; }"
@@ -453,19 +451,17 @@ BULLETIN_LOOSEN_PROFILES = [
         ".spacer-sm { height: 16pt; } "
         ".section-heading { margin-top: 22pt; } "
         ".ep-break { height: 20pt; } "
-        ".cover { min-height: 8in; } "
         "body { font-size: 11.5pt; line-height: 1.45; orphans: 4; widows: 4; } "
         ".reading-text { line-height: 1.45; } "
         ".psalm-verse { line-height: 1.4; } "
         ".two-col { column-gap: 0.3in; }"
     ), scale=1.03),
-    # L6 — maximum loosening: largest font, tallest cover, scaled
+    # L6 — maximum loosening: largest font and widest spacing, scaled
     AdjustProfile(name="L6", css=(
         ".spacer { height: 32pt; } "
         ".spacer-sm { height: 18pt; } "
         ".section-heading { margin-top: 24pt; } "
         ".ep-break { height: 22pt; } "
-        ".cover { min-height: 8.2in; } "
         "body { font-size: 12pt; line-height: 1.5; orphans: 4; widows: 4; } "
         ".reading-text { line-height: 1.5; } "
         ".psalm-verse { line-height: 1.45; } "
@@ -794,6 +790,7 @@ def _build_eucharistic_context(config: ServiceConfig) -> dict:
         ],
         "words_of_institution_paragraphs": _split_stanzas(WORDS_OF_INSTITUTION),
         "has_memorial_acclamation": config.include_memorial_acclamation,
+        "memorial_acclamation_mode": config.memorial_acclamation_mode,
         "memorial_acclamation": MEMORIAL_ACCLAMATION,
         "eucharistic_prayer_closing_stanzas": _split_stanzas(EUCHARISTIC_PRAYER_CLOSING),
         "come_holy_spirit": COME_HOLY_SPIRIT,
@@ -882,6 +879,7 @@ def _build_large_print_context(
         "prelude_title": config.prelude_title,
         "prelude_performer": config.prelude_performer,
         "prelude_composer": config.prelude_composer,
+        "offertory_type": config.offertory_type,
         "offertory_title": config.offertory_title,
         "offertory_performer": config.offertory_performer,
         "offertory_composer": config.offertory_composer,
@@ -890,6 +888,7 @@ def _build_large_print_context(
         "postlude_composer": config.postlude_composer,
 
         "choral_title": config.choral_title,
+        "choral_composer": config.choral_composer,
         "gathering_hymn": config.gathering_hymn,
         "gathering_hymn_image_uri": gathering_hymn_image_uri,
         "kyrie_entries": KYRIE_DIALOG if config.include_kyrie else None,
@@ -969,12 +968,15 @@ def _build_pulpit_prayers_context(
 # ── Bulletin helpers ──────────────────────────────────────────────────
 
 def _hymn_title_str(hymn: HymnLyrics | None) -> str:
-    """Format a hymn as 'ELW 335' or 'ELW 386 (Verses 1, 3-5)'."""
+    """Format a hymn heading for the congregation bulletin."""
     if hymn is None:
         return ""
+    label = hymn.number
+    if hymn.title:
+        label = f"{label} - {hymn.title}"
     if hymn.verse_label:
-        return f"{hymn.number} ({hymn.verse_label})"
-    return hymn.number
+        return f"{label} ({hymn.verse_label})"
+    return label
 
 
 def _safe_setting_image_uri(piece: str) -> str:
@@ -1037,9 +1039,14 @@ def _build_bulletin_context(
         # Prelude/postlude
         "prelude_title": config.prelude_title,
         "prelude_performer": config.prelude_performer,
+        "offertory_type": config.offertory_type,
+        "offertory_title": config.offertory_title,
+        "offertory_performer": config.offertory_performer,
+        "offertory_composer": config.offertory_composer,
         "postlude_title": config.postlude_title,
         "postlude_performer": config.postlude_performer,
         "choral_title": config.choral_title,
+        "choral_composer": config.choral_composer,
 
         # Notation images
         "kyrie_image_uri": kyrie_uri,
