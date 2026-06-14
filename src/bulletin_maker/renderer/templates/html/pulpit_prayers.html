@@ -14,7 +14,7 @@
 </p>
 
 {% for stanza in creed_stanzas %}
-<p class="creed-stanza">{{ stanza | creed_line }}</p>
+<p class="creed-stanza">{{ stanza | creed_line | terminal_amen }}</p>
 {% endfor %}
 
 {# ── Prayers of Intercession ── #}

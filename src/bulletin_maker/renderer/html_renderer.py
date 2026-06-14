@@ -90,6 +90,7 @@ from bulletin_maker.renderer.static_text import (
     GREAT_THANKSGIVING_PREFACE,
     GREAT_THANKSGIVING_PREFACE_SHORT,
     GREETING,
+    INVITATION_TO_COMMUNION,
     INVITATION_TO_LENT,
     KYRIE_DIALOG,
     LORDS_PRAYER,
@@ -808,10 +809,6 @@ def _build_common_context(
         prayers_call = parse_prayers_call(day.prayers_html)
         prayers_response = parse_prayers_response(day.prayers_html)
 
-    invitation_text = "Taste and see that the Lord is good."
-    if day.invitation_to_communion:
-        invitation_text = strip_tags(preprocess_html(day.invitation_to_communion))
-
     cover_image_uri = ""
     if config.cover_image:
         cover_path = Path(config.cover_image)
@@ -841,7 +838,7 @@ def _build_common_context(
         "prayers_response": prayers_response,
         "offertory_hymn_verses": OFFERTORY_HYMN_VERSES,
         "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE,
-        "invitation_to_communion_text": invitation_text,
+        "invitation_to_communion_text": INVITATION_TO_COMMUNION,
         "show_nunc_dimittis": config.show_nunc_dimittis,
         "offering_prayer_text": config.offering_prayer_text or "",
         "prayer_after_communion_text": config.prayer_after_communion_text or "",
@@ -1039,12 +1036,14 @@ def _build_bulletin_context(
         # Prelude/postlude
         "prelude_title": config.prelude_title,
         "prelude_performer": config.prelude_performer,
+        "prelude_composer": config.prelude_composer,
         "offertory_type": config.offertory_type,
         "offertory_title": config.offertory_title,
         "offertory_performer": config.offertory_performer,
         "offertory_composer": config.offertory_composer,
         "postlude_title": config.postlude_title,
         "postlude_performer": config.postlude_performer,
+        "postlude_composer": config.postlude_composer,
         "choral_title": config.choral_title,
         "choral_composer": config.choral_composer,
 

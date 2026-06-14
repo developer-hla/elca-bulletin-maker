@@ -30,6 +30,7 @@ from bulletin_maker.renderer.static_text import (
     GREAT_THANKSGIVING_DIALOG,
     GREAT_THANKSGIVING_PREFACE,
     GREETING,
+    INVITATION_TO_COMMUNION,
     INVITATION_TO_LENT,
     KYRIE_DIALOG,
     LORDS_PRAYER,
@@ -106,6 +107,10 @@ class TestLiturgicalTexts:
 
     def test_words_of_institution_has_stanza_breaks(self):
         assert "\n\n" in WORDS_OF_INSTITUTION
+
+    def test_words_of_institution_uses_handed_over(self):
+        assert "In the night in which he was handed over" in WORDS_OF_INSTITUTION
+        assert "In the night in which he was betrayed" not in WORDS_OF_INSTITUTION
 
 
 class TestGreatThanksgiving:
@@ -200,6 +205,12 @@ class TestMiscTexts:
 
     def test_invitation_to_lent_nonempty(self):
         assert len(INVITATION_TO_LENT) > 100
+
+    def test_invitation_to_communion_uses_ascension_text(self):
+        assert "breathed your first breath" in INVITATION_TO_COMMUNION
+        assert "breathe your last" in INVITATION_TO_COMMUNION
+        assert "God\u2019s Table" in INVITATION_TO_COMMUNION
+        assert INVITATION_TO_COMMUNION.endswith("Taste and see that the Lord is good.")
 
     def test_aaronic_blessing_has_three_lines(self):
         lines = [l for l in AARONIC_BLESSING.split("\n") if l.strip()]

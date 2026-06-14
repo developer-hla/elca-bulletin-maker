@@ -78,16 +78,16 @@
 <div class="liturgy-heading"><span>GATHERING CHIMES: Worship Begins</span></div>
 <div class="spacer"></div>
 
-{% if choral_title %}
-<div class="liturgy-heading"><span>CHORAL CALL TO WORSHIP</span></div>
-<p class="music-citation">{{ choral_title }}{% if choral_composer %} &mdash; {{ choral_composer }}{% endif %}</p>
-{% endif %}
-
 <div class="liturgy-heading"><span>PRELUDE</span></div>
 {% if prelude_title %}
 <p class="music-citation">{{ prelude_title }}{% if prelude_composer %} &mdash; {{ prelude_composer }}{% endif %}{% if prelude_performer %} / {{ prelude_performer }}{% endif %}</p>
 {% else %}
 <div class="spacer"></div>
+{% endif %}
+
+{% if choral_title %}
+<div class="liturgy-heading"><span>CHORAL CALL TO WORSHIP</span></div>
+<p class="music-citation">{{ choral_title }}{% if choral_composer %} &mdash; {{ choral_composer }}{% endif %}</p>
 {% endif %}
 
 <div class="liturgy-heading"><span>WELCOME</span></div>
@@ -124,9 +124,9 @@
 {% if greeting_entries %}
 {% for role, text in greeting_entries %}
 {% if role.value == "P" %}
-<p><span class="role-label">P: </span>{{ text }}</p>
+<p><span class="role-label">P: </span>{{ text | terminal_amen }}</p>
 {% elif role.value == "C" %}
-<p><strong>{{ text }}</strong></p>
+<p><strong>{{ text | terminal_amen(false) }}</strong></p>
 {% endif %}
 {% endfor %}
 {% endif %}
@@ -141,9 +141,9 @@
 <div class="two-col">
 {% for role, text in kyrie_entries %}
 {% if role.value == "P" %}
-<p><span class="role-label">P: </span>{{ text }}</p>
+<p><span class="role-label">P: </span>{{ text | terminal_amen }}</p>
 {% elif role.value == "C" %}
-<p><strong>{{ text }}</strong></p>
+<p><strong>{{ text | terminal_amen(false) }}</strong></p>
 {% endif %}
 {% endfor %}
 </div>
@@ -157,13 +157,13 @@
 {% elif canticle_text %}
 <div class="liturgy-heading"><span>*CANTICLE OF PRAISE</span></div>
 <div class="two-col">
-<p><strong>{{ canticle_text.refrain }}</strong></p>
+<p><strong>{{ canticle_text.refrain | terminal_amen(false) }}</strong></p>
 {% for verse in canticle_text.verses %}
-<p><strong>{{ verse }}</strong></p>
+<p><strong>{{ verse | terminal_amen(false) }}</strong></p>
 {% if loop.last and canticle_text.final_refrain %}
-<p><strong>{{ canticle_text.final_refrain }}</strong></p>
+<p><strong>{{ canticle_text.final_refrain | terminal_amen(false) }}</strong></p>
 {% else %}
-<p><strong>{{ canticle_text.refrain }}</strong></p>
+<p><strong>{{ canticle_text.refrain | terminal_amen(false) }}</strong></p>
 {% endif %}
 {% endfor %}
 </div>
@@ -185,7 +185,7 @@
     <span class="heading-role">Pastor</span>
 </div>
 {% if prayer_of_day_html %}
-<div>{{ prayer_of_day_html | safe }}</div>
+<div>{{ prayer_of_day_html | terminal_amen_html | safe }}</div>
 {% endif %}
 
 
@@ -228,7 +228,6 @@
 </p>
 {% endif %}
 {% endfor %}
-<p>The word of the Lord.<br>Thanks be to God.</p>
 {% endif %}
 
 
@@ -302,36 +301,36 @@
 <div class="scripture-heading"><span>Renunciation</span></div>
 {% for role, text in baptism_renunciation %}
 {% if role.value == "P" %}
-<p><span class="role-label">P: </span>{{ text }}</p>
+<p><span class="role-label">P: </span>{{ text | terminal_amen }}</p>
 {% elif role.value == "C" %}
-<p><strong>{{ text }}</strong></p>
+<p><strong>{{ text | terminal_amen(false) }}</strong></p>
 {% else %}
-<p>{{ text }}</p>
+<p>{{ text | terminal_amen }}</p>
 {% endif %}
 {% endfor %}
 
 <div class="scripture-heading"><span>Profession of Faith</span></div>
 {% for role, text in baptism_profession %}
 {% if role.value == "P" %}
-<p><span class="role-label">P: </span>{{ text }}</p>
+<p><span class="role-label">P: </span>{{ text | terminal_amen }}</p>
 {% elif role.value == "C" %}
-<p><strong>{{ text }}</strong></p>
+<p><strong>{{ text | terminal_amen(false) }}</strong></p>
 {% else %}
-<p>{{ text }}</p>
+<p>{{ text | terminal_amen }}</p>
 {% endif %}
 {% endfor %}
 
 <div class="scripture-heading"><span>Thanksgiving at the Font</span></div>
-<p>{{ baptism_flood_prayer }}</p>
+<p>{{ baptism_flood_prayer | terminal_amen }}</p>
 
 <div class="scripture-heading"><span>The Baptism</span></div>
 {% for formula in baptism_formulas %}
-<p><span class="role-label">P: </span>{{ formula }}</p>
+<p><span class="role-label">P: </span>{{ formula | terminal_amen }}</p>
 {% endfor %}
 
 <div class="scripture-heading"><span>Welcome</span></div>
-<p><span class="role-label">P: </span>{{ baptism_welcome }}</p>
-<p><strong>{{ baptism_welcome_response }}</strong></p>
+<p><span class="role-label">P: </span>{{ baptism_welcome | terminal_amen }}</p>
+<p><strong>{{ baptism_welcome_response | terminal_amen(false) }}</strong></p>
 
 {% else %}
 <div class="creed-section">
@@ -341,7 +340,7 @@
 </div>
 <div class="two-col">
 {% for stanza in creed_stanzas %}
-<p class="creed-stanza">{{ stanza | nl2br }}</p>
+<p class="creed-stanza">{{ stanza | terminal_amen }}</p>
 {% endfor %}
 </div>
 </div>
@@ -359,7 +358,7 @@
 <p class="instruction">As each petition of the prayers ends:</p>
 <p>
     <span class="role-label" style="font-style: italic;">Leader: {{ prayers_call }}</span>
-    <br><strong>CONGREGATION: {{ prayers_response }}</strong>
+    <br><strong>CONGREGATION: {{ prayers_response | terminal_amen(false) }}</strong>
 </p>
 </div>
 
@@ -370,7 +369,7 @@
     <span>*SHARING OF THE PEACE</span>
     <span class="heading-role">Pastor</span>
 </div>
-<p><span class="role-label">P: </span><strong>The peace of Christ be with you always.</strong></p>
+<p><span class="role-label">P: </span>The peace of Christ be with you always.</p>
 <p><strong>C: And also with you.</strong></p>
 <p class="instruction">We greet one another with a sign of Christ&rsquo;s peace, saying &ldquo;Peace be with you,&rdquo; as we shake hands or share a hug.</p>
 </div>
@@ -416,7 +415,7 @@
     <span class="heading-role">Communion Assistant</span>
 </div>
 {% if offering_prayer_text %}
-<p>{{ offering_prayer_text | nl2br }}</p>
+<p>{{ offering_prayer_text | terminal_amen }}</p>
 {% else %}
 <p>Leader: Let us pray&hellip;<br>CONGREGATION: Amen</p>
 {% endif %}
@@ -431,7 +430,7 @@
 {% for role, text in great_thanksgiving_dialog %}
 <p>
     <span class="dialog-label{% if role.value == 'P' %} red{% endif %}">{{ role.value }}: </span>
-    <strong>{{ text }}</strong>
+    {% if role.value == "C" %}<strong>{{ text | terminal_amen(false) }}</strong>{% else %}{{ text | terminal_amen }}{% endif %}
 </p>
 {% endfor %}
 <p class="mt-12">
@@ -447,7 +446,7 @@
 {# ── Sanctus ── #}
 <div class="two-col sanctus-block">
 {% for stanza in sanctus_stanzas %}
-<p>{{ stanza | nl2br }}</p>
+<p>{{ stanza | terminal_amen }}</p>
 {% endfor %}
 </div>
 
@@ -485,7 +484,7 @@
 <p><span class="role-label" style="font-weight: bold;">P: </span>Gathered into one by the Holy Spirit, let us pray as Jesus taught us.</p>
 <div class="two-col">
 {% for stanza in lords_prayer_stanzas %}
-<p class="lords-prayer-stanza">{{ stanza | nl2br }}</p>
+<p class="lords-prayer-stanza">{{ stanza | terminal_amen }}</p>
 {% endfor %}
 </div>
 
@@ -493,7 +492,7 @@
 {# ── Invitation to Communion ── #}
 <div class="flow-group">
 <div class="liturgy-heading"><span>*INVITATION TO COMMUNION</span></div>
-<p><span class="role-label">P: </span><strong>{{ invitation_to_communion_text }}</strong></p>
+<p><span class="role-label">P: </span>{{ invitation_to_communion_text | terminal_amen }}</p>
 <p class="instruction-left mt-12 mb-24">The Congregation is SEATED</p>
 </div>
 
@@ -505,7 +504,7 @@
 </div>
 <div class="two-col agnus-dei-block">
 {% for stanza in agnus_dei_stanzas %}
-<p>{{ stanza | nl2br }}</p>
+<p>{{ stanza | terminal_amen }}</p>
 {% endfor %}
 </div>
 
@@ -537,7 +536,7 @@
 <div class="flow-group">
 <p class="instruction-left">The Congregation SINGS:</p>
 {% for line in nunc_dimittis_lines %}
-<p class="nunc-dimittis-line">{{ line }}</p>
+<p class="nunc-dimittis-line">{{ line | terminal_amen(false) }}</p>
 {% endfor %}
 </div>
 {% endif %}
@@ -550,7 +549,7 @@
     <span class="heading-role">Communion Assistant</span>
 </div>
 {% if prayer_after_communion_text %}
-<p>{{ prayer_after_communion_text | nl2br }}</p>
+<p>{{ prayer_after_communion_text | terminal_amen }}</p>
 {% else %}
 <div class="spacer"></div>
 {% endif %}
@@ -580,9 +579,9 @@
 </div>
 {% for role, text in dismissal_entries %}
 {% if role.value == "C" %}
-<p><strong>{{ text }}</strong></p>
+<p><strong>{{ text | terminal_amen(false) }}</strong></p>
 {% else %}
-<p>{{ text }}</p>
+<p>{{ text | terminal_amen }}</p>
 {% endif %}
 {% endfor %}
 

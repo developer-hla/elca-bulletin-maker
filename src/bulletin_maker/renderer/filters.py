@@ -48,15 +48,38 @@ def terminal_amen(text: str, bold_amen: bool = True) -> str:
     """Put a terminal Amen on its own line, optionally wrapping it in strong."""
     if not text:
         return ""
-    match = re.match(r"^(?P<body>.*?)(?:\s+)?(?P<amen>\bAmen\.?)\s*$", text)
+    match = re.match(
+        r"^(?P<body>.*?)(?:\s+)?(?P<amen>\bAmen\.?)\s*$",
+        text,
+        re.DOTALL | re.IGNORECASE,
+    )
     if not match:
-        return text
+        return nl2br(text)
     body = match.group("body").rstrip()
     amen = match.group("amen")
     amen_html = f"<strong>{amen}</strong>" if bold_amen else amen
     if not body:
         return amen_html
-    return f"{body}<br>\n{amen_html}"
+    return f"{nl2br(body)}<br>\n{amen_html}"
+
+
+def terminal_amen_html(html: str) -> str:
+    """Bold a terminal Amen in a trusted HTML fragment."""
+    if not html:
+        return ""
+    match = re.match(
+        r"^(?P<body>.*?)(?P<amen>\bAmen\.?)(?P<trailing>(?:\s|</[^>]+>)*$)",
+        html,
+        re.DOTALL | re.IGNORECASE,
+    )
+    if not match:
+        return html
+    body = match.group("body").rstrip()
+    amen = match.group("amen")
+    trailing = match.group("trailing")
+    if body.endswith("<strong>") and trailing.lstrip().startswith("</strong>"):
+        return html
+    return f"{body}<br>\n<strong>{amen}</strong>{trailing}"
 
 
 def setup_jinja_env() -> Environment:
@@ -69,4 +92,5 @@ def setup_jinja_env() -> Environment:
     env.filters["hymn_text"] = hymn_text
     env.filters["creed_line"] = creed_line
     env.filters["terminal_amen"] = terminal_amen
+    env.filters["terminal_amen_html"] = terminal_amen_html
     return env

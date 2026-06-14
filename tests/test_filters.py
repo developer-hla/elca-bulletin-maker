@@ -8,6 +8,7 @@ from bulletin_maker.renderer.filters import (
     nl2br,
     setup_jinja_env,
     terminal_amen,
+    terminal_amen_html,
 )
 
 
@@ -83,6 +84,10 @@ class TestTerminalAmen:
     def test_standalone_amen_is_bold_without_blank_line(self):
         assert terminal_amen("Amen.") == "<strong>Amen.</strong>"
 
+    def test_multiline_text_keeps_breaks_and_bolds_amen(self):
+        result = terminal_amen("Lord, have mercy.\nAmen.")
+        assert result == "Lord, have mercy.<br>\n<strong>Amen.</strong>"
+
     def test_text_without_terminal_amen_is_unchanged(self):
         text = "Amen is not at the end of this sentence."
         assert terminal_amen(text) == text
@@ -94,6 +99,20 @@ class TestTerminalAmen:
         assert terminal_amen(None) == ""
 
 
+class TestTerminalAmenHtml:
+    def test_bolds_terminal_amen_before_closing_tag(self):
+        result = terminal_amen_html("<p>Through Christ our Lord. Amen.</p>")
+        assert result == "<p>Through Christ our Lord.<br>\n<strong>Amen.</strong></p>"
+
+    def test_leaves_existing_strong_amen_unchanged(self):
+        html = "<p>Through Christ our Lord.<br><strong>Amen.</strong></p>"
+        assert terminal_amen_html(html) == html
+
+    def test_text_without_terminal_amen_is_unchanged(self):
+        html = "<p>Amen is not at the end of this sentence.</p>"
+        assert terminal_amen_html(html) == html
+
+
 class TestSetupJinjaEnv:
     def test_env_has_filters(self):
         env = setup_jinja_env()
@@ -101,6 +120,7 @@ class TestSetupJinjaEnv:
         assert "hymn_text" in env.filters
         assert "creed_line" in env.filters
         assert "terminal_amen" in env.filters
+        assert "terminal_amen_html" in env.filters
 
     def test_env_loads_templates(self):
         env = setup_jinja_env()

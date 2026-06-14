@@ -325,7 +325,6 @@ p { margin: 0; }
 /* ── Offering ── */
 .offering-text {
     line-height: 21pt;
-    font-weight: bold;
     color: #C00000;
 }
 

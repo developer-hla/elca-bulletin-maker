@@ -7,6 +7,8 @@ Agnus Dei, Nunc Dimittis, Lord's Prayer, Offertory Hymn.
 S&S DOES provide: Confession, Prayer of Day, Readings, Gospel Acclamation,
 Prayers, Offering Prayer, Invitation to Communion, Prayer After Communion,
 Blessing, Dismissal.
+
+Ascension overrides S&S for Invitation to Communion.
 """
 
 from __future__ import annotations
@@ -133,6 +135,14 @@ PRAYERS_INTRO = "We continue with the prayers of the people:"
 DEFAULT_PRAYERS_CALL = "Hear us, O God."
 DEFAULT_PRAYERS_RESPONSE = "Your mercy is great."
 
+INVITATION_TO_COMMUNION = (
+    "From even before you breathed your first breath,\n"
+    "and even after you will breathe your last,\n"
+    f"you are God{APOSTROPHE}s children and you are welcome at God{APOSTROPHE}s Table.\n"
+    "The feast is ready.\n"
+    "Taste and see that the Lord is good."
+)
+
 # ── Large Print liturgical texts (from LP reference DOCX) ──────────
 
 # Great Thanksgiving — spoken P:/C: dialog (not notation in Large Print)
@@ -195,7 +205,7 @@ EUCHARISTIC_PRAYER_EXTENDED = (
 )
 
 WORDS_OF_INSTITUTION = (
-    "In the night in which he was betrayed, our Lord Jesus took bread, "
+    "In the night in which he was handed over, our Lord Jesus took bread, "
     "and gave thanks; broke it, and gave it to his disciples, saying:\n"
     "\n"
     "Take and eat; this is my body,\n"

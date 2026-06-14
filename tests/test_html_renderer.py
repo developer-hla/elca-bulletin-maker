@@ -38,6 +38,7 @@ from bulletin_maker.renderer.html_renderer import (
 from bulletin_maker.renderer.filters import setup_jinja_env
 from bulletin_maker.renderer.static_text import (
     GLORY_TO_GOD_TEXT,
+    INVITATION_TO_COMMUNION,
     MEMORIAL_ACCLAMATION,
     THIS_IS_THE_FEAST_TEXT,
 )
@@ -261,6 +262,18 @@ class TestBuildCommonContext:
         assert ctx["gospel"] is not None
         assert ctx["gospel"]["citation"] == "Matthew 4:1-11"
 
+    @patch("bulletin_maker.renderer.html_renderer.get_gospel_acclamation_image",
+           side_effect=FileNotFoundError)
+    def test_invitation_to_communion_uses_ascension_text(self, _mock_ga):
+        day = _make_day()
+        day.invitation_to_communion = "<p>S&S invitation should not render.</p>"
+        config = ServiceConfig(
+            date="2026-2-22", date_display="February 22, 2026",
+        )
+        ctx = _build_common_context(day, config, LiturgicalSeason.LENT)
+
+        assert ctx["invitation_to_communion_text"] == INVITATION_TO_COMMUNION
+
 
 class TestBulletinTemplate:
     """Template behavior for congregation bulletin-specific rendering."""
@@ -337,6 +350,82 @@ class TestBulletinTemplate:
 
         assert "Create in Me a Clean Heart" in html
         assert "Carl Mueller" in html
+
+    @pytest.mark.parametrize("template_name", ["bulletin.html", "large_print.html"])
+    def test_psalm_does_not_include_reading_response(self, template_name):
+        env = setup_jinja_env()
+        template = env.get_template(template_name)
+        html = template.render(
+            css="",
+            church_address="",
+            psalm_data={
+                "number": "32",
+                "intro": "",
+                "verses": [
+                    {
+                        "verse_num": "1",
+                        "text": "Happy are they whose transgressions are forgiven.",
+                        "bold": False,
+                        "continuation": False,
+                        "continuations": [],
+                    },
+                ],
+            },
+            eucharistic_form="short",
+            lords_prayer_stanzas=[],
+            dismissal_entries=[],
+        )
+
+        assert "Happy are they whose transgressions are forgiven." in html
+        assert "The word of the Lord." not in html
+        assert "Thanks be to God." not in html
+
+    @pytest.mark.parametrize("template_name,prelude_markup,heading_markup", [
+        ("bulletin.html", "<em>Prelude on AZMON</em>", "<span>WELCOME</span>"),
+        ("large_print.html", ">Prelude on AZMON", "<span>WELCOME</span>"),
+    ])
+    def test_choral_call_follows_prelude(self, template_name, prelude_markup, heading_markup):
+        env = setup_jinja_env()
+        template = env.get_template(template_name)
+        html = template.render(
+            css="",
+            church_address="",
+            prelude_title="Prelude on AZMON",
+            choral_title="Create in Me a Clean Heart",
+            eucharistic_form="short",
+            lords_prayer_stanzas=[],
+            dismissal_entries=[],
+        )
+
+        prelude_index = html.index(prelude_markup)
+        choral_index = html.index("CHORAL CALL TO WORSHIP")
+        welcome_index = html.index(heading_markup, choral_index)
+        assert prelude_index < choral_index < welcome_index
+
+    @patch("bulletin_maker.renderer.html_renderer._safe_setting_image_uri", return_value="")
+    @patch("bulletin_maker.renderer.html_renderer._load_offertory_image_uri", return_value="")
+    @patch("bulletin_maker.renderer.html_renderer.get_gospel_acclamation_image",
+           side_effect=FileNotFoundError)
+    def test_bulletin_service_music_includes_composer(self, *_mocks):
+        env = setup_jinja_env()
+        template = env.get_template("bulletin.html")
+        config = ServiceConfig(
+            date="2026-05-10",
+            date_display="May 10, 2026",
+            prelude_title="Prelude on AZMON",
+            prelude_composer="J.S. Bach",
+            prelude_performer="Organist",
+            postlude_title="Toccata",
+            postlude_composer="Charles-Marie Widor",
+            postlude_performer="Organist",
+        )
+        ctx = _build_bulletin_context(_make_day(), config, LiturgicalSeason.EASTER)
+        html = template.render(**ctx)
+
+        assert "<span>PRELUDE</span>" in html
+        assert "<em>Prelude on AZMON</em> &mdash; J.S. Bach / Organist" in html
+        assert "<span>*POSTLUDE</span>" in html
+        assert "<em>Toccata</em> &mdash; Charles-Marie Widor / Organist" in html
 
     @patch("bulletin_maker.renderer.html_renderer._safe_setting_image_uri", return_value="")
     @patch("bulletin_maker.renderer.html_renderer._load_offertory_image_uri", return_value="")
@@ -416,6 +505,75 @@ class TestBulletinTemplate:
         )
 
         assert "The Lord give you peace.<br>\n<strong>Amen.</strong>" in html
+
+    def test_bulletin_prayers_bold_terminal_amen_without_bolding_pastor_lines(self):
+        env = setup_jinja_env()
+        template = env.get_template("bulletin.html")
+        html = template.render(
+            css="",
+            church_address="",
+            show_confession=False,
+            prayer_of_day_html="<p>Through Christ our Lord. Amen.</p>",
+            offering_prayer_text="Receive these gifts. Amen.",
+            prayer_after_communion_text="Send us in peace.\nAmen.",
+            invitation_to_communion_text="Come to the table.",
+            eucharistic_form="short",
+            words_of_institution_paragraphs=[],
+            lords_prayer_stanzas=["forever and ever. Amen."],
+            blessing_lines=[],
+            dismissal_entries=[],
+        )
+
+        assert "Through Christ our Lord.<br>\n<strong>Amen.</strong></p>" in html
+        assert "Receive these gifts.<br>\n<strong>Amen.</strong>" in html
+        assert "Send us in peace.<br>\n<strong>Amen.</strong>" in html
+        assert "forever and ever.<br>\n<strong>Amen.</strong>" in html
+        assert (
+            '<span class="role-label">P: </span><strong>The peace of Christ'
+            not in html
+        )
+        assert '<span class="role-label">P: </span>The peace of Christ' in html
+        assert (
+            '<span class="role-label">P: </span><strong>Gathered into one'
+            not in html
+        )
+        assert '<span class="role-label">P: </span>Gathered into one' in html
+        assert (
+            '<span class="role-label">P: </span><strong>Come to the table.'
+            not in html
+        )
+        assert '<span class="role-label">P: </span>Come to the table.' in html
+
+    def test_large_print_great_thanksgiving_bolds_only_congregation_response(self):
+        env = setup_jinja_env()
+        template = env.get_template("large_print.html")
+        html = template.render(
+            css="",
+            church_address="",
+            show_confession=False,
+            prayer_of_day_html="<p>Through Christ our Lord. Amen.</p>",
+            invitation_to_communion_text="Come to the table.",
+            great_thanksgiving_dialog=[
+                (DialogRole.PASTOR, "The Lord be with you."),
+                (DialogRole.CONGREGATION, "And also with you."),
+            ],
+            eucharistic_form="short",
+            words_of_institution_paragraphs=[],
+            lords_prayer_stanzas=[],
+            sanctus_stanzas=[],
+            agnus_dei_stanzas=[],
+            blessing_lines=[],
+            dismissal_entries=[],
+        )
+
+        assert "<strong>The Lord be with you.</strong>" not in html
+        assert "<strong>And also with you.</strong>" in html
+        assert "Through Christ our Lord.<br>\n<strong>Amen.</strong></p>" in html
+        assert (
+            '<span class="role-label">P: </span><strong>The peace of Christ'
+            not in html
+        )
+        assert '<span class="role-label">P: </span>The peace of Christ' in html
 
 
 class TestHymnTitleStr:
