@@ -242,12 +242,19 @@ var api = (function() {
         try { data = await resp.json(); } catch (e) {}
         if (!resp.ok) {
             var detail = (data && data.detail) || {};
-            return {
+            var failure = {
                 success: false,
                 error: detail.error || ("Server error (HTTP " + resp.status + ")"),
                 error_type: detail.error_type || "internal",
                 auth_error: !!detail.auth_error,
             };
+            // Expired sessions re-open the sign-in overlay from ANY call
+            if (failure.auth_error) handleAuthError(failure);
+            return failure;
+        }
+        if (data === null) {
+            return { success: false, error_type: "internal",
+                     error: "The server sent an unexpected response — please try again." };
         }
         return data;
     }
@@ -349,6 +356,32 @@ var api = (function() {
     };
     return methods;
 })();
+
+// Allowlist sanitizer for S&S-derived HTML (previews). Keeps textual
+// structure, drops every attribute except class and any non-listed tag.
+var SANITIZE_ALLOWED_TAGS = {
+    P: 1, BR: 1, DIV: 1, SPAN: 1, SUP: 1, SUB: 1, EM: 1, STRONG: 1,
+    B: 1, I: 1, H3: 1, H4: 1, UL: 1, OL: 1, LI: 1,
+};
+
+function sanitizeHtml(html) {
+    var template = document.createElement("template");
+    template.innerHTML = html || "";
+    (function walk(node) {
+        var children = Array.from(node.children || []);
+        children.forEach(function(el) {
+            if (!SANITIZE_ALLOWED_TAGS[el.tagName]) {
+                el.replaceWith(document.createTextNode(el.textContent || ""));
+                return;
+            }
+            Array.from(el.attributes).forEach(function(attr) {
+                if (attr.name !== "class") el.removeAttribute(attr.name);
+            });
+            walk(el);
+        });
+    })(template.content);
+    return template.innerHTML;
+}
 
 function escapeHtml(str) {
     var div = document.createElement("div");
@@ -908,6 +941,7 @@ function resetFormUI() {
 
 /** Resets all wizard state and UI to initial values. */
 function resetAll() {
+    state.unsavedWork = false;
     Object.assign(state, initialState());
 
     // Reset UI
@@ -950,6 +984,7 @@ function resetAll() {
 async function handleDateFetchResult(result) {
     state.season = result.season;
     state.defaults = result.defaults;
+    state.unsavedWork = true;
 
     // Surface S&S content sanity-check warnings (empty sections)
     var contentWarning = $("#content-warning");
@@ -1086,29 +1121,28 @@ async function handleDateFetchResult(result) {
                 return;
             }
             showBtnSpinner(previewBtn);
-            try {
-                var res = await api.get_reading_preview(slot);
-                hideBtnSpinner(previewBtn, "Preview");
-                if (!res.success) {
-                    return;
-                }
-                var preview = document.createElement("div");
-                preview.className = "reading-content-preview";
-                if (res.intro) {
-                    var intro = document.createElement("p");
-                    intro.className = "reading-intro";
-                    intro.textContent = res.intro;
-                    preview.appendChild(intro);
-                }
-                var content = document.createElement("div");
-                content.className = "reading-content";
-                content.innerHTML = res.preview_html;
-                preview.appendChild(content);
-                div.appendChild(preview);
-                previewBtn.textContent = "Hide";
-            } catch (_) {
-                hideBtnSpinner(previewBtn, "Preview");
+            var res = await api.get_reading_preview(slot);
+            hideBtnSpinner(previewBtn, "Preview");
+            if (!res.success) {
+                showError($("#date-error"),
+                    "Could not load the preview: " + (res.error || "unknown error"));
+                return;
             }
+            hideError($("#date-error"));
+            var preview = document.createElement("div");
+            preview.className = "reading-content-preview";
+            if (res.intro) {
+                var intro = document.createElement("p");
+                intro.className = "reading-intro";
+                intro.textContent = res.intro;
+                preview.appendChild(intro);
+            }
+            var content = document.createElement("div");
+            content.className = "reading-content";
+            content.innerHTML = sanitizeHtml(res.preview_html);
+            preview.appendChild(content);
+            div.appendChild(preview);
+            previewBtn.textContent = "Hide";
         });
         header.appendChild(previewBtn);
 
@@ -1182,8 +1216,6 @@ function setupDateFetch() {
         this.disabled = true;
 
         const dateDisplay = formatDate(dateStr);
-        state.dateStr = dateStr;
-        state.dateDisplay = dateDisplay;
 
         const result = await api.fetch_day_content(dateStr, dateDisplay);
 
@@ -1191,11 +1223,13 @@ function setupDateFetch() {
         this.disabled = false;
 
         if (!result.success) {
-            if (handleAuthError(result)) return;
+            if (result.auth_error) return;
             showError($("#date-error"), result.error || "Failed to fetch content.");
             return;
         }
 
+        state.dateStr = dateStr;
+        state.dateDisplay = dateDisplay;
         await handleDateFetchResult(result);
     });
 }
@@ -1373,17 +1407,83 @@ function setupFetchAllHymns() {
 
         showBtnSpinner(this);
         for (var i = 0; i < toFetch.length; i++) {
-            var btn = toFetch[i].querySelector(".hymn-fetch-btn");
-            if (btn) btn.click();
-            // Wait for the fetch to complete (button re-enables when done)
-            await new Promise(function(resolve) {
-                var check = setInterval(function() {
-                    if (!btn.disabled) { clearInterval(check); resolve(); }
-                }, 100);
-            });
+            await fetchHymnSlot(toFetch[i]);
         }
         hideBtnSpinner(this, "Fetch All Hymns");
     });
+}
+
+/** Fetch one hymn slot's title + lyrics. Callable directly (Fetch All,
+    past-run restore) or from the per-slot button — no click simulation. */
+async function fetchHymnSlot(slot) {
+    const slotName = slot.dataset.slot;
+    const numberInput = slot.querySelector(".hymn-number");
+    const collection = slot.querySelector(".hymn-collection").value;
+    const errorEl = slot.querySelector(".hymn-error");
+    const infoEl = slot.querySelector(".hymn-info");
+    const fetchBtn = slot.querySelector(".hymn-fetch-btn");
+    const clearBtn = slot.querySelector(".hymn-clear-btn");
+    const number = numberInput.value.trim();
+
+    if (!number) {
+        showError(errorEl, "Enter a hymn number from the hymnal's index.");
+        hide(infoEl);
+        return;
+    }
+
+    hideError(errorEl);
+    infoEl.textContent = "";
+    hide(infoEl);
+    if (clearBtn) hide(clearBtn);
+    state.hymns[slotName] = null;
+    showBtnSpinner(fetchBtn);
+
+    try {
+        // One call: the server merges search + lyrics fetch
+        const result = await api.search_hymn(number, collection);
+        hideBtnSpinner(fetchBtn, "Fetch");
+
+        if (!result.success) {
+            showError(errorEl, result.error ||
+                "Hymn not found. Check the number and make sure the right hymnal is selected.");
+            return;
+        }
+
+        if (result.lyrics_unavailable) {
+            infoEl.textContent = result.title + " (title only \u2014 no lyrics available)";
+            show(infoEl);
+            if (clearBtn) show(clearBtn);
+            state.hymns[slotName] = {
+                number: number,
+                collection: collection,
+                title: result.title,
+                hasLyrics: false,
+            };
+            return;
+        }
+
+        infoEl.textContent = result.title +
+            " \u2014 " + result.verse_count + " verse(s)" +
+            (result.has_refrain ? " + refrain" : "");
+        show(infoEl);
+        if (clearBtn) show(clearBtn);
+        var allVerses = [];
+        for (var vi = 1; vi <= result.verse_count; vi++) allVerses.push(vi);
+        state.hymns[slotName] = {
+            number: number,
+            collection: collection,
+            title: result.title,
+            hasLyrics: result.verse_count > 0,
+            verseCount: result.verse_count,
+            selectedVerses: allVerses,
+        };
+        if (result.verse_count > 1) {
+            showVerseSelect(slot, slotName, result.verse_count);
+        }
+    } catch (err) {
+        hideBtnSpinner(fetchBtn, "Fetch");
+        showError(errorEl, "Failed to fetch hymn: " + (err.message || "unknown error"));
+    }
 }
 
 function setupHymnFetch() {
@@ -1395,98 +1495,8 @@ function setupHymnFetch() {
     });
 
     $$(".hymn-fetch-btn").forEach(function(btn) {
-        btn.addEventListener("click", async function() {
-            const slot = this.closest(".hymn-slot");
-            const slotName = slot.dataset.slot;
-            const numberInput = slot.querySelector(".hymn-number");
-            const collection = slot.querySelector(".hymn-collection").value;
-            const errorEl = slot.querySelector(".hymn-error");
-            const infoEl = slot.querySelector(".hymn-info");
-            const number = numberInput.value.trim();
-
-            if (!number) {
-                showError(errorEl, "Enter a hymn number from the hymnal's index.");
-                hide(infoEl);
-                return;
-            }
-
-            // Clear previous results
-            hideError(errorEl);
-            infoEl.textContent = "";
-            hide(infoEl);
-            var clearBtn = slot.querySelector(".hymn-clear-btn");
-            if (clearBtn) hide(clearBtn);
-            state.hymns[slotName] = null;
-            showBtnSpinner(this);
-
-            try {
-                // Search first
-                const searchResult = await api.search_hymn(number, collection);
-
-                if (!searchResult.success) {
-                    hideBtnSpinner(this, "Fetch");
-                    showError(errorEl, searchResult.error || "Hymn not found. Check the number and make sure the right hymnal is selected.");
-                    return;
-                }
-
-                // Skip lyrics fetch if hymn has no words download
-                if (!searchResult.has_words) {
-                    hideBtnSpinner(this, "Fetch");
-                    infoEl.textContent = searchResult.title + " (title only \u2014 no lyrics available)";
-                    show(infoEl);
-                    if (clearBtn) show(clearBtn);
-                    state.hymns[slotName] = {
-                        number: number,
-                        collection: collection,
-                        title: searchResult.title,
-                        hasLyrics: false,
-                    };
-                    return;
-                }
-
-                // Then fetch lyrics
-                const lyricsResult = await api.fetch_hymn_lyrics(
-                    number, state.dateStr, collection
-                );
-
-                hideBtnSpinner(this, "Fetch");
-
-                if (lyricsResult.success) {
-                    infoEl.textContent = searchResult.title +
-                        " \u2014 " + lyricsResult.verse_count + " verse(s)" +
-                        (lyricsResult.has_refrain ? " + refrain" : "");
-                    show(infoEl);
-                    if (clearBtn) show(clearBtn);
-                    var allVerses = [];
-                    for (var vi = 1; vi <= lyricsResult.verse_count; vi++) allVerses.push(vi);
-                    state.hymns[slotName] = {
-                        number: number,
-                        collection: collection,
-                        title: searchResult.title,
-                        hasLyrics: true,
-                        verseCount: lyricsResult.verse_count,
-                        selectedVerses: allVerses,
-                    };
-                    if (lyricsResult.verse_count > 1) {
-                        showVerseSelect(slot, slotName, lyricsResult.verse_count);
-                    }
-                } else {
-                    // Lyrics failed but search succeeded — still usable (title only)
-                    infoEl.textContent = searchResult.title + " (title only \u2014 lyrics unavailable)";
-                    show(infoEl);
-                    if (clearBtn) show(clearBtn);
-                    state.hymns[slotName] = {
-                        number: number,
-                        collection: collection,
-                        title: searchResult.title,
-                        hasLyrics: false,
-                    };
-                    showError(errorEl, "Lyrics: " + (lyricsResult.error || "unavailable"));
-                }
-            } catch (err) {
-                hideBtnSpinner(this, "Fetch");
-                showError(errorEl, "Failed to fetch hymn: " + (err.message || "unknown error"));
-            }
+        btn.addEventListener("click", function() {
+            fetchHymnSlot(this.closest(".hymn-slot"));
         });
     });
 }
@@ -1536,7 +1546,7 @@ async function loadPastRuns() {
             deleteBtn.textContent = "Delete";
             deleteBtn.addEventListener("click", function(e) {
                 e.stopPropagation();
-                deletePastRun(run.id);
+                deletePastRun(run.id, label);
             });
             item.appendChild(deleteBtn);
 
@@ -1547,11 +1557,17 @@ async function loadPastRuns() {
     }
 }
 
-async function deletePastRun(runId) {
-    try {
-        await api.delete_past_run(runId);
-        loadPastRuns();
-    } catch (_) {}
+async function deletePastRun(runId, label) {
+    if (!confirm('Delete the saved run "' + (label || runId) + '"? This cannot be undone.')) {
+        return;
+    }
+    var result = await api.delete_past_run(runId);
+    if (!result.success) {
+        showError($("#date-error"),
+            "Could not delete that run: " + (result.error || "unknown error"));
+        return;
+    }
+    loadPastRuns();
 }
 
 async function savePastRun(formData) {
@@ -1575,18 +1591,20 @@ async function savePastRun(formData) {
         hymn_summary: hymnSummary,
     };
 
-    try {
-        await api.save_past_run(saveData, metadata);
-        loadPastRuns();
-    } catch (_) {}
+    var result = await api.save_past_run(saveData, metadata);
+    if (!result.success) {
+        showWarning($("#date-warning"),
+            "The documents generated, but this run could not be saved to Past Runs.");
+        return;
+    }
+    loadPastRuns();
 }
 
 async function restorePastRun(runId) {
-    try {
-        var result = await api.get_past_run(runId);
-        if (!result.success) return;
-    } catch (_) {
-        showError($("#date-error"), "Failed to load past run.");
+    var result = await api.get_past_run(runId);
+    if (!result.success) {
+        showError($("#date-error"),
+            "Could not load that past run: " + (result.error || "unknown error"));
         return;
     }
 
@@ -1594,8 +1612,6 @@ async function restorePastRun(runId) {
 
     // Set the date and trigger content fetch
     $("#date-input").value = fd.date;
-    state.dateStr = fd.date;
-    state.dateDisplay = formatDate(fd.date);
 
     hideError($("#date-error"));
     hideWarning($("#date-warning"));
@@ -1615,6 +1631,8 @@ async function restorePastRun(runId) {
         return;
     }
 
+    state.dateStr = fd.date;
+    state.dateDisplay = formatDate(fd.date);
     await handleDateFetchResult(fetchResult);
 
     // Overlay saved settings
@@ -1693,17 +1711,7 @@ async function restoreHymns(fd) {
             collectionSelect.value = hymnData.collection;
         }
 
-        var fetchBtn = slotEl.querySelector(".hymn-fetch-btn");
-        if (fetchBtn) fetchBtn.click();
-
-        // Wait for the fetch to complete (30s timeout)
-        await new Promise(function(resolve) {
-            var attempts = 0;
-            var check = setInterval(function() {
-                attempts++;
-                if (!fetchBtn.disabled || attempts > 300) { clearInterval(check); resolve(); }
-            }, 100);
-        });
+        await fetchHymnSlot(slotEl);
 
         // Restore verse selection if applicable
         if (hymnData.selected_verses && state.hymns[slot] && state.hymns[slot].verseCount) {
@@ -2158,9 +2166,12 @@ function collectFormData() {
 }
 
 /** Runs the document generation flow. Extracted for reuse by single-doc regen. */
-async function runGeneration() {
+var generationInProgress = false;
+
+async function runGeneration(docOverride) {
     const generateBtn = $("#generate-btn");
     const errorEl = $("#generate-error");
+    if (generationInProgress) return;
     hideError(errorEl);
     hide($("#results-area"));
 
@@ -2170,7 +2181,17 @@ async function runGeneration() {
         return;
     }
 
-    var selectedDocs = $$('input[name="doc_select"]:checked');
+    // The date box must match what was actually fetched
+    var dateInput = $("#date-input");
+    if (dateInput && dateInput.value && dateInput.value !== state.dateStr) {
+        showError(errorEl,
+            "The date box shows " + dateInput.value + " but the fetched content is for " +
+            state.dateStr + ". Click Fetch Content on Step 1 before generating.");
+        return;
+    }
+
+    var selectedDocs = docOverride ||
+        Array.from($$('input[name="doc_select"]:checked')).map(function(el) { return el.value; });
     if (selectedDocs.length === 0) {
         showError(errorEl, "Select at least one document to generate.");
         return;
@@ -2180,6 +2201,7 @@ async function runGeneration() {
     }
 
     const formData = collectFormData();
+    formData.selected_docs = selectedDocs;
 
     // Warn if any hymns lack lyrics (Large Print will show title only)
     var missingLyrics = [];
@@ -2201,7 +2223,9 @@ async function runGeneration() {
         if (!proceed) return;
     }
 
+    generationInProgress = true;
     generateBtn.disabled = true;
+    $$(".regen-single-btn").forEach(function(el) { el.disabled = true; });
     show($("#progress-area"));
     $("#progress-fill").style.width = "0%";
     $("#progress-status").textContent = "Starting generation...";
@@ -2210,6 +2234,7 @@ async function runGeneration() {
 
     const result = await api.generate_all(formData);
 
+    generationInProgress = false;
     generateBtn.disabled = false;
 
     if (result.error && !result.results) {
@@ -2277,7 +2302,9 @@ async function runGeneration() {
     // Store output dir for open folder button
 
 
+    state.unsavedWork = false;
     show($("#results-area"));
+    $("#results-area").scrollIntoView({ behavior: "smooth", block: "start" });
 
     // Save this run for Past Runs recall
     if (Object.keys(result.results || {}).length > 0) {
@@ -2287,16 +2314,7 @@ async function runGeneration() {
 
 /** Regenerate a single document by key, then restore all checkboxes. */
 async function regenerateSingleDoc(docKey) {
-    var checkboxes = $$('input[name="doc_select"]');
-    var savedState = Array.from(checkboxes).map(function(el) { return el.checked; });
-
-    // Uncheck all, check only the target
-    checkboxes.forEach(function(el) { el.checked = (el.value === docKey); });
-
-    await runGeneration();
-
-    // Restore checkbox state
-    checkboxes.forEach(function(el, i) { el.checked = savedState[i]; });
+    await runGeneration([docKey]);
 }
 
 function setupGenerate() {
@@ -2342,6 +2360,15 @@ function setupMemorialAcclamationModeToggle() {
     });
     updateMemorialAcclamationModeControls();
 }
+
+// Back/refresh/close protection: a fetched-but-not-generated bulletin
+// represents real volunteer effort — make the browser ask first.
+window.addEventListener("beforeunload", function(e) {
+    if (state.unsavedWork) {
+        e.preventDefault();
+        e.returnValue = "";
+    }
+});
 
 document.addEventListener("DOMContentLoaded", function() {
     // Pre-fill date with next Sunday

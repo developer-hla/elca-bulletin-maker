@@ -244,19 +244,36 @@ def create_app() -> FastAPI:
                     "error_type": "internal",
                 })
             found = results[0]
-            if date:
-                try:
-                    dt = datetime.strptime(date, "%Y-%m-%d")
-                except ValueError:
-                    dt = datetime.now()
-            else:
-                dt = datetime.now()
-            use_date = f"{dt.month}/{dt.day}/{dt.year}"
-            lyrics = client.fetch_hymn_lyrics(number, use_date, collection)
         except AuthError as e:
             raise _fail(401, e)
         except BulletinError as e:
             raise _fail(502, e)
+
+        if date:
+            try:
+                dt = datetime.strptime(date, "%Y-%m-%d")
+            except ValueError:
+                dt = datetime.now()
+        else:
+            dt = datetime.now()
+        use_date = f"{dt.month}/{dt.day}/{dt.year}"
+
+        # Some hymns have no downloadable words — degrade to title-only
+        # rather than failing the whole slot.
+        try:
+            lyrics = client.fetch_hymn_lyrics(number, use_date, collection)
+        except AuthError as e:
+            raise _fail(401, e)
+        except BulletinError:
+            logger.warning("No lyrics for %s %s — title only", collection, number)
+            return {
+                "success": True,
+                "number": f"{collection} {number}",
+                "title": found.title,
+                "verse_count": 0,
+                "has_refrain": False,
+                "lyrics_unavailable": True,
+            }
 
         session.hymn_cache[f"{collection}_{number}"] = {
             "number": lyrics.number,
