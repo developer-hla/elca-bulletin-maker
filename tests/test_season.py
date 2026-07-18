@@ -66,6 +66,15 @@ class TestGetSeasonalConfig:
         config = get_seasonal_config(LiturgicalSeason.PENTECOST)
         assert config.eucharistic_form == "short"
 
+    def test_all_eucharistic_forms_are_renderable(self):
+        # Templates render only "short" and "extended"; any other value
+        # silently falls through to the short form (the old "poetic" bug).
+        for season in LiturgicalSeason:
+            config = get_seasonal_config(season)
+            assert config.eucharistic_form in ("short", "extended"), (
+                f"{season} defaults to a form templates cannot render"
+            )
+
     def test_christmas_has_memorial_acclamation(self):
         config = get_seasonal_config(LiturgicalSeason.CHRISTMAS)
         assert config.has_memorial_acclamation is True

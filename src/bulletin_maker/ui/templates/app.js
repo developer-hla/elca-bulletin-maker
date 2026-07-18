@@ -470,14 +470,8 @@ function buildReviewOutline() {
     }
     items.push({ label: "Prelude", value: preludeVal || "(not set)", empty: !preludeVal });
 
-    // Baptism after welcome
     var baptismOn = $("#include-baptism").checked;
-    var placementEl = $("#baptism-placement");
-    var baptismPlacement = placementEl ? placementEl.value : "replace_creed";
     var baptismNames = $("#baptism-names").value.trim();
-    if (baptismOn && baptismPlacement === "after_welcome") {
-        items.push({ label: "BAPTISM", value: baptismNames || "(names not set)", extra: true });
-    }
 
     // Confession
     var showConf = $("#show-confession").checked;
@@ -518,15 +512,10 @@ function buildReviewOutline() {
     // Sermon Hymn
     items.push(hymnOutlineItem("Sermon Hymn", "sermon"));
 
-    // Baptism after sermon
-    if (baptismOn && baptismPlacement === "after_sermon") {
-        items.push({ label: "BAPTISM", value: baptismNames || "(names not set)", extra: true });
-    }
-
     // Creed (or Baptism replacing creed)
     var creedEl = document.querySelector('input[name="creed_type"]:checked');
     var creedType = creedEl ? creedEl.value : "apostles";
-    if (baptismOn && baptismPlacement === "replace_creed") {
+    if (baptismOn) {
         items.push({ label: "BAPTISM", value: (baptismNames || "(names not set)") + " (replaces Creed)", extra: true });
     } else {
         items.push({ label: "Creed", value: creedType === "nicene" ? "Nicene Creed" : "Apostles\u2019 Creed" });
@@ -534,11 +523,6 @@ function buildReviewOutline() {
 
     // Prayers
     items.push({ label: "Prayers", value: "This Week\u2019s (S&S)" });
-
-    // Baptism after prayers
-    if (baptismOn && baptismPlacement === "after_prayers") {
-        items.push({ label: "BAPTISM", value: baptismNames || "(names not set)", extra: true });
-    }
 
     // Offering Prayer
     items.push({ label: "Offering Prayer", value: getTextSourceLabel("offering_prayer"), textKey: "offering_prayer" });
@@ -927,8 +911,6 @@ function resetAll() {
     $("#include-baptism").checked = false;
     hide($("#baptism-details"));
     $("#baptism-names").value = "";
-    var placementEl = $("#baptism-placement");
-    if (placementEl) placementEl.value = "after_welcome";
 
     // Reset review outline + season theme
     $("#review-outline").innerHTML = "";
@@ -1233,8 +1215,6 @@ function applyDefaults(defaults) {
     $("#include-baptism").checked = false;
     hide($("#baptism-details"));
     $("#baptism-names").value = "";
-    var placementEl = $("#baptism-placement");
-    if (placementEl) placementEl.value = "after_welcome";
 }
 
 /** Populate preface dropdown from API, pre-selecting the seasonal default. */
@@ -1642,8 +1622,6 @@ function applyRestoredSettings(fd) {
     if (fd.include_baptism) {
         show(baptismDetails);
         $("#baptism-names").value = fd.baptism_candidate_names || "";
-        var placementEl = $("#baptism-placement");
-        if (placementEl && fd.baptism_placement) placementEl.value = fd.baptism_placement;
     } else {
         hide(baptismDetails);
     }
@@ -2073,8 +2051,6 @@ function collectFormData() {
     const epEl = document.querySelector('input[name="eucharistic_form"]:checked');
     const includeMemorial = $("#include-memorial").checked;
 
-    var placementEl = $("#baptism-placement");
-
     const formData = {
         date: state.dateStr,
         date_display: state.dateDisplay,
@@ -2089,7 +2065,6 @@ function collectFormData() {
         show_nunc_dimittis: $("#show-nunc-dimittis").checked,
         include_baptism: $("#include-baptism").checked,
         baptism_candidate_names: $("#baptism-names").value.trim(),
-        baptism_placement: placementEl ? placementEl.value : "after_welcome",
         prelude_title: $("#prelude-title").value.trim(),
         prelude_composer: $("#prelude-composer").value.trim(),
         offertory_type: getOffertoryType(),

@@ -345,7 +345,6 @@
                         <p class="impact-text">The communion prayer printed in the bulletin. Extended adds a sung congregational response.</p>
                         <div class="radio-group">
                             <label><input type="radio" name="eucharistic_form" value="short"> Short</label>
-                            <label><input type="radio" name="eucharistic_form" value="poetic"> Poetic</label>
                             <label><input type="radio" name="eucharistic_form" value="extended"> Extended</label>
                         </div>
                         <span class="default-hint" id="hint-eucharistic"></span>
@@ -423,7 +422,7 @@
 
                 <div class="setting-group">
                     <label class="setting-label">Holy Baptism</label>
-                    <p class="impact-text">Adds the baptism liturgy to all documents. The service order will change based on placement.</p>
+                    <p class="impact-text">Adds the baptism liturgy to all documents, replacing the Creed in the service order.</p>
                     <label class="checkbox-label">
                         <input type="checkbox" id="include-baptism"> Include Holy Baptism
                     </label>
@@ -432,15 +431,6 @@
                     <div class="field" style="margin-top: 10px; max-width: 400px;">
                         <label for="baptism-names">Candidate Name(s)</label>
                         <input type="text" id="baptism-names" placeholder="e.g. John Smith, Jane Doe" maxlength="200">
-                    </div>
-                    <div class="field" style="margin-top: 10px; max-width: 300px;">
-                        <label for="baptism-placement">Placement in Service</label>
-                        <select id="baptism-placement">
-                            <option value="after_welcome" selected>After Welcome (before Confession)</option>
-                            <option value="replace_creed">Replaces Creed</option>
-                            <option value="after_sermon">After Sermon (before Creed)</option>
-                            <option value="after_prayers">After Prayers</option>
-                        </select>
                     </div>
                 </div>
 

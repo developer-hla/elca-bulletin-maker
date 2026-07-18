@@ -104,7 +104,7 @@ class SeasonalConfig:
     has_kyrie: bool                # Kyrie present (omitted in Large Print regardless)
     canticle: str                  # CANTICLE_GLORY_TO_GOD, CANTICLE_THIS_IS_THE_FEAST, or CANTICLE_NONE
     creed_default: str             # "apostles" or "nicene"
-    eucharistic_form: str          # "short", "poetic", or "extended"
+    eucharistic_form: str          # "short" or "extended"
     has_memorial_acclamation: bool # Memorial Acclamation in eucharistic prayer
     preface: PrefaceType           # Default preface for this season
     show_confession: bool = True   # False for Christmas Eve
@@ -118,7 +118,7 @@ _SEASON_CONFIGS = {
         has_kyrie=True,
         canticle=CANTICLE_GLORY_TO_GOD,
         creed_default="apostles",
-        eucharistic_form="poetic",
+        eucharistic_form="short",
         has_memorial_acclamation=False,
         preface=PrefaceType.ADVENT,
     ),

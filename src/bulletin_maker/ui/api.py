@@ -808,7 +808,6 @@ class BulletinAPI:
             reading_overrides=form_data.get("reading_overrides") or None,
             include_baptism=form_data.get("include_baptism", False),
             baptism_candidate_names=form_data.get("baptism_candidate_names", ""),
-            baptism_placement=form_data.get("baptism_placement", "after_welcome"),
             confession_entries=self._parse_dialog_entries(
                 form_data.get("confession_entries")
             ),

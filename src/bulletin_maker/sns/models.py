@@ -97,7 +97,7 @@ class ServiceConfig:
     creed_type: Optional[str] = None            # "apostles" or "nicene"
     include_kyrie: Optional[bool] = None        # Show Kyrie?
     canticle: Optional[str] = None              # CANTICLE_GLORY_TO_GOD, CANTICLE_THIS_IS_THE_FEAST, or CANTICLE_NONE
-    eucharistic_form: Optional[str] = None      # "short", "poetic", or "extended"
+    eucharistic_form: Optional[str] = None      # "short" or "extended"
     include_memorial_acclamation: Optional[bool] = None  # Memorial Acclamation in EP?
     memorial_acclamation_mode: Optional[str] = None       # "sung" or "spoken"
     preface: Optional[PrefaceType] = None       # None = Sundays/Ordinary Time (not seasonal)
@@ -127,7 +127,6 @@ class ServiceConfig:
     # ── Baptism ──
     include_baptism: bool = False
     baptism_candidate_names: str = ""           # Comma-separated names
-    baptism_placement: str = "after_welcome"     # "after_welcome", "replace_creed", "after_sermon", "after_prayers"
 
     # ── Other service details ──
     prelude_title: str = ""
