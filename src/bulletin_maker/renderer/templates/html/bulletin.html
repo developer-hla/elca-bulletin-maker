@@ -22,7 +22,7 @@
     <div class="cover-image"></div>
     {% endif %}
     <div class="cover-footer">
-        <p class="cover-date">10:00 AM &mdash; {{ date_display }}</p>
+        <p class="cover-date">{{ service_time }} &mdash; {{ date_display }}</p>
         <p class="cover-day-name">The {{ day_name }}</p>
     </div>
 </div>
@@ -535,11 +535,9 @@
 {% endif %}
 
 <div class="copyright-block">
-    <p>Liturgy from <em>Evangelical Lutheran Worship</em> &copy; 2006 Augsburg Fortress.
-    Reprinted by permission under Augsburg Fortress Liturgies Annual License.</p>
-    <p>Scripture readings from the <em>New Revised Standard Version Bible</em>
-    &copy; 1989, Division of Christian Education of the National Council of the
-    Churches of Christ in the United States of America. Used by permission.</p>
+{% for para in copyright_paragraphs %}
+    <p>{{ para }}</p>
+{% endfor %}
 </div>
 </div>
 

@@ -1,0 +1,28 @@
+# Congregation profile — identity fields that appear on the printed
+# documents plus the bounded output options. This is the shipped
+# default (Ascension Lutheran Church, Jackson MS). Another congregation
+# copies this file to ~/.bulletin-maker/profile.toml and edits it;
+# everything not in this file is fixed house style.
+
+[church]
+name = "Ascension Lutheran Church"
+address_lines = [
+    "6481 Old Canton Road Jackson · Mississippi · 39211",
+    "601.956.4263",
+    "www.ascensionlutheran.com",
+]
+service_time = "10:00 AM"
+
+[texts]
+welcome_message = "Welcome to Ascension. We are glad that you have chosen to worship with us today! May the Holy Spirit bless us as we worship and praise God together."
+standing_instructions = "“ * ” Indicates when the congregation stands. \nBold lettering indicates the congregation reads aloud in UNISON."
+copyright_paragraphs = [
+    "Liturgy from Evangelical Lutheran Worship © 2006 Augsburg Fortress. Reprinted by permission under Augsburg Fortress Liturgies Annual License.",
+    "Scripture readings from the New Revised Standard Version Bible © 1989, Division of Christian Education of the National Council of the Churches of Christ in the United States of America. Used by permission.",
+]
+
+[options]
+# Bounded choices — pick from the documented preset lists, never freeform.
+liturgical_setting = "setting_two"
+paper_size = "legal_booklet"
+cover_image = ""

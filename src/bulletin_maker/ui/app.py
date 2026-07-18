@@ -9,6 +9,7 @@ from pathlib import Path
 
 import webview
 
+from bulletin_maker.core.profile import load_profile
 from bulletin_maker.ui.api import BulletinAPI
 
 logger = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ def main() -> None:
     api = BulletinAPI(debug=debug)
 
     window = webview.create_window(
-        title="Bulletin Maker — Ascension Lutheran Church",
+        title=f"Bulletin Maker — {load_profile().church_name}",
         url=str(TEMPLATES_DIR / "index.html"),
         js_api=api,
         width=900,

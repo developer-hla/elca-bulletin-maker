@@ -757,6 +757,15 @@ function setupUpdateBanner() {
 async function initLogin() {
     await waitForApi();
 
+    // Show this congregation's name from the profile
+    try {
+        var profileResult = await window.pywebview.api.get_profile();
+        if (profileResult.success && profileResult.church_name) {
+            var subtitle = document.querySelector(".subtitle");
+            if (subtitle) subtitle.textContent = profileResult.church_name;
+        }
+    } catch (_) {}
+
     // Restore saved output directory
     try {
         var dirResult = await window.pywebview.api.get_saved_output_dir();

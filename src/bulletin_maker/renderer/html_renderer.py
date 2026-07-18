@@ -24,6 +24,7 @@ from typing import Callable, Optional
 
 from bulletin_maker.core.models import ServiceConfig
 from bulletin_maker.core.naming import extract_day_name
+from bulletin_maker.core.profile import CongregationProfile, load_profile
 from bulletin_maker.exceptions import BulletinError, ContentNotFoundError
 from bulletin_maker.sns.models import (
     CANTICLE_GLORY_TO_GOD,
@@ -79,8 +80,6 @@ from bulletin_maker.renderer.static_text import (
     BAPTISM_RENUNCIATION,
     BAPTISM_WELCOME,
     BAPTISM_WELCOME_RESPONSE,
-    CHURCH_ADDRESS,
-    CHURCH_NAME,
     COME_HOLY_SPIRIT,
     CONFESSION_AND_FORGIVENESS,
     DISMISSAL,
@@ -105,8 +104,6 @@ from bulletin_maker.renderer.static_text import (
     DEFAULT_PRAYERS_RESPONSE,
     PRAYERS_INTRO,
     SANCTUS,
-    STANDING_INSTRUCTIONS,
-    WELCOME_MESSAGE,
     WORDS_OF_INSTITUTION,
 )
 
@@ -789,6 +786,7 @@ def _build_eucharistic_context(config: ServiceConfig) -> dict:
 
 def _build_common_context(
     day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
+    profile: CongregationProfile | None = None,
 ) -> dict:
     """Build context keys shared by bulletin, large print, and leader guide."""
     prayers_call = DEFAULT_PRAYERS_CALL
@@ -808,14 +806,19 @@ def _build_common_context(
             except FileNotFoundError:
                 logger.warning("Cover image not found: %s", config.cover_image)
 
+    if profile is None:
+        profile = load_profile()
+
     ctx = {
-        "church_name": CHURCH_NAME,
-        "church_address": CHURCH_ADDRESS,
+        "church_name": profile.church_name,
+        "church_address": profile.church_address,
+        "service_time": profile.service_time,
+        "copyright_paragraphs": list(profile.copyright_paragraphs),
         "cover_image_uri": cover_image_uri,
         "date_display": config.date_display,
         "day_name": extract_day_name(day.title),
-        "welcome_message": WELCOME_MESSAGE,
-        "standing_instructions": STANDING_INSTRUCTIONS,
+        "welcome_message": profile.welcome_message,
+        "standing_instructions": profile.standing_instructions,
         "show_confession": config.show_confession,
         "confession_entries": config.confession_entries,
         "greeting_entries": GREETING if config.show_greeting else None,
@@ -846,9 +849,10 @@ def _build_large_print_context(
     sermon_hymn_image_uri: str = "",
     communion_hymn_image_uri: str = "",
     sending_hymn_image_uri: str = "",
+    profile: CongregationProfile | None = None,
 ) -> dict:
     """Build the full template context for the Large Print document."""
-    ctx = _build_common_context(day, config, season)
+    ctx = _build_common_context(day, config, season, profile)
 
     ga_text = ""
     if day.gospel_acclamation:
@@ -996,9 +1000,10 @@ def _build_bulletin_context(
     season: LiturgicalSeason,
     *,
     communion_hymn_image_uri: str = "",
+    profile: CongregationProfile | None = None,
 ) -> dict:
     """Build template context for the standard Bulletin for Congregation."""
-    ctx = _build_common_context(day, config, season)
+    ctx = _build_common_context(day, config, season, profile)
 
     # Notation images for liturgical setting pieces
     kyrie_uri = _safe_setting_image_uri("kyrie") if config.include_kyrie else ""
@@ -1136,6 +1141,7 @@ def generate_large_print(
     season: LiturgicalSeason,
     client: SundaysClient | None = None,
     keep_intermediates: bool = False,
+    profile: CongregationProfile | None = None,
 ) -> Path:
     """Generate the Full with Hymns LARGE PRINT PDF via HTML + Playwright.
 
@@ -1157,6 +1163,7 @@ def generate_large_print(
     ctx = _build_large_print_context(
         day, config, season,
         communion_hymn_image_uri=_fetch_hymn_image_uri(client, config.communion_hymn),
+        profile=profile,
     )
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
@@ -1171,6 +1178,7 @@ def _build_leader_guide_context(
     sermon_hymn_image_uri: str = "",
     communion_hymn_image_uri: str = "",
     sending_hymn_image_uri: str = "",
+    profile: CongregationProfile | None = None,
 ) -> dict:
     """Build template context for the Leader Guide (large print + notation)."""
     ctx = _build_large_print_context(
@@ -1179,6 +1187,7 @@ def _build_leader_guide_context(
         sermon_hymn_image_uri=sermon_hymn_image_uri,
         communion_hymn_image_uri=communion_hymn_image_uri,
         sending_hymn_image_uri=sending_hymn_image_uri,
+        profile=profile,
     )
     ctx["is_leader_guide"] = True
 
@@ -1209,6 +1218,7 @@ def generate_leader_guide(
     season: LiturgicalSeason,
     client: SundaysClient | None = None,
     keep_intermediates: bool = False,
+    profile: CongregationProfile | None = None,
 ) -> Path:
     """Generate the Leader Guide PDF — large print with sung notation.
 
@@ -1235,6 +1245,7 @@ def generate_leader_guide(
         sermon_hymn_image_uri=_fetch_hymn_image_uri(client, config.sermon_hymn),
         communion_hymn_image_uri=_fetch_hymn_image_uri(client, config.communion_hymn),
         sending_hymn_image_uri=_fetch_hymn_image_uri(client, config.sending_hymn),
+        profile=profile,
     )
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
@@ -1328,6 +1339,7 @@ def generate_bulletin(
     client: SundaysClient | None = None,
     keep_intermediates: bool = False,
     on_progress: Optional[Callable[[str], None]] = None,
+    profile: CongregationProfile | None = None,
 ) -> tuple[Path, int | None]:
     """Generate the standard Bulletin for Congregation as a booklet PDF.
 
@@ -1355,6 +1367,7 @@ def generate_bulletin(
     template = env.get_template("bulletin.html")
     ctx = _build_bulletin_context(
         day, config, season, communion_hymn_image_uri=communion_hymn_image_uri,
+        profile=profile,
     )
     html_string = template.render(**ctx)
 

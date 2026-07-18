@@ -20,8 +20,6 @@ from bulletin_maker.renderer.static_text import (
     BAPTISM_RENUNCIATION,
     BAPTISM_WELCOME,
     BAPTISM_WELCOME_RESPONSE,
-    CHURCH_ADDRESS,
-    CHURCH_NAME,
     CONFESSION_AND_FORGIVENESS,
     DISMISSAL,
     EUCHARISTIC_PRAYER_CLOSING,
@@ -40,9 +38,7 @@ from bulletin_maker.renderer.static_text import (
     OFFERTORY_HYMN_VERSES,
     PRAYERS_INTRO,
     SANCTUS,
-    STANDING_INSTRUCTIONS,
     THIS_IS_THE_FEAST_TEXT,
-    WELCOME_MESSAGE,
     WORDS_OF_INSTITUTION,
 )
 
@@ -178,30 +174,12 @@ class TestConfession:
             assert isinstance(role, DialogRole)
 
 
-class TestChurchInfo:
-    def test_church_name(self):
-        assert "Ascension" in CHURCH_NAME
-        assert "Lutheran" in CHURCH_NAME
-
-    def test_church_address_has_phone(self):
-        assert "601" in CHURCH_ADDRESS
-
-    def test_church_address_has_url(self):
-        assert "ascensionlutheran.com" in CHURCH_ADDRESS
-
-
 class TestMiscTexts:
     def test_dismissal_has_response(self):
         assert "Thanks be to God" in DISMISSAL
 
     def test_prayers_intro_nonempty(self):
         assert len(PRAYERS_INTRO) > 10
-
-    def test_welcome_message_nonempty(self):
-        assert len(WELCOME_MESSAGE) > 20
-
-    def test_standing_instructions_nonempty(self):
-        assert len(STANDING_INSTRUCTIONS) > 10
 
     def test_invitation_to_lent_nonempty(self):
         assert len(INVITATION_TO_LENT) > 100

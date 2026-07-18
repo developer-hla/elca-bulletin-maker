@@ -299,20 +299,9 @@ OFFERTORY_HYMN_VERSES = [
     ),
 ]
 
-# Welcome message (from LP reference)
-WELCOME_MESSAGE = (
-    "Welcome to Ascension. We are glad that you have chosen to worship with us today! "
-    "May the Holy Spirit bless us as we worship and praise God together."
-)
-
-STANDING_INSTRUCTIONS = (
-    f"{LQUOTE} * {RQUOTE}{NBSP}Indicates when the congregation stands. \n"
-    "Bold lettering indicates the congregation reads aloud in UNISON."
-)
-
-# Church info for cover
-CHURCH_NAME = "Ascension Lutheran Church"
-CHURCH_ADDRESS = f"6481 Old Canton Road Jackson {MIDDOT} Mississippi {MIDDOT} 39211\n601.956.4263\nwww.ascensionlutheran.com"
+# Congregation identity (name, address, welcome message, standing
+# instructions) lives in the CongregationProfile — see core/profile.py
+# and profiles/ascension.toml.
 
 # ── Standard ELW Confession and Forgiveness (Form A) ──────────────
 # Used consistently at Ascension regardless of season.

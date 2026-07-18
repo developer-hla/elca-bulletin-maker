@@ -15,6 +15,7 @@ from typing import Callable, Optional
 
 from bulletin_maker.core.models import ServiceConfig
 from bulletin_maker.core.naming import build_filename
+from bulletin_maker.core.profile import CongregationProfile, load_profile
 from bulletin_maker.renderer import (
     generate_bulletin,
     generate_large_print,
@@ -109,6 +110,7 @@ def generate_documents(
     selected: set[str] | None = None,
     keep_intermediates: bool = False,
     on_progress: Optional[ProgressCallback] = None,
+    profile: CongregationProfile | None = None,
 ) -> GenerationResult:
     """Generate the selected documents into output_dir.
 
@@ -128,6 +130,11 @@ def generate_documents(
     unknown = selected - set(_SPECS_BY_KEY)
     if unknown:
         raise ValueError(f"Unknown document keys: {sorted(unknown)}")
+
+    if profile is None:
+        profile = load_profile()
+    if not config.cover_image and profile.cover_image:
+        config.cover_image = profile.cover_image
 
     outcome = GenerationResult()
     total = len(selected)
@@ -156,6 +163,7 @@ def generate_documents(
                 client=client,
                 keep_intermediates=keep_intermediates,
                 on_progress=_bulletin_progress,
+                profile=profile,
             )
             outcome.creed_page = creed_page
             return path
@@ -199,6 +207,7 @@ def generate_documents(
                 output_path=output_dir / _filename("large_print"),
                 season=season, client=client,
                 keep_intermediates=keep_intermediates,
+                profile=profile,
             ),
             outcome, _report_step,
         )
@@ -212,6 +221,7 @@ def generate_documents(
                 output_path=output_dir / _filename("leader_guide"),
                 season=season, client=client,
                 keep_intermediates=keep_intermediates,
+                profile=profile,
             ),
             outcome, _report_step,
         )

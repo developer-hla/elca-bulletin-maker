@@ -28,6 +28,7 @@ from bulletin_maker.core.documents import (
 )
 from bulletin_maker.core.models import ServiceConfig
 from bulletin_maker.core.naming import build_date_suffix, build_filename, extract_day_name
+from bulletin_maker.core.profile import load_profile
 from bulletin_maker.exceptions import AuthError, BulletinError, NetworkError, UpdateError
 from bulletin_maker.renderer.season import (
     PrefaceType,
@@ -147,6 +148,22 @@ class BulletinAPI:
         if self._client is None:
             self._client = SundaysClient()
         return self._client
+
+    # ── Congregation Profile ──────────────────────────────────────────
+
+    def get_profile(self) -> dict:
+        """Return congregation identity fields for UI display."""
+        try:
+            profile = load_profile()
+            return {
+                "success": True,
+                "church_name": profile.church_name,
+                "service_time": profile.service_time,
+                "source_path": profile.source_path,
+            }
+        except BulletinError as e:
+            return {"success": False, "error": str(e),
+                    "error_type": self._classify_error(e)}
 
     # ── Update Check ─────────────────────────────────────────────────
 
