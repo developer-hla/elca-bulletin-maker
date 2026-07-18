@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import threading
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -43,6 +44,41 @@ MARGINS_BULLETIN = {
     "left": "0.35in",
     "right": "0.35in",
 }
+
+
+# ── Cached browser ───────────────────────────────────────────────────
+# Auto-adjust renders a bulletin up to ~14 times; launching Chromium per
+# render dominated generation time. Playwright's sync API is bound to
+# the thread that started it, so the cache is thread-local. Browsers
+# live until process exit — Playwright's driver kills them when the
+# pipe closes, so no atexit hook is needed.
+
+_thread_state = threading.local()
+
+
+def _get_browser():
+    """Return this thread's cached Chromium, launching it on first use."""
+    browser = getattr(_thread_state, "browser", None)
+    if browser is not None and browser.is_connected():
+        return browser
+    playwright = getattr(_thread_state, "playwright", None)
+    if playwright is None:
+        from playwright.sync_api import sync_playwright
+        playwright = sync_playwright().start()
+        _thread_state.playwright = playwright
+    browser = playwright.chromium.launch()
+    _thread_state.browser = browser
+    return browser
+
+
+def _new_page():
+    """Open a page on the cached browser, relaunching once if it died."""
+    try:
+        return _get_browser().new_page()
+    except Exception:
+        logger.warning("Cached browser unavailable — relaunching Chromium")
+        _thread_state.browser = None
+        return _get_browser().new_page()
 
 
 def _build_header_template(
@@ -107,16 +143,13 @@ def render_to_pdf(
     Returns:
         Path to the generated PDF.
     """
-    from playwright.sync_api import sync_playwright
-
     output_path = Path(output_path).with_suffix(".pdf")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     margins = margins or MARGINS_DEFAULT
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page()
+    page = _new_page()
+    try:
         page.set_content(html_string, wait_until="networkidle")
 
         pdf_opts = {
@@ -144,7 +177,8 @@ def render_to_pdf(
             )
 
         page.pdf(**pdf_opts)
-        browser.close()
+    finally:
+        page.close()
 
     return output_path
 
