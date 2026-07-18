@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bulletin Maker — Help</title>
+    <link rel="icon" type="image/svg+xml" href="luther-rose.svg">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="help.css">
 </head>
@@ -27,16 +28,15 @@
             <p class="toc-heading">Contents</p>
             <ol>
                 <li><a href="#welcome">Welcome</a></li>
-                <li><a href="#what-you-need">What you'll need</a></li>
+                <li><a href="#accounts">Your account</a></li>
                 <li><a href="#quick-start">Quick Start</a></li>
                 <li><a href="#step-1">Step 1 — Date &amp; Music</a></li>
                 <li><a href="#step-2">Step 2 — Service Settings</a></li>
-                <li><a href="#step-3">Step 3 — Extras</a></li>
-                <li><a href="#step-4">Step 4 — Review &amp; Generate</a></li>
+                <li><a href="#step-3">Step 3 — Review &amp; Generate</a></li>
                 <li><a href="#documents">The five documents</a></li>
+                <li><a href="#settings">Church Settings (admins)</a></li>
                 <li><a href="#past-bulletins">Reusing past bulletins</a></li>
                 <li><a href="#troubleshooting">If something goes wrong</a></li>
-                <li><a href="#updates">Updates</a></li>
                 <li><a href="#contact">Need more help?</a></li>
             </ol>
         </nav>
@@ -49,42 +49,42 @@
             <p>
                 Bulletin Maker creates the five Sunday documents for you automatically.
                 Instead of copying readings, prayers, and hymns by hand each week,
-                you fill out a short form and the program builds the PDFs.
+                you fill out a short form in your web browser and the program
+                builds the PDFs.
             </p>
             <p>
                 You don't need to know anything technical to use it.
                 If you can fill in a form and click a button, you can make a bulletin.
             </p>
             <p class="callout">
-                <strong>Tip:</strong> You can keep this help window open next to
-                Bulletin Maker so you can read along as you go.
+                <strong>Tip:</strong> You can keep this help page open in another
+                tab so you can read along as you go.
             </p>
         </section>
 
-        <section id="what-you-need">
-            <h2>What you'll need</h2>
+        <section id="accounts">
+            <h2>Your account</h2>
+            <p>
+                Everyone who makes bulletins has their own simple account —
+                an email address and a password you choose. You never need the
+                church's Sundays &amp; Seasons password; a church admin links
+                that once, behind the scenes.
+            </p>
             <ul>
                 <li>
-                    <strong>Your Sundays &amp; Seasons account.</strong>
-                    Bulletin Maker logs in to <em>sundaysandseasons.com</em> on your behalf
-                    to pull readings, prayers, and hymn lyrics. Use the same username
-                    and password you use on that website.
+                    <strong>Joining your church:</strong> ask your church admin
+                    for the <em>invite code</em>, click
+                    "Join with an invite code" on the sign-in screen, and pick
+                    your own email and password.
                 </li>
                 <li>
-                    <strong>The hymn numbers for the service.</strong>
-                    Usually four hymns: gathering, sermon, communion, and sending.
-                    Most come from the cranberry-colored ELW hymnal; a few may come
-                    from the ACS book.
+                    <strong>Signing in:</strong> your email and the password you
+                    chose. If you see "Session expired," just sign in again —
+                    nothing is lost.
                 </li>
                 <li>
-                    <strong>An internet connection.</strong>
-                    The program has to talk to Sundays &amp; Seasons to fetch
-                    the readings and hymn words.
-                </li>
-                <li>
-                    <strong>A few minutes.</strong>
-                    Generating all five documents usually takes one to two minutes
-                    after you click [Generate].
+                    <strong>Forgot your password?</strong> Ask your church admin
+                    or the person who runs the server for help.
                 </li>
             </ul>
         </section>
@@ -94,23 +94,18 @@
             <p>Here's the short version, start to finish:</p>
             <ol class="big-steps">
                 <li>
-                    <strong>Open Bulletin Maker.</strong>
-                    Run <code>bulletin-maker</code> — the wizard opens in your browser.
-                </li>
-                <li>
-                    <strong>Sign in.</strong>
-                    Type your Sundays &amp; Seasons username and password,
-                    then click [Sign In]. The program will remember you next time.
+                    <strong>Open Bulletin Maker in your browser and sign in.</strong>
                 </li>
                 <li>
                     <strong>Pick the date.</strong>
-                    Click in the date box at the top of Step 1 and choose
-                    the Sunday you're making the bulletin for.
+                    Click the date box at the top of Step 1 and choose
+                    the Sunday you're making the bulletin for, then click
+                    [Fetch Content].
                 </li>
                 <li>
                     <strong>Type in the hymn numbers.</strong>
-                    Enter each hymn number. The program will look up the title
-                    automatically and show it back to you.
+                    Enter each hymn number and click [Fetch All Hymns]. The
+                    program looks up the titles and lyrics automatically.
                 </li>
                 <li>
                     <strong>Click [Next] through the rest of the steps.</strong>
@@ -118,15 +113,12 @@
                     You only need to change something if your service is unusual.
                 </li>
                 <li>
-                    <strong>Click [Generate Documents].</strong>
-                    Wait a minute or two. When it's done, your PDFs download
-                    right in the browser.
+                    <strong>Click [Generate Selected Documents].</strong>
+                    Wait a minute or two. Each PDF downloads in your browser —
+                    click the file names, or [Download All (.zip)] for the
+                    whole set.
                 </li>
             </ol>
-            <p>
-                That's it. The rest of this guide walks through each screen
-                in detail in case you ever get stuck.
-            </p>
         </section>
 
         <section id="step-1">
@@ -138,274 +130,160 @@
 
             <h3>Date &amp; Season</h3>
             <p>
-                Click the date box and pick the Sunday you're making the bulletin for.
-                The program will fetch the readings and figure out the season
-                (Advent, Lent, Easter, and so on). You'll see a colored bar
-                appear at the top of the window showing the season — that's how
-                you know it worked.
+                Click the date box and pick the Sunday, then click
+                [Fetch Content]. The program fetches the readings and figures
+                out the season (Advent, Lent, Easter, and so on) — you'll see a
+                colored bar appear at the top of the window showing the season.
             </p>
             <p>
-                If you pick a date and nothing happens for a moment, that's normal.
-                The program is talking to Sundays &amp; Seasons.
+                If the program notices anything odd about the week's content
+                (a missing reading, for example) a yellow note will appear
+                here — read it before you continue.
             </p>
 
             <h3>Hymns</h3>
             <p>For each hymn (Gathering, Sermon, Communion, Sending):</p>
             <ol>
                 <li>
-                    Pick <strong>ELW</strong> or <strong>ACS</strong> from the small
-                    dropdown — ELW is the burgundy hymnal, ACS is the newer
-                    paperback supplement.
+                    Pick <strong>ELW</strong> (the cranberry hymnal) or
+                    <strong>ACS</strong> (the newer All Creation Sings
+                    supplement) from the small dropdown.
                 </li>
+                <li>Type the hymn number in the box next to it.</li>
                 <li>
-                    Type the hymn number in the box next to it.
-                </li>
-                <li>
-                    Wait a second. The hymn title will appear once the program
-                    finds it. If it doesn't, double-check the number.
+                    Click [Fetch] — or fill in all four numbers and click
+                    [Fetch All Hymns] once.
                 </li>
             </ol>
             <p>
-                Some hymns have many verses. If you only want certain verses,
-                click the [Choose Verses] link that appears under the hymn title
-                and check the ones you want.
+                When a hymn has more than one verse, checkboxes appear so you
+                can untick any verses you don't want printed.
             </p>
 
             <h3>Service Music</h3>
             <p>
-                These are the instrumental and choral pieces — prelude, offertory,
-                postlude, and any anthem. Type the title, composer, and performer
-                if you have them. These are optional. Leave a box blank if you
-                don't have that information yet.
+                These are the instrumental and choral pieces — prelude,
+                offertory, postlude, and any anthem. Type the title, composer,
+                and performer if you have them. These are optional; leave a box
+                blank if there's nothing that week.
             </p>
         </section>
 
         <section id="step-2">
             <h2>Step 2 — Service Settings</h2>
             <p>
-                This screen controls the parts of the liturgy that change with the
-                season — the Kyrie, the canticle, the creed, and so on.
-                <strong>The program already filled these in for you</strong> based
-                on the season. You usually don't need to change anything.
+                Everything here is pre-filled with the right defaults for the
+                season — most weeks you can just click [Next].
             </p>
-            <p>
-                If the pastor asks for something different (for example, the
-                Nicene Creed instead of the Apostles' Creed), use the dropdowns
-                to switch it. Otherwise, click [Next].
-            </p>
-
-            <h3>Liturgical Settings</h3>
-            <p>The choices on this part of the screen are:</p>
             <ul>
                 <li><strong>Creed</strong> — Apostles' or Nicene</li>
-                <li><strong>Kyrie</strong> — included or not</li>
-                <li><strong>Canticle of Praise</strong> — Glory to God, This Is the Feast, or none</li>
+                <li><strong>Kyrie / Canticle</strong> — the sung liturgy pages</li>
                 <li><strong>Eucharistic Prayer</strong> — short or extended</li>
-                <li><strong>Memorial Acclamation</strong> — included or not, then sung music or spoken text</li>
-                <li><strong>Preface</strong> — the seasonal preface the pastor sings</li>
-            </ul>
-            <p>
-                If you're not sure what something is, just leave the default.
-                The program picks the right one for the season.
-            </p>
-
-            <h3>Review Liturgical Texts</h3>
-            <p>
-                Lower on the screen you'll see boxes for the Confession, Offering Prayer,
-                Prayer After Communion, Blessing, and Dismissal. Each one shows the text
-                that will appear in the bulletin. You can:
-            </p>
-            <ul>
                 <li>
-                    <strong>Use this week's text from Sundays &amp; Seasons</strong>
-                    (the default for most weeks)
+                    <strong>Review Liturgical Texts</strong> — your church's
+                    standard texts are used automatically. Open a panel to
+                    switch to this week's Sundays &amp; Seasons version or make
+                    a one-week edit.
                 </li>
                 <li>
-                    <strong>Use the standard text your congregation always uses</strong>
-                    (for example, the Aaronic Blessing for the Blessing)
+                    <strong>Special Rites</strong> — tick Holy Baptism when
+                    there's a baptism; it replaces the Creed in the service.
                 </li>
             </ul>
-            <p>
-                Click the option you want. You can also edit the text directly
-                if the pastor wants a small wording change.
-            </p>
         </section>
 
         <section id="step-3">
-            <h2>Step 3 — Extras</h2>
+            <h2>Step 3 — Review &amp; Generate</h2>
             <p>
-                This screen is for anything special this week. Most weeks
-                you can scroll through and click [Next] without changing anything.
-            </p>
-
-            <h3>Cover image</h3>
-            <p>
-                If you want a picture on the front of the bulletin, click
-                [Choose Cover Image] and pick a photo or graphic from your computer.
-                If you leave it blank, the cover will use a plain text title.
+                The review screen shows the whole service in order — every
+                hymn, reading, and prayer, plus what's not set. Give it one
+                look before generating.
             </p>
             <p>
-                Pictures should be JPEG or PNG. Tall pictures work better than
-                wide ones because the cover is a portrait shape.
-            </p>
-
-            <h3>Baptism</h3>
-            <p>
-                Check the [Include baptism liturgy] box only if there's a baptism
-                that Sunday. Type the names of the people being baptized in the
-                box. The program will add the baptism liturgy in the right place
-                in the bulletin.
-            </p>
-        </section>
-
-        <section id="step-4">
-            <h2>Step 4 — Review &amp; Generate</h2>
-            <p>
-                This is the final screen. You'll see a summary of everything
-                you entered, and then the buttons that actually make the PDFs.
-            </p>
-
-            <h3>Service Order Review</h3>
-            <p>
-                Scroll through this part to make sure everything looks right.
-                If something is wrong, click [Back] to fix it.
-            </p>
-
-            <h3>Output Settings</h3>
-            <p>
-                The <strong>output folder</strong> is where the PDFs will be saved.
-                Click [Choose Folder] and pick a place on your computer.
-                A good choice is a folder called "Bulletins" in your Documents.
-                The program will remember the folder for next time.
+                Choose a cover image if you have one (the Luther rose or a
+                seasonal picture), tick the documents you want, and click
+                [Generate Selected Documents].
             </p>
             <p>
-                Below the folder you'll see a list of <strong>which documents
-                to generate</strong>. By default all five are checked. Leave them
-                all on unless you only need one of them.
-            </p>
-
-            <h3>Generate Documents</h3>
-            <p>
-                Click the big [Generate Documents] button. You'll see a progress
-                bar showing what's happening. The program is:
-            </p>
-            <ol>
-                <li>Building the bulletin booklet</li>
-                <li>Building the pulpit prayers page</li>
-                <li>Building the pulpit scripture page</li>
-                <li>Building the large print bulletin</li>
-                <li>Building the leader guide</li>
-            </ol>
-            <p>
-                When it's finished, you'll see a list of the files it made.
-                Click any file name to download it, or click
-                [Download All (.zip)] to save the whole set at once.
+                When it's finished you'll see a list of the files it made.
+                Click any file name to download it, or [Download All (.zip)]
+                for the whole set. They download like any other file — look in
+                your browser's Downloads.
             </p>
         </section>
 
         <section id="documents">
             <h2>The five documents</h2>
-            <p>Bulletin Maker produces five PDFs each week. Here's what each one is for:</p>
-
             <table class="docs-table">
-                <thead>
-                    <tr>
-                        <th>Document</th>
-                        <th>Who it's for</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Bulletin for Congregation</strong></td>
-                        <td>Everyone in the pews</td>
-                        <td>Print on legal-size paper, folded into a booklet (saddle-stitched).</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Full with Hymns LARGE PRINT</strong></td>
-                        <td>Anyone who has trouble reading small print</td>
-                        <td>Letter size, single column, every hymn typed out word by word.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Pulpit SCRIPTURE</strong></td>
-                        <td>The lay reader</td>
-                        <td>Letter size, just the readings and the psalm.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Pulpit PRAYERS</strong></td>
-                        <td>The prayer leader</td>
-                        <td>Letter size, the creed and the prayers of intercession.</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Leader Guide</strong></td>
-                        <td>The pastor</td>
-                        <td>Same as the large print, plus the music for the parts the pastor sings.</td>
-                    </tr>
-                </tbody>
+                <tr><th>Document</th><th>Who it's for</th></tr>
+                <tr><td>Bulletin for Congregation</td><td>The folded booklet everyone holds — readings, prayers, sheet music</td></tr>
+                <tr><td>Full with Hymns LARGE PRINT</td><td>Large-type version with every hymn's full lyrics</td></tr>
+                <tr><td>Leader Guide</td><td>The pastor's copy — large print plus the sung notation</td></tr>
+                <tr><td>Pulpit SCRIPTURE</td><td>One sheet for the scripture reader at the lectern</td></tr>
+                <tr><td>Pulpit PRAYERS</td><td>One sheet for the prayer leader — creed and prayers</td></tr>
             </table>
+        </section>
 
+        <section id="settings">
+            <h2>Church Settings (admins)</h2>
             <p>
-                The file names all end in the date and the day name, so you
-                can find them easily. For example:
-                <code>Bulletin for Congregation - 2026.04.05 - Fifth Sunday in Lent Year A.pdf</code>
+                Click <strong>Settings</strong> in the top bar. Church admins
+                can change:
             </p>
+            <ul>
+                <li>
+                    <strong>What prints on the bulletins</strong> — church name,
+                    address, service time, welcome message, and the copyright
+                    footer.
+                </li>
+                <li>
+                    <strong>Liturgical Setting</strong> — which ELW musical
+                    setting's sheet music appears (Setting One through Five).
+                </li>
+                <li><strong>Paper size</strong> — Legal booklet, Letter booklet, or A4.</li>
+                <li>
+                    <strong>The Sundays &amp; Seasons account</strong> — linked
+                    once here; volunteers never need it.
+                </li>
+                <li>
+                    <strong>The invite code</strong> — share it with volunteers
+                    so they can create their own accounts.
+                </li>
+            </ul>
         </section>
 
         <section id="past-bulletins">
             <h2>Reusing past bulletins</h2>
             <p>
-                Every time you generate a bulletin, the program remembers what
-                you entered. If you want to make a similar bulletin again
-                (for example, the same date next year), you don't have to type
-                everything in again.
-            </p>
-            <p>
-                On the first screen, look for the <strong>"Recent Bulletins"</strong>
-                list. Click one to fill in all the same answers automatically.
-                Then change the date and any hymns that are different.
-            </p>
-            <p>
-                To start fresh instead, click the [New Bulletin] link in the
-                top right corner of the window.
+                Every bulletin you generate is saved under
+                <strong>Past Runs</strong> on Step 1. Click one to reload all
+                its choices — hymns, music, settings — then change the date
+                and whatever's different this week. It's the fastest way to
+                make a typical Sunday.
             </p>
         </section>
 
         <section id="troubleshooting">
             <h2>If something goes wrong</h2>
 
-            <h3>"Sign in failed"</h3>
+            <h3>"Session expired. Please sign in again."</h3>
             <p>
-                Almost always this means the username or password has a typo.
-                Check carefully, watching for capital letters and the difference
-                between the letter O and the number 0. If you're sure it's right,
-                try signing in to <em>sundaysandseasons.com</em> in a web browser
-                first to make sure your account is still active.
+                Sign in again — this happens after several hours of inactivity
+                and nothing is lost except what you were typing.
             </p>
 
-            <h3>"Hymn not found" or the title doesn't appear</h3>
+            <h3>"No Sundays &amp; Seasons account is linked yet"</h3>
             <p>
-                Make sure the dropdown next to the hymn number says <strong>ELW</strong>
-                or <strong>ACS</strong> (whichever book the hymn comes from).
-                Then double-check the number. If you typed it correctly,
-                Sundays &amp; Seasons may have a temporary problem — wait a minute
-                and try again.
+                A church admin needs to open Settings and link the church's
+                S&amp;S account once. If you're not an admin, ask the person
+                who set up Bulletin Maker for your church.
             </p>
 
-            <h3>The program seems frozen</h3>
+            <h3>A hymn won't fetch</h3>
             <p>
-                The first time you generate a bulletin after opening the program
-                can be slow (twenty seconds or so) while it warms up.
-                After that, look at the progress bar at the bottom — if it's
-                still moving, the program is working. If it's been more than
-                three minutes with no movement, close the window and try again.
-            </p>
-
-            <h3>"Generation failed" for one of the documents</h3>
-            <p>
-                If four out of five documents finish but one fails, the most
-                common cause is a hymn lookup that didn't work. Click [Back]
-                to Step 1, fix the hymn, and click [Generate Documents] again.
-                The program won't re-do the documents you already have.
+                Double-check the number and that the right hymnal (ELW or ACS)
+                is selected. A few hymns have no printable lyrics — the program
+                will say "title only" and still print the title.
             </p>
 
             <h3>"Where did the files go?"</h3>
@@ -417,38 +295,18 @@
 
             <h3>The bulletin is missing something</h3>
             <p>
-                If a section of the bulletin looks wrong (for example, a hymn
-                with the wrong verses, or the wrong creed), open Bulletin Maker
-                again, click [Recent Bulletins] and pick the one you just made.
-                Fix the setting that was wrong and click [Generate Documents]
-                to make a new copy.
-            </p>
-        </section>
-
-        <section id="updates">
-            <h2>Updates</h2>
-            <p>
-                Updating is one command. Close Bulletin Maker, open a terminal,
-                and run:
-            </p>
-            <p><code>uv tool upgrade bulletin-maker</code></p>
-            <p>
-                Then start Bulletin Maker again — you're on the newest version.
+                Check the review screen on Step 3 — anything marked
+                <em>(not set)</em> was left blank on Steps 1–2. Fill it in and
+                click [Generate Selected Documents] again; regenerating is
+                always safe.
             </p>
         </section>
 
         <section id="contact">
             <h2>Need more help?</h2>
             <p>
-                If something goes wrong that this guide doesn't cover, write down
-                exactly what you did and what the program said, then ask
-                whoever installed Bulletin Maker for you. The more specific you
-                can be ("I clicked Generate and got an error that said X"),
-                the easier it is to figure out what happened.
-            </p>
-            <p>
-                You can also report problems on the project's GitHub page
-                if you're comfortable doing that.
+                Ask your church admin, or the person who set up Bulletin Maker
+                for your congregation.
             </p>
         </section>
 

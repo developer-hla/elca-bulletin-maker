@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bulletin Maker</title>
+    <link rel="icon" type="image/svg+xml" href="luther-rose.svg">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -118,10 +119,6 @@
                 </li>
                 <li class="wizard-step" data-step="3">
                     <span class="wizard-step-number">3</span>
-                    <span class="wizard-step-label">Extras</span>
-                </li>
-                <li class="wizard-step" data-step="4">
-                    <span class="wizard-step-number">4</span>
                     <span class="wizard-step-label">Review &amp; Generate</span>
                 </li>
             </ol>
@@ -170,7 +167,7 @@
 
             <section class="card">
                 <h2>Hymns</h2>
-                <p class="section-hint">All hymns are optional. Enter numbers and click Fetch All, or fetch individually.</p>
+                <p class="section-hint">All hymns are optional. Enter numbers and click Fetch All, or fetch individually. ELW is the cranberry hymnal (Evangelical Lutheran Worship); ACS is All Creation Sings.</p>
                 <button id="fetch-all-hymns-btn" class="btn secondary fetch-all-hymns-btn">Fetch All Hymns</button>
 
                 <div class="hymn-slot" data-slot="gathering">
@@ -184,8 +181,8 @@
                         <div class="field field-xs">
                             <label>Collection</label>
                             <select class="hymn-collection">
-                                <option value="ELW" selected>ELW (Evangelical Lutheran Worship)</option>
-                                <option value="ACS">ACS (All Creation Sings)</option>
+                                <option value="ELW" selected>ELW</option>
+                                <option value="ACS">ACS</option>
                             </select>
                         </div>
                         <div class="field field-btn">
@@ -209,8 +206,8 @@
                         <div class="field field-xs">
                             <label>Collection</label>
                             <select class="hymn-collection">
-                                <option value="ELW" selected>ELW (Evangelical Lutheran Worship)</option>
-                                <option value="ACS">ACS (All Creation Sings)</option>
+                                <option value="ELW" selected>ELW</option>
+                                <option value="ACS">ACS</option>
                             </select>
                         </div>
                         <div class="field field-btn">
@@ -234,8 +231,8 @@
                         <div class="field field-xs">
                             <label>Collection</label>
                             <select class="hymn-collection">
-                                <option value="ELW" selected>ELW (Evangelical Lutheran Worship)</option>
-                                <option value="ACS">ACS (All Creation Sings)</option>
+                                <option value="ELW" selected>ELW</option>
+                                <option value="ACS">ACS</option>
                             </select>
                         </div>
                         <div class="field field-btn">
@@ -259,8 +256,8 @@
                         <div class="field field-xs">
                             <label>Collection</label>
                             <select class="hymn-collection">
-                                <option value="ELW" selected>ELW (Evangelical Lutheran Worship)</option>
-                                <option value="ACS">ACS (All Creation Sings)</option>
+                                <option value="ELW" selected>ELW</option>
+                                <option value="ACS">ACS</option>
                             </select>
                         </div>
                         <div class="field field-btn">
@@ -425,7 +422,7 @@
 
             <section class="card">
                 <h2>Review Liturgical Texts</h2>
-                <p class="section-hint">Ascension texts are the default. Toggle to S&amp;S for this week's seasonal version, or edit directly.</p>
+                <p class="section-hint">Your church's standard texts are used automatically. Toggle to S&amp;S for this week's seasonal version, or edit directly.</p>
                 <div id="texts-spinner" class="spinner" hidden>
                     <div class="spinner-ring"></div>
                     <span>Loading liturgical texts...</span>
@@ -435,18 +432,9 @@
                 <div id="custom-edit-warning" class="warning-msg" hidden>Custom edits are not saved and will not be available next week.</div>
             </section>
 
-            <div class="wizard-buttons">
-                <button type="button" class="btn wizard-back-btn">Back</button>
-                <button type="button" class="btn primary wizard-next-btn">Next</button>
-            </div>
-        </div>
-
-        <!-- Step 3: Extras -->
-        <div id="step-extras" class="wizard-panel">
-
             <section class="card">
-                <h2>Extras</h2>
-                <p class="section-hint">Special rites and additions. Skip if none apply this week.</p>
+                <h2>Special Rites</h2>
+                <p class="section-hint">Skip if none apply this week.</p>
 
                 <div class="setting-group">
                     <label class="setting-label">Holy Baptism</label>
@@ -461,10 +449,6 @@
                         <input type="text" id="baptism-names" placeholder="e.g. John Smith, Jane Doe" maxlength="200">
                     </div>
                 </div>
-
-                <div style="margin-top: 24px;">
-                    <p class="section-hint">Future extras (Confirmation, Reception of Members) will appear here.</p>
-                </div>
             </section>
 
             <div class="wizard-buttons">
@@ -473,7 +457,7 @@
             </div>
         </div>
 
-        <!-- Step 4: Review + Generate -->
+        <!-- Step 3: Review + Generate -->
         <div id="step-review-generate" class="wizard-panel">
 
             <section class="card">

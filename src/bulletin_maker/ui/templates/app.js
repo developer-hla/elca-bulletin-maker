@@ -18,12 +18,12 @@ const SEASON_LABELS = {
 /** Liturgical season colors for the season bar. */
 const SEASON_COLORS = {
     advent:       "#2B5EA0",
-    christmas:    "#B8860B",
+    christmas:    "#8A6414",
     epiphany:     "#2E7D32",
     lent:         "#5B2882",
-    easter:       "#B8860B",
+    easter:       "#8A6414",
     pentecost:    "#2E7D32",
-    christmas_eve:"#B8860B",
+    christmas_eve:"#8A6414",
 };
 
 /** Canticle key to display label. */
@@ -43,7 +43,7 @@ const DOC_LABELS = {
 };
 
 /** Wizard panel IDs in step order. */
-const STEP_IDS = ["step-date-music", "step-liturgy-texts", "step-extras", "step-review-generate"];
+const STEP_IDS = ["step-date-music", "step-liturgy-texts", "step-review-generate"];
 
 // ── State ────────────────────────────────────────────────────────────
 
@@ -303,15 +303,9 @@ var api = (function() {
                                    "/" + encodeURIComponent(number) +
                                    "?date=" + encodeURIComponent(state.dateStr || ""));
             if (result.success) {
-                result.has_words = true;
                 hymnCache[collection + "_" + number] = result;
             }
             return result;
-        },
-        fetch_hymn_lyrics: function(number, dateStr, collection) {
-            var cached = hymnCache[collection + "_" + number];
-            if (cached) return Promise.resolve(cached);
-            return methods.search_hymn(number, collection);
         },
 
         save_past_run: function(formData, metadata) {
@@ -431,7 +425,7 @@ function showStep(n) {
             stepEl.classList.add("completed");
         }
     });
-    if (n === 4) {
+    if (n === STEP_IDS.length) {
         buildReadinessSummary();
         buildReviewOutline();
     }
@@ -509,6 +503,8 @@ function buildReadinessSummary() {
         { label: "Date", ok: !!state.dateStr, detail: state.dateStr ? state.dateDisplay : "Not set" },
         { label: "Hymns", ok: hymnCount > 0, detail: hymnCount + " of 4 set" },
         { label: "Output", ok: true, detail: "Downloads in your browser" },
+        { label: "Prints", ok: true,
+          detail: (state.paperLabel || "Legal booklet") + " \u00b7 " + (state.settingLabel || "Setting Two") },
         { label: "Docs", ok: docCount > 0, detail: docCount + " selected" },
         {
             label: "Memorial Acc.",
@@ -646,7 +642,7 @@ function buildReviewOutline() {
 
     // Kyrie
     var hasKyrie = $("#include-kyrie").checked;
-    items.push({ label: "Kyrie", value: hasKyrie ? "Setting Two" : "(omitted)", empty: !hasKyrie });
+    items.push({ label: "Kyrie", value: hasKyrie ? (state.settingLabel || "Sung setting") : "(omitted)", empty: !hasKyrie });
 
     // Canticle
     var canticleEl = document.querySelector('input[name="canticle"]:checked');
@@ -812,13 +808,6 @@ function buildReviewOutline() {
 
 window.updateProgress = function(data) {
     // Route update-step progress to the banner progress bar
-    if (data.step === "update") {
-        var upFill = document.getElementById("update-progress-fill");
-        var upText = document.getElementById("update-progress-text");
-        if (upFill) upFill.style.width = data.pct + "%";
-        if (upText) upText.textContent = data.detail;
-        return;
-    }
     const fill = document.getElementById("progress-fill");
     const status = document.getElementById("progress-status");
     const bar = document.querySelector(".progress-bar");
@@ -829,7 +818,6 @@ window.updateProgress = function(data) {
 
 // ── Update Check ─────────────────────────────────────────────────────
 
-var _updateState = { downloadUrl: null, releaseNotes: null, installing: false };
 
 // ── Login ────────────────────────────────────────────────────────────
 
@@ -856,6 +844,7 @@ function enterApp(auth) {
     document.title = "Bulletin Maker — " + ((auth.church && auth.church.name) || "");
     state.isAdmin = user.role === "admin";
     state.snsLinked = !!auth.sns_linked;
+    loadChurchLabels();
     if (!state.snsLinked) {
         showWarning($("#date-warning"),
             state.isAdmin
@@ -863,6 +852,20 @@ function enterApp(auth) {
                 : "No Sundays & Seasons account is linked yet — ask your church admin to link one under Settings.");
     }
     loadPastRuns();
+}
+
+/** Cache the church's setting/paper labels for the review outline. */
+async function loadChurchLabels() {
+    var result = await api.get_church();
+    if (!result.success) return;
+    var profile = result.profile || {};
+    function labelFor(options, key) {
+        var found = (options || []).filter(function(o) { return o.key === key; })[0];
+        return found ? found.label : key;
+    }
+    state.settingLabel = labelFor(result.options.liturgical_setting,
+                                  profile.liturgical_setting);
+    state.paperLabel = labelFor(result.options.paper_size, profile.paper_size);
 }
 
 async function initAuth() {
@@ -1051,6 +1054,7 @@ function setupSettings() {
         }
         show($("#settings-saved"));
         $("#church-display").textContent = result.profile.church_name;
+        loadChurchLabels();
     });
 
     $("#sns-link-btn").addEventListener("click", async function() {
@@ -1774,7 +1778,6 @@ async function deletePastRun(runId, label) {
 
 async function savePastRun(formData) {
     var saveData = Object.assign({}, formData);
-    delete saveData.output_dir;
     delete saveData.selected_docs;
     delete saveData.cover_image;
 
@@ -2501,7 +2504,6 @@ async function runGeneration(docOverride) {
         hide(banner);
     }
 
-    // Store output dir for open folder button
 
 
     state.unsavedWork = false;
