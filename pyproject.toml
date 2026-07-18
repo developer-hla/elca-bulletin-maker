@@ -13,42 +13,21 @@ dependencies = [
     "python-dotenv",
     "Jinja2>=3.1",
     "tomli>=2; python_version < '3.11'",
+    "pypdf",
+    "Pillow",
+    "playwright>=1.40",
+    "fastapi",
+    "uvicorn[standard]",
+    "python-multipart",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "playwright>=1.40",
     "pytest",
-    "fastapi",
-    "uvicorn[standard]",
-    "python-multipart",
-    "httpx",
-]
-renderer = [
-    "pypdf",
-    "Pillow",
-    "playwright>=1.40",
-]
-web = [
-    "fastapi",
-    "uvicorn[standard]",
-    "python-multipart",
-    "pypdf",
-    "Pillow",
-    "playwright>=1.40",
-]
-app = [
-    "pywebview>=5.0",
-    "pypdf",
-    "Pillow",
-    "playwright>=1.40",
-]
-build = [
-    "pyinstaller>=6.0",
 ]
 
 [project.scripts]
-bulletin-maker = "bulletin_maker.ui.app:main"
+bulletin-maker = "bulletin_maker.web.app:main"
 
 [tool.hatch.version]
 path = "src/bulletin_maker/version.py"

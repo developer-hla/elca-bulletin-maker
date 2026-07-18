@@ -95,7 +95,7 @@
             <ol class="big-steps">
                 <li>
                     <strong>Open Bulletin Maker.</strong>
-                    Double-click the program icon on your desktop.
+                    Run <code>bulletin-maker</code> — the wizard opens in your browser.
                 </li>
                 <li>
                     <strong>Sign in.</strong>
@@ -119,8 +119,8 @@
                 </li>
                 <li>
                     <strong>Click [Generate Documents].</strong>
-                    Wait a minute or two. When it's done, click [Open Folder]
-                    to see your five PDFs.
+                    Wait a minute or two. When it's done, your PDFs download
+                    right in the browser.
                 </li>
             </ol>
             <p>
@@ -297,9 +297,9 @@
                 <li>Building the leader guide</li>
             </ol>
             <p>
-                When it's finished, you'll see a list of the files it made
-                and an [Open Folder] button. Click that to see your bulletins
-                in a window you can drag, copy, or print from.
+                When it's finished, you'll see a list of the files it made.
+                Click any file name to download it, or click
+                [Download All (.zip)] to save the whole set at once.
             </p>
         </section>
 
@@ -410,9 +410,9 @@
 
             <h3>"Where did the files go?"</h3>
             <p>
-                Click [Open Folder] on the final screen and a window will pop up
-                showing all five PDFs. The folder is whatever you picked under
-                "Output Settings" — usually a Bulletins folder in your Documents.
+                They download through your browser like any other file —
+                check your Downloads folder, or click the file names on the
+                final screen to download them again.
             </p>
 
             <h3>The bulletin is missing something</h3>
@@ -428,28 +428,12 @@
         <section id="updates">
             <h2>Updates</h2>
             <p>
-                When a new version of Bulletin Maker is ready, you'll see a yellow
-                bar at the top of the window that says <em>"A new version is available."</em>
+                Updating is one command. Close Bulletin Maker, open a terminal,
+                and run:
             </p>
-            <ul>
-                <li>
-                    Click [Install Update] to install it. The program will download
-                    the new version, replace itself, and restart automatically.
-                    This usually takes about a minute.
-                </li>
-                <li>
-                    Click [What's New] to see what changed in the new version.
-                </li>
-                <li>
-                    Click the small <strong>×</strong> on the right to dismiss
-                    the bar if you'd rather update later. It will come back next
-                    time you open the program.
-                </li>
-            </ul>
+            <p><code>uv tool upgrade bulletin-maker</code></p>
             <p>
-                You don't have to install every update right away, but new versions
-                often fix bugs, so it's a good idea to install updates within a
-                week or two.
+                Then start Bulletin Maker again — you're on the newest version.
             </p>
         </section>
 

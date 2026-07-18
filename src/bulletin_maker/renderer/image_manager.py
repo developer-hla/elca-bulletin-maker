@@ -12,7 +12,6 @@ Handles two kinds of notation images:
 from __future__ import annotations
 
 import logging
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -34,10 +33,7 @@ from bulletin_maker.sns.models import (
 
 logger = logging.getLogger(__name__)
 
-if getattr(sys, "frozen", False):
-    ASSETS_DIR = Path(sys._MEIPASS) / "bulletin_maker" / "renderer" / "assets"
-else:
-    ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 GOSPEL_ACCLAMATION_DIR = ASSETS_DIR / "gospel_acclamation"
 
 # ── S&S Library atom-code suffixes ───────────────────────────────────

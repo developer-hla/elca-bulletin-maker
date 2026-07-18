@@ -10,48 +10,60 @@ Automated church bulletin generator for Ascension Lutheran Church (Jackson, MS).
 4. **Pulpit Scripture** — Letter front/back readings + psalm for the scripture reader
 5. **Pulpit Prayers** — Letter front/back creed + prayers for the prayer leader
 
-## Setup
+## Install
+
+With [uv](https://docs.astral.sh/uv/) (recommended — one command, easy updates):
 
 ```bash
-python -m venv venv
-source venv/bin/activate
-pip install -e ".[app]"
-playwright install chromium
+uv tool install git+https://github.com/developer-hla/elca-bulletin-maker
 ```
 
-Copy `.env.example` to `.env` and fill in your Sundays & Seasons credentials:
+Or with pip: `pip install git+https://github.com/developer-hla/elca-bulletin-maker`
 
-```
-SNDS_USERNAME=your@email.com
-SNDS_PASSWORD=yourpassword
-```
-
-## Usage
-
-Launch the desktop wizard:
+## Run
 
 ```bash
 bulletin-maker
 ```
 
-Or run directly:
+The wizard opens in your browser. Sign in with your own Sundays & Seasons
+credentials; the first run downloads the PDF renderer (Chromium) automatically.
+
+## Update
 
 ```bash
-venv/bin/python -m bulletin_maker.ui.app
+uv tool upgrade bulletin-maker
 ```
+
+## Another congregation?
+
+Copy the identity profile and edit the eight fields (name, address, service
+time, welcome text, license footer) plus the two options (liturgical setting,
+paper size):
+
+```bash
+cp src/bulletin_maker/profiles/ascension.toml ~/.bulletin-maker/profile.toml
+```
+
+Everything else — the five documents, their layout, and the liturgy — is
+fixed house style by design.
 
 ## Development
 
 ```bash
+python -m venv venv && source venv/bin/activate
 pip install -e ".[dev]"
-venv/bin/python -m pytest tests/ -v
+playwright install chromium
+python -m pytest tests/ -v            # fast suite
+python -m pytest tests/ -m layout -v  # layout regression (renders real PDFs)
 ```
 
 ## Project Structure
 
 - `src/bulletin_maker/sns/` — Sundays & Seasons client (auth, content fetching, hymn search/download)
 - `src/bulletin_maker/renderer/` — HTML/CSS + Playwright PDF generation (5 document types)
-- `src/bulletin_maker/ui/` — pywebview desktop wizard application
+- `src/bulletin_maker/web/` — FastAPI server + entry point
+- `src/bulletin_maker/ui/templates/` — wizard SPA (HTML/JS/CSS)
 - `src/bulletin_maker/exceptions.py` — Custom exception hierarchy
 - `tests/` — Pytest test suite with fixtures in `tests/fixtures/`
 - `scripts/` — Dev utilities (generate_test, test_sns_client)

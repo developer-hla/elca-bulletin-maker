@@ -15,6 +15,8 @@
 - `src/bulletin_maker/core/` — Domain layer: ServiceConfig, document registry, generate_documents() workflow, filename rules. UI shells adapt to this package; it never imports them.
 - `src/bulletin_maker/sns/` — Sundays & Seasons API client
 - `src/bulletin_maker/renderer/` — HTML/CSS + Playwright PDF generation
+- `src/bulletin_maker/web/` — FastAPI adapter (sessions, generation jobs, serves the SPA); entry point `bulletin-maker` runs it locally
+- `src/bulletin_maker/ui/templates/` — wizard SPA assets (fetch-based, no pywebview)
 - `src/bulletin_maker/exceptions.py` — Custom exception hierarchy
 - `scripts/` — Dev utilities (generate_test, test_sns_client, explore_and_download)
 - `scripts/data/` — Exploration output (JSON dumps, API responses) — scripts should save here
