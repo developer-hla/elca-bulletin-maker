@@ -12,7 +12,7 @@ import pytest
 
 from bulletin_maker.exceptions import ContentNotFoundError
 from bulletin_maker.sns.client import SundaysClient
-from bulletin_maker.sns.models import DayContent
+from bulletin_maker.sns.models import DayContent, Reading
 
 
 # ── Realistic HTML stubs ─────────────────────────────────────────────
@@ -268,3 +268,57 @@ class TestExtractErrorDetail:
     def test_no_useful_content(self):
         resp = self._make_response('<html><body><p>Some text</p></body></html>')
         assert SundaysClient._extract_error_detail(resp) == ""
+
+
+class TestDayContentWarnings:
+    """DayContent.content_warnings() flags empty scraped sections."""
+
+    def _full_day(self):
+        readings = [
+            Reading(label=label, citation="X 1:1", intro="", text_html="<p>x</p>")
+            for label in ("First Reading", "Psalm", "Second Reading", "Gospel")
+        ]
+        return DayContent(
+            date="2026-7-19",
+            title="Sunday, July 19, 2026 Lectionary 16, Year A",
+            introduction="",
+            confession_html="<p>c</p>",
+            prayer_of_the_day_html="<p>p</p>",
+            gospel_acclamation="<p>ga</p>",
+            readings=readings,
+            prayers_html="<p>prayers</p>",
+            offering_prayer_html="<p>o</p>",
+            prayer_after_communion_html="<p>pac</p>",
+            blessing_html="<p>b</p>",
+            dismissal_html="<p>d</p>",
+        )
+
+    def test_complete_day_has_no_warnings(self):
+        assert self._full_day().content_warnings() == []
+
+    def test_missing_single_reading(self):
+        day = self._full_day()
+        day.readings = [r for r in day.readings if r.label != "Psalm"]
+        warnings = day.content_warnings()
+        assert any("Psalm" in w for w in warnings)
+
+    def test_no_readings_at_all(self):
+        day = self._full_day()
+        day.readings = []
+        warnings = day.content_warnings()
+        assert any("No readings" in w for w in warnings)
+
+    def test_missing_prayers_names_pulpit_document(self):
+        day = self._full_day()
+        day.prayers_html = ""
+        warnings = day.content_warnings()
+        assert any("Pulpit Prayers" in w for w in warnings)
+
+    def test_fallback_sections_grouped_into_one_warning(self):
+        day = self._full_day()
+        day.blessing_html = ""
+        day.dismissal_html = ""
+        warnings = day.content_warnings()
+        grouped = [w for w in warnings if "standard texts" in w]
+        assert len(grouped) == 1
+        assert "Blessing" in grouped[0] and "Dismissal" in grouped[0]

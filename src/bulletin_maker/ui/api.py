@@ -402,6 +402,7 @@ class BulletinAPI:
                 "day_name": day_name,
                 "season": season.value,
                 "readings": readings,
+                "warnings": self._day.content_warnings(),
                 "defaults": {
                     "creed_type": seasonal.creed_default,
                     "include_kyrie": seasonal.has_kyrie,

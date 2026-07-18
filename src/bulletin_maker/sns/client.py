@@ -195,6 +195,8 @@ class SundaysClient:
 
         day = self._parse_day_texts(date, resp.text)
         logger.debug("Parsed DayTexts: %s (%d readings)", day.title, len(day.readings))
+        for warning in day.content_warnings():
+            logger.warning("DayTexts %s: %s", date, warning)
         return day
 
     def _parse_day_texts(self, date: str, html: str) -> DayContent:

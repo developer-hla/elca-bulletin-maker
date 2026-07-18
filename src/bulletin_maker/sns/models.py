@@ -16,6 +16,9 @@ SLOT_SECOND = "second"
 SLOT_PSALM = "psalm"
 SLOT_GOSPEL = "gospel"
 
+# Reading labels a normal Sunday DayTexts page provides
+EXPECTED_READING_LABELS = ("First Reading", "Psalm", "Second Reading", "Gospel")
+
 
 # ── Canticle slug constants ──────────────────────────────────────────
 # Values for ServiceConfig.canticle. Also used as image_manager keys.
@@ -50,6 +53,48 @@ class DayContent:
     blessing_html: str = ""             # Aaronic blessing text
     dismissal_html: str = ""            # "Go in peace..."
     raw_html: str = ""                  # full rightpanel HTML for fallback
+
+    def content_warnings(self) -> list[str]:
+        """Detect expected sections that came back empty from S&S.
+
+        Scraping failures manifest as empty strings, not errors — a markup
+        change on the S&S site would otherwise print as silent blank
+        sections in the bulletin. Returns human-readable warnings.
+        """
+        warnings: list[str] = []
+
+        found_labels = {r.label for r in self.readings}
+        missing = [
+            label for label in EXPECTED_READING_LABELS
+            if label not in found_labels
+        ]
+        if len(missing) == len(EXPECTED_READING_LABELS):
+            warnings.append("No readings were found for this date.")
+        elif missing:
+            warnings.append("Missing readings: " + ", ".join(missing) + ".")
+
+        if not self.prayers_html:
+            warnings.append(
+                "Prayers of Intercession are missing — "
+                "the Pulpit Prayers document cannot be generated."
+            )
+        if not self.prayer_of_the_day_html:
+            warnings.append("Prayer of the Day is missing.")
+
+        fallback_sections = [
+            ("Confession", self.confession_html),
+            ("Offering Prayer", self.offering_prayer_html),
+            ("Prayer after Communion", self.prayer_after_communion_html),
+            ("Blessing", self.blessing_html),
+            ("Dismissal", self.dismissal_html),
+        ]
+        empty = [name for name, value in fallback_sections if not value]
+        if empty:
+            warnings.append(
+                "Not provided by S&S this week (standard texts will be "
+                "used): " + ", ".join(empty) + "."
+            )
+        return warnings
 
 
 @dataclass

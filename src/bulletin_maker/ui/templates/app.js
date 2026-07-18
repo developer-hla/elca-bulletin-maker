@@ -890,6 +890,7 @@ function resetAll() {
     hide($("#filename-preview"));
     hideError($("#date-error"));
     hideWarning($("#date-warning"));
+    hideWarning($("#content-warning"));
     $("#date-input").value = "";
     $("#preface-select").innerHTML = "";
 
@@ -925,6 +926,17 @@ function resetAll() {
 async function handleDateFetchResult(result) {
     state.season = result.season;
     state.defaults = result.defaults;
+
+    // Surface S&S content sanity-check warnings (empty sections)
+    var contentWarning = $("#content-warning");
+    if (contentWarning) {
+        if (result.warnings && result.warnings.length) {
+            showWarning(contentWarning,
+                "Content check: " + result.warnings.join(" "));
+        } else {
+            hideWarning(contentWarning);
+        }
+    }
 
     // Reset hymns and service details for the new date
     state.hymns = { gathering: null, sermon: null, communion: null, sending: null };
@@ -1133,6 +1145,7 @@ function setupDateFetch() {
 
         hideError($("#date-error"));
         hideWarning($("#date-warning"));
+        hideWarning($("#content-warning"));
         hide($("#day-info"));
 
         // Warn if date is not a Sunday (non-blocking)
@@ -1562,6 +1575,7 @@ async function restorePastRun(runId) {
 
     hideError($("#date-error"));
     hideWarning($("#date-warning"));
+    hideWarning($("#content-warning"));
     hide($("#day-info"));
     var spinner = $("#date-spinner");
     show(spinner);
