@@ -340,7 +340,21 @@ var api = (function() {
             lastJobId = start.job_id;
             var seen = 0;
             for (;;) {
-                await new Promise(function(r) { setTimeout(r, 700); });
+                // Poll every 700ms; when a backgrounded tab returns to
+                // focus, check immediately instead of waiting out the
+                // browser's throttled timer.
+                await new Promise(function(r) {
+                    var timer = setTimeout(done, 700);
+                    function done() {
+                        clearTimeout(timer);
+                        document.removeEventListener("visibilitychange", onVisible);
+                        r();
+                    }
+                    function onVisible() {
+                        if (!document.hidden) done();
+                    }
+                    document.addEventListener("visibilitychange", onVisible);
+                });
                 var status = await req("GET", "/api/jobs/" + lastJobId);
                 if (!status.success) return status;
                 (status.progress || []).slice(seen).forEach(function(entry) {
@@ -430,6 +444,11 @@ function showStep(n) {
         buildReviewOutline();
     }
     window.scrollTo(0, 0);
+    var heading = document.querySelector(".wizard-panel.active h2");
+    if (heading) {
+        heading.setAttribute("tabindex", "-1");
+        heading.focus({ preventScroll: true });
+    }
 }
 
 /** Validates whether the user can leave the given step. */
@@ -444,6 +463,19 @@ function validateStep(n) {
 }
 
 /** Wires up Next/Back buttons and step indicator clicks. */
+function setupWizardStepKeys() {
+    $$(".wizard-step").forEach(function(stepEl) {
+        stepEl.setAttribute("role", "button");
+        stepEl.setAttribute("tabindex", "0");
+        stepEl.addEventListener("keydown", function(e) {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                stepEl.click();
+            }
+        });
+    });
+}
+
 function setupWizardNav() {
     $$(".wizard-next-btn").forEach(function(btn) {
         btn.addEventListener("click", function() {
@@ -1993,9 +2025,11 @@ function setupFilePickers() {
         try {
             var result = await api.upload_cover(file);
             if (!result.success) {
-                alert(result.error || "Could not upload the cover image.");
+                showError($("#cover-error"),
+                    result.error || "Could not upload the cover image.");
                 return;
             }
+            hideError($("#cover-error"));
             state.coverImage = result.cover_token;
             $("#cover-image-path").textContent = file.name;
             show($("#cover-image-clear"));
@@ -2184,12 +2218,15 @@ async function loadLiturgicalTexts() {
             panel.className = "text-panel";
             panel.dataset.key = key;
 
-            var header = document.createElement("div");
+            var header = document.createElement("button");
             header.className = "text-panel-header";
+            header.setAttribute("type", "button");
+            header.setAttribute("aria-expanded", "false");
             header.innerHTML = '<span class="text-panel-title">' + escapeHtml(info.label) + '</span>' +
                 '<span class="text-panel-toggle">&#9660;</span>';
             header.addEventListener("click", function() {
-                panel.classList.toggle("open");
+                var open = panel.classList.toggle("open");
+                header.setAttribute("aria-expanded", open ? "true" : "false");
             });
             panel.appendChild(header);
 
@@ -2574,9 +2611,31 @@ window.addEventListener("beforeunload", function(e) {
     }
 });
 
+function setupA11y() {
+    // Announce errors, warnings, and status changes to assistive tech
+    $$(".error-msg").forEach(function(el) { el.setAttribute("role", "alert"); });
+    $$(".warning-msg").forEach(function(el) { el.setAttribute("role", "status"); });
+    $$(".spinner").forEach(function(el) { el.setAttribute("role", "status"); });
+    var progressStatus = $("#progress-status");
+    if (progressStatus) progressStatus.setAttribute("role", "status");
+
+    // Associate the per-slot hymn labels with their inputs
+    $$(".hymn-slot").forEach(function(slot) {
+        var slotName = slot.dataset.slot;
+        var numberInput = slot.querySelector(".hymn-number");
+        var collectionSelect = slot.querySelector(".hymn-collection");
+        numberInput.id = "hymn-number-" + slotName;
+        collectionSelect.id = "hymn-collection-" + slotName;
+        var labels = slot.querySelectorAll(".field label");
+        if (labels[0]) labels[0].setAttribute("for", numberInput.id);
+        if (labels[1]) labels[1].setAttribute("for", collectionSelect.id);
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     // Pre-fill date with next Sunday
     $("#date-input").value = getNextSunday();
+    setupA11y();
 
     setupAuth();
     setupSettings();
@@ -2593,5 +2652,6 @@ document.addEventListener("DOMContentLoaded", function() {
     setupMemorialAcclamationModeToggle();
     setupPastRuns();
     setupWizardNav();
+    setupWizardStepKeys();
     initAuth();
 });

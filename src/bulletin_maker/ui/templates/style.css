@@ -1392,3 +1392,64 @@ main {
     font-size: 13px;
     margin: 10px 0;
 }
+
+
+/* text-panel headers are real <button>s now — keep the old div look */
+button.text-panel-header {
+    width: 100%;
+    background: none;
+    border: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* keyboard focus visibility */
+.wizard-step:focus-visible,
+button.text-panel-header:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ── Small screens ──────────────────────────────────────── */
+@media (max-width: 640px) {
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        flex-wrap: wrap;
+    }
+
+    .wizard-steps {
+        gap: 4px;
+    }
+
+    .wizard-step-label {
+        white-space: normal;
+        font-size: 11px;
+        line-height: 1.2;
+        max-width: 72px;
+        text-align: center;
+    }
+
+    header {
+        flex-wrap: wrap;
+        row-gap: 6px;
+    }
+
+    .church-display {
+        display: none;
+    }
+
+    .header-right {
+        flex-wrap: wrap;
+        row-gap: 4px;
+    }
+
+    .wizard-buttons {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+}
