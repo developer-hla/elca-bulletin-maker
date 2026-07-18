@@ -598,8 +598,9 @@ class TestFetchDayContentErrors:
 class TestPastRuns:
     @pytest.fixture()
     def api(self, tmp_path, monkeypatch):
+        from bulletin_maker.core import past_runs
         monkeypatch.setattr(
-            BulletinAPI, "_past_runs_path", staticmethod(lambda: tmp_path / "past_runs.json")
+            past_runs, "_path", lambda: tmp_path / "past_runs.json"
         )
         return BulletinAPI()
 
@@ -662,12 +663,14 @@ class TestPastRuns:
         assert result["success"] is False
 
     def test_corrupted_file_returns_empty(self, api):
-        api._past_runs_path().write_text("not json")
+        from bulletin_maker.core import past_runs
+        past_runs._path().write_text("not json")
         runs = api.get_past_runs()
         assert runs["runs"] == []
 
     def test_corrupted_file_recovers_on_save(self, api):
-        api._past_runs_path().write_text("{}")
+        from bulletin_maker.core import past_runs
+        past_runs._path().write_text("{}")
         api.save_past_run({"date": "2026-03-01"}, {})
         runs = api.get_past_runs()
         assert len(runs["runs"]) == 1

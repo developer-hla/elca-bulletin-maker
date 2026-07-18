@@ -19,8 +19,20 @@ dependencies = [
 dev = [
     "playwright>=1.40",
     "pytest",
+    "fastapi",
+    "uvicorn[standard]",
+    "python-multipart",
+    "httpx",
 ]
 renderer = [
+    "pypdf",
+    "Pillow",
+    "playwright>=1.40",
+]
+web = [
+    "fastapi",
+    "uvicorn[standard]",
+    "python-multipart",
     "pypdf",
     "Pillow",
     "playwright>=1.40",

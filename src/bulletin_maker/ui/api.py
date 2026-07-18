@@ -21,6 +21,10 @@ from typing import Optional
 import webview
 from PIL import Image
 
+from bulletin_maker.core.content_views import (
+    build_liturgical_text_options,
+    build_reading_preview,
+)
 from bulletin_maker.core.documents import (
     DEFAULT_SELECTION,
     document_label,
@@ -28,7 +32,9 @@ from bulletin_maker.core.documents import (
 )
 from bulletin_maker.core.models import ServiceConfig
 from bulletin_maker.core.naming import build_date_suffix, build_filename, extract_day_name
+from bulletin_maker.core import past_runs
 from bulletin_maker.core.profile import load_profile
+from bulletin_maker.core.service_form import build_service_config
 from bulletin_maker.exceptions import AuthError, BulletinError, NetworkError, UpdateError
 from bulletin_maker.renderer.season import (
     PrefaceType,
@@ -37,20 +43,8 @@ from bulletin_maker.renderer.season import (
     get_preface_options,
     get_seasonal_config,
 )
-from bulletin_maker.renderer.static_text import (
-    AARONIC_BLESSING,
-    CONFESSION_AND_FORGIVENESS,
-    DISMISSAL_ENTRIES,
-)
-from bulletin_maker.renderer.text_utils import (
-    DialogRole,
-    clean_sns_html,
-    group_psalm_verses,
-    parse_dialog_html,
-    preprocess_html,
-)
 from bulletin_maker.sns.client import SundaysClient
-from bulletin_maker.sns.models import DayContent, HymnLyrics
+from bulletin_maker.sns.models import DayContent
 from bulletin_maker.updater import check_for_update, install_update, is_install_writable
 
 logger = logging.getLogger(__name__)
@@ -60,43 +54,6 @@ def _help_html_path() -> Path:
     if getattr(sys, "frozen", False):
         return Path(sys._MEIPASS) / "bulletin_maker" / "ui" / "templates" / "help.html"
     return Path(__file__).resolve().parent / "templates" / "help.html"
-
-
-def _format_verse_label(selected: list[int]) -> str:
-    """Build a compact verse label like 'Verses 1, 3-5' from sorted indices."""
-    if not selected:
-        return ""
-    nums = sorted(selected)
-    ranges: list[str] = []
-    start = end = nums[0]
-    for n in nums[1:]:
-        if n == end + 1:
-            end = n
-        else:
-            ranges.append(str(start) if start == end else f"{start}-{end}")
-            start = end = n
-    ranges.append(str(start) if start == end else f"{start}-{end}")
-    label = ", ".join(ranges)
-    return f"Verse {label}" if len(nums) == 1 else f"Verses {label}"
-
-
-def _filter_verses(
-    all_verses: list[str],
-    selected: list[int] | None,
-) -> tuple[list[str], str]:
-    """Filter verses by 1-based indices and build a verse label.
-
-    Returns (filtered_verses, verse_label).  If *selected* is None or
-    includes all verses, returns the original list with an empty label.
-    """
-    total = len(all_verses)
-    if not selected or len(selected) >= total:
-        return all_verses, ""
-    valid = sorted(i for i in selected if 1 <= i <= total)
-    if not valid or len(valid) >= total:
-        return all_verses, ""
-    filtered = [all_verses[i - 1] for i in valid]
-    return filtered, _format_verse_label(valid)
 
 
 class BulletinAPI:
@@ -238,70 +195,25 @@ class BulletinAPI:
 
     # ── Past Runs ─────────────────────────────────────────────────────
 
-    MAX_PAST_RUNS = 20
-
-    @staticmethod
-    def _past_runs_path() -> Path:
-        return Path.home() / ".bulletin-maker" / "past_runs.json"
-
-    def _read_past_runs(self) -> list:
-        try:
-            path = self._past_runs_path()
-            if path.exists():
-                data = json.loads(path.read_text())
-                if isinstance(data, list):
-                    return data
-        except Exception:
-            logger.debug("Could not read past runs", exc_info=True)
-        return []
-
-    def _write_past_runs(self, runs: list) -> None:
-        try:
-            path = self._past_runs_path()
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(runs[: self.MAX_PAST_RUNS], indent=2))
-        except Exception:
-            logger.debug("Could not write past runs", exc_info=True)
-
     def save_past_run(self, form_data: dict, metadata: dict) -> dict:
-        now = datetime.now()
-        run = {
-            "id": now.strftime("%Y%m%d%H%M%S"),
-            "timestamp": now.isoformat(),
-            "metadata": metadata,
-            "form_data": form_data,
-        }
-        runs = self._read_past_runs()
-        runs = [r for r in runs if r.get("form_data", {}).get("date") != form_data.get("date")]
-        runs.insert(0, run)
-        self._write_past_runs(runs)
-        return {"success": True, "id": run["id"]}
+        run_id = past_runs.save_past_run(form_data, metadata)
+        return {"success": True, "id": run_id}
 
     def get_past_runs(self) -> dict:
-        runs = self._read_past_runs()
-        summaries = [
-            {
-                "id": r.get("id", ""),
-                "timestamp": r.get("timestamp", ""),
-                "metadata": r.get("metadata", {}),
-                "date": r.get("form_data", {}).get("date", ""),
-            }
-            for r in runs
-        ]
-        return {"success": True, "runs": summaries}
+        return {"success": True, "runs": past_runs.list_past_runs()}
 
     def get_past_run(self, run_id: str) -> dict:
-        for r in self._read_past_runs():
-            if r.get("id") == run_id:
-                return {"success": True, "form_data": r.get("form_data", {}), "metadata": r.get("metadata", {})}
-        return {"success": False, "error": "Run not found.", "error_type": "validation"}
+        run = past_runs.get_past_run(run_id)
+        if run is None:
+            return {"success": False, "error": "Run not found.",
+                    "error_type": "validation"}
+        return {"success": True, "form_data": run.get("form_data", {}),
+                "metadata": run.get("metadata", {})}
 
     def delete_past_run(self, run_id: str) -> dict:
-        runs = self._read_past_runs()
-        filtered = [r for r in runs if r.get("id") != run_id]
-        if len(filtered) == len(runs):
-            return {"success": False, "error": "Run not found.", "error_type": "validation"}
-        self._write_past_runs(filtered)
+        if not past_runs.delete_past_run(run_id):
+            return {"success": False, "error": "Run not found.",
+                    "error_type": "validation"}
         return {"success": True}
 
     # ── Credentials ───────────────────────────────────────────────────
@@ -405,65 +317,15 @@ class BulletinAPI:
 
     # ── Reading Preview ─────────────────────────────────────────────────
 
-    @staticmethod
-    def _build_psalm_preview(text_html: str) -> str:
-        """Build preview HTML for a psalm reading."""
-        groups = group_psalm_verses(text_html)
-        lines = []
-        for g in groups:
-            prefix = f'<sup>{g.verse_num}</sup>' if g.verse_num else ''
-            cls = ' class="psalm-bold"' if g.bold else ''
-            lines.append(f'<p{cls}>{prefix}{g.text}</p>')
-            for c in g.continuations:
-                cls = "psalm-bold psalm-cont" if c.bold else "psalm-cont"
-                lines.append(f'<p class="{cls}">{c.text}</p>')
-        return "\n".join(lines)
-
     def get_reading_preview(self, slot: str) -> dict:
         """Return rendered HTML for a reading preview."""
         if self._day is None:
             return {"success": False, "error": "No content fetched yet.",
                     "error_type": "validation"}
-
-        slot_labels = {
-            "first": "First Reading",
-            "second": "Second Reading",
-            "psalm": "Psalm",
-            "gospel": "Gospel",
-        }
-        target_label = slot_labels.get(slot)
-        if not target_label:
-            return {"success": False, "error": f"Unknown slot: {slot}",
-                    "error_type": "validation"}
-
-        reading = None
-        for r in self._day.readings:
-            if r.label == target_label:
-                reading = r
-                break
-        if not reading:
-            return {"success": False,
-                    "error": f"No {target_label} found for this date.",
-                    "error_type": "validation"}
-
         try:
-            if slot == "psalm":
-                preview_html = self._build_psalm_preview(reading.text_html)
-            else:
-                body = reading.text_html
-                body = re.sub(r'^<div[^>]*>', '', body)
-                body = re.sub(r'</div>\s*$', '', body)
-                preview_html = preprocess_html(body)
-
-            return {
-                "success": True,
-                "label": reading.label,
-                "citation": reading.citation,
-                "intro": clean_sns_html(reading.intro),
-                "preview_html": preview_html,
-            }
-        except BulletinError as e:
-            logger.exception("Error getting reading preview")
+            preview = build_reading_preview(self._day, slot)
+            return {"success": True, **preview}
+        except (ValueError, BulletinError) as e:
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
 
@@ -482,103 +344,13 @@ class BulletinAPI:
     # ── Liturgical Texts ────────────────────────────────────────────────
 
     def get_liturgical_texts(self) -> dict:
-        """Return named options for the 5 variable liturgical texts.
-
-        Must be called after fetch_day_content() populates self._day.
-        Each text has an ``options`` list of named presets (Ascension
-        customs, S&S weekly variants, etc.) and a ``default`` key.
-        The UI renders radio buttons from the options list.
-        """
+        """Return named options for the 5 variable liturgical texts."""
         try:
             if self._day is None:
                 return {"success": False, "error": "No content fetched yet.",
                         "error_type": "validation"}
-
-            day = self._day
-
-            def _entries_to_dicts(entries):
-                return [{"role": r.value, "text": t} for r, t in entries]
-
-            # Parse S&S structured versions
-            sns_confession = _entries_to_dicts(
-                parse_dialog_html(day.confession_html)
-            ) if day.confession_html else []
-
-            sns_dismissal = _entries_to_dicts(
-                parse_dialog_html(day.dismissal_html)
-            ) if day.dismissal_html else []
-
-            texts = {
-                "prayer_of_day": {
-                    "label": "Prayer of the Day",
-                    "type": "text",
-                    "default": "sns",
-                    "options": [
-                        {"key": "sns", "label": "This Week\u2019s (S&S)",
-                         "data": clean_sns_html(day.prayer_of_the_day_html),
-                         "disabled": not bool(day.prayer_of_the_day_html)},
-                    ],
-                },
-                "confession": {
-                    "label": "Confession and Forgiveness",
-                    "type": "structured",
-                    "default": "form_a",
-                    "options": [
-                        {"key": "form_a", "label": "ELW Form A",
-                         "data": _entries_to_dicts(CONFESSION_AND_FORGIVENESS)},
-                        {"key": "sns", "label": "This Week\u2019s (S&S)",
-                         "data": sns_confession,
-                         "disabled": not bool(sns_confession)},
-                    ],
-                },
-                "offering_prayer": {
-                    "label": "Offering Prayer",
-                    "type": "text",
-                    "default": "sns",
-                    "options": [
-                        {"key": "sns", "label": "This Week\u2019s (S&S)",
-                         "data": clean_sns_html(day.offering_prayer_html),
-                         "disabled": not bool(day.offering_prayer_html)},
-                    ],
-                },
-                "prayer_after_communion": {
-                    "label": "Prayer After Communion",
-                    "type": "text",
-                    "default": "sns",
-                    "options": [
-                        {"key": "sns", "label": "This Week\u2019s (S&S)",
-                         "data": clean_sns_html(day.prayer_after_communion_html),
-                         "disabled": not bool(day.prayer_after_communion_html)},
-                    ],
-                },
-                "blessing": {
-                    "label": "Blessing",
-                    "type": "text",
-                    "default": "aaronic",
-                    "options": [
-                        {"key": "aaronic", "label": "Aaronic Blessing",
-                         "data": AARONIC_BLESSING},
-                        {"key": "sns", "label": "This Week\u2019s (S&S)",
-                         "data": clean_sns_html(day.blessing_html),
-                         "disabled": not bool(day.blessing_html)},
-                    ],
-                },
-                "dismissal": {
-                    "label": "Dismissal",
-                    "type": "structured",
-                    "default": "standard",
-                    "options": [
-                        {"key": "standard",
-                         "label": "Go in peace to love and serve the Lord",
-                         "data": _entries_to_dicts(DISMISSAL_ENTRIES)},
-                        {"key": "sns", "label": "This Week\u2019s (S&S)",
-                         "data": sns_dismissal,
-                         "disabled": not bool(sns_dismissal)},
-                    ],
-                },
-            }
-
-            return {"success": True, "texts": texts}
+            return {"success": True,
+                    "texts": build_liturgical_text_options(self._day)}
         except BulletinError as e:
             logger.exception("Error getting liturgical texts")
             return {"success": False, "error": str(e),
@@ -718,106 +490,9 @@ class BulletinAPI:
 
     # ── Generation helpers ─────────────────────────────────────────────
 
-    def _build_hymn(self, form_data: dict, slot: str) -> Optional[HymnLyrics]:
-        """Build a HymnLyrics from cached data for a form slot."""
-        hymn_data = form_data.get(slot)
-        if not hymn_data:
-            return None
-        number = hymn_data.get("number", "")
-        collection = hymn_data.get("collection", "ELW")
-        cache_key = f"{collection}_{number}"
-        cached = self._hymn_cache.get(cache_key)
-        if cached:
-            all_verses = cached["verses"]
-            selected = hymn_data.get("selected_verses")
-            verses, verse_label = _filter_verses(all_verses, selected)
-            return HymnLyrics(
-                number=cached["number"],
-                title=cached["title"],
-                verses=verses,
-                refrain=cached["refrain"],
-                copyright=cached["copyright"],
-                verse_label=verse_label,
-            )
-        # Minimal fallback — title only (no lyrics fetched)
-        logger.warning("Hymn %s %s not in cache — large print will show title only",
-                        collection, number)
-        title = hymn_data.get("title", "")
-        return HymnLyrics(
-            number=f"{collection} {number}",
-            title=title,
-            verses=[],
-        )
-
-    @staticmethod
-    def _parse_preface(value: str | None) -> PrefaceType | None:
-        """Convert a preface string to PrefaceType, returning None on bad input."""
-        if not value:
-            return None
-        try:
-            return PrefaceType(value)
-        except ValueError:
-            logger.warning("Invalid preface value from UI: %r", value)
-            return None
-
-    @staticmethod
-    def _parse_dialog_entries(raw: list | None) -> list | None:
-        """Convert JSON dialog dicts back to (DialogRole, text) tuples."""
-        if not raw:
-            return None
-        entries = []
-        for e in raw:
-            try:
-                role = DialogRole(e.get("role", ""))
-            except ValueError:
-                role = DialogRole.NONE
-            entries.append((role, e.get("text", "")))
-        return entries
-
     def _build_service_config(self, form_data: dict) -> ServiceConfig:
-        """Build a ServiceConfig from wizard form data."""
-        return ServiceConfig(
-            date=form_data.get("date", ""),
-            date_display=form_data.get("date_display", ""),
-            creed_type=form_data.get("creed_type"),
-            include_kyrie=form_data.get("include_kyrie"),
-            canticle=form_data.get("canticle"),
-            eucharistic_form=form_data.get("eucharistic_form"),
-            include_memorial_acclamation=form_data.get("include_memorial_acclamation"),
-            memorial_acclamation_mode=form_data.get("memorial_acclamation_mode"),
-            preface=self._parse_preface(form_data.get("preface")),
-            show_confession=form_data.get("show_confession"),
-            show_nunc_dimittis=form_data.get("show_nunc_dimittis"),
-            reading_overrides=form_data.get("reading_overrides") or None,
-            include_baptism=form_data.get("include_baptism", False),
-            baptism_candidate_names=form_data.get("baptism_candidate_names", ""),
-            confession_entries=self._parse_dialog_entries(
-                form_data.get("confession_entries")
-            ),
-            offering_prayer_text=form_data.get("offering_prayer_text") or None,
-            prayer_after_communion_text=form_data.get("prayer_after_communion_text") or None,
-            blessing_text=form_data.get("blessing_text") or None,
-            dismissal_entries=self._parse_dialog_entries(
-                form_data.get("dismissal_entries")
-            ),
-            gathering_hymn=self._build_hymn(form_data, "gathering_hymn"),
-            sermon_hymn=self._build_hymn(form_data, "sermon_hymn"),
-            communion_hymn=self._build_hymn(form_data, "communion_hymn"),
-            sending_hymn=self._build_hymn(form_data, "sending_hymn"),
-            prelude_title=form_data.get("prelude_title", ""),
-            prelude_composer=form_data.get("prelude_composer", ""),
-            prelude_performer=form_data.get("prelude_performer", ""),
-            offertory_type=form_data.get("offertory_type", "offertory"),
-            offertory_title=form_data.get("offertory_title", ""),
-            offertory_composer=form_data.get("offertory_composer", ""),
-            offertory_performer=form_data.get("offertory_performer", ""),
-            postlude_title=form_data.get("postlude_title", ""),
-            postlude_composer=form_data.get("postlude_composer", ""),
-            postlude_performer=form_data.get("postlude_performer", ""),
-            choral_title=form_data.get("choral_title", ""),
-            choral_composer=form_data.get("choral_composer", ""),
-            cover_image=form_data.get("cover_image", ""),
-        )
+        """Build a ServiceConfig from wizard form data + hymn cache."""
+        return build_service_config(form_data, self._hymn_cache)
 
     # ── Generation ────────────────────────────────────────────────────
 
