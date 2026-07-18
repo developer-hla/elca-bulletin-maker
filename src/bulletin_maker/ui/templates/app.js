@@ -63,7 +63,6 @@ function initialState() {
         },
         readingOverrides: {},  // {slot: {label, citation, intro, text_html}}
         coverImage: "",
-        outputDir: "",
         liturgicalTexts: null,  // raw texts from API
         textChoices: {},        // {key: {source, isCustom, value}}
     };
@@ -217,16 +216,139 @@ function readingSlotKey(label) {
     return l;
 }
 
-/** Waits for pywebview JS bridge to be ready. */
-function waitForApi() {
-    return new Promise(function(resolve) {
-        if (window.pywebview && window.pywebview.api) {
-            resolve();
-            return;
+// ── Server API adapter ───────────────────────────────────────────────
+// Talks to the FastAPI backend. Method names mirror the old pywebview
+// bridge so call sites read the same; failures resolve to
+// {success:false, error, error_type, auth_error?} rather than throwing.
+var api = (function() {
+    var lastDayResponse = null;
+    var hymnCache = {};       // "COLL_NUM" -> merged hymn response
+    var lastJobId = null;
+
+    async function req(method, url, body) {
+        var opts = { method: method, headers: {} };
+        if (body !== undefined) {
+            opts.headers["Content-Type"] = "application/json";
+            opts.body = JSON.stringify(body);
         }
-        window.addEventListener("pywebviewready", resolve);
-    });
-}
+        var resp;
+        try {
+            resp = await fetch(url, opts);
+        } catch (e) {
+            return { success: false, error_type: "network",
+                     error: "Cannot reach the Bulletin Maker server. Is it still running?" };
+        }
+        var data = null;
+        try { data = await resp.json(); } catch (e) {}
+        if (!resp.ok) {
+            var detail = (data && data.detail) || {};
+            return {
+                success: false,
+                error: detail.error || ("Server error (HTTP " + resp.status + ")"),
+                error_type: detail.error_type || "internal",
+                auth_error: !!detail.auth_error,
+            };
+        }
+        return data;
+    }
+
+    var methods = {
+        login: function(u, pw) { return req("POST", "/api/session", { username: u, password: pw }); },
+        logout: function() { return req("DELETE", "/api/session"); },
+        get_profile: function() { return req("GET", "/api/profile"); },
+        get_preface_options: function() { return req("GET", "/api/prefaces"); },
+
+        fetch_day_content: async function(dateStr, dateDisplay) {
+            var result = await req("GET", "/api/day?date=" + encodeURIComponent(dateStr) +
+                                   "&display=" + encodeURIComponent(dateDisplay));
+            if (result.success) lastDayResponse = result;
+            return result;
+        },
+        get_file_prefix: function() {
+            if (lastDayResponse && lastDayResponse.prefix) {
+                return Promise.resolve({ success: true, prefix: lastDayResponse.prefix });
+            }
+            return Promise.resolve({ success: false, error: "No content fetched yet.",
+                                     error_type: "validation" });
+        },
+        get_liturgical_texts: function() { return req("GET", "/api/day/texts"); },
+        get_reading_preview: function(slot) {
+            return req("GET", "/api/day/readings/" + encodeURIComponent(slot) + "/preview");
+        },
+        fetch_custom_reading: function(citation) {
+            return req("POST", "/api/passage", { citation: citation });
+        },
+
+        // The server merges search + lyrics into one endpoint; both old
+        // bridge methods resolve from it (cached per hymn).
+        search_hymn: async function(number, collection) {
+            var result = await req("GET", "/api/hymns/" + encodeURIComponent(collection) +
+                                   "/" + encodeURIComponent(number) +
+                                   "?date=" + encodeURIComponent(state.dateStr || ""));
+            if (result.success) {
+                result.has_words = true;
+                hymnCache[collection + "_" + number] = result;
+            }
+            return result;
+        },
+        fetch_hymn_lyrics: function(number, dateStr, collection) {
+            var cached = hymnCache[collection + "_" + number];
+            if (cached) return Promise.resolve(cached);
+            return methods.search_hymn(number, collection);
+        },
+
+        save_past_run: function(formData, metadata) {
+            return req("POST", "/api/runs", { form_data: formData, metadata: metadata });
+        },
+        get_past_runs: function() { return req("GET", "/api/runs"); },
+        get_past_run: function(runId) { return req("GET", "/api/runs/" + encodeURIComponent(runId)); },
+        delete_past_run: function(runId) { return req("DELETE", "/api/runs/" + encodeURIComponent(runId)); },
+
+        upload_cover: async function(file) {
+            var fd = new FormData();
+            fd.append("file", file, file.name);
+            var resp;
+            try {
+                resp = await fetch("/api/cover", { method: "POST", body: fd });
+            } catch (e) {
+                return { success: false, error: "Upload failed.", error_type: "network" };
+            }
+            var data = null;
+            try { data = await resp.json(); } catch (e) {}
+            if (!resp.ok) {
+                var detail = (data && data.detail) || {};
+                return { success: false, error: detail.error || "Upload failed.",
+                         error_type: detail.error_type || "internal" };
+            }
+            return data;
+        },
+
+        generate_all: async function(formData) {
+            var start = await req("POST", "/api/generate", formData);
+            if (!start.success) return start;
+            lastJobId = start.job_id;
+            var seen = 0;
+            for (;;) {
+                await new Promise(function(r) { setTimeout(r, 700); });
+                var status = await req("GET", "/api/jobs/" + lastJobId);
+                if (!status.success) return status;
+                (status.progress || []).slice(seen).forEach(function(entry) {
+                    updateProgress(entry);
+                });
+                seen = (status.progress || []).length;
+                if (status.status !== "running") {
+                    return { success: status.status === "done",
+                             results: status.results, errors: status.errors };
+                }
+            }
+        },
+        file_url: function(docKey) {
+            return "/api/jobs/" + lastJobId + "/files/" + encodeURIComponent(docKey);
+        },
+        zip_url: function() { return "/api/jobs/" + lastJobId + "/zip"; },
+    };
+    return methods;
+})();
 
 function escapeHtml(str) {
     var div = document.createElement("div");
@@ -343,7 +465,7 @@ function buildReadinessSummary() {
     var items = [
         { label: "Date", ok: !!state.dateStr, detail: state.dateStr ? state.dateDisplay : "Not set" },
         { label: "Hymns", ok: hymnCount > 0, detail: hymnCount + " of 4 set" },
-        { label: "Output", ok: !!state.outputDir, detail: state.outputDir ? state.outputDir.split("/").pop().split("\\").pop() : "Not set" },
+        { label: "Output", ok: true, detail: "Downloads in your browser" },
         { label: "Docs", ok: docCount > 0, detail: docCount + " selected" },
         {
             label: "Memorial Acc.",
@@ -666,112 +788,16 @@ window.updateProgress = function(data) {
 
 var _updateState = { downloadUrl: null, releaseNotes: null, installing: false };
 
-async function checkForUpdate() {
-    try {
-        var result = await window.pywebview.api.check_for_update();
-        if (result.success && result.update_available) {
-            _updateState.downloadUrl = result.download_url || null;
-            _updateState.releaseNotes = result.release_notes || null;
-
-            $("#update-message").textContent =
-                "Version " + result.latest + " is available (you have " + result.current + ").";
-
-            // Show install button if we have a direct download URL
-            var installBtn = $("#update-install-btn");
-            if (_updateState.downloadUrl) {
-                show(installBtn);
-            } else {
-                hide(installBtn);
-            }
-
-            show($("#update-banner"));
-        }
-    } catch (e) {
-        // Silently ignore — update check is non-critical
-    }
-}
-
-async function installUpdate() {
-    if (_updateState.installing || !_updateState.downloadUrl) return;
-    _updateState.installing = true;
-
-    var installBtn = $("#update-install-btn");
-    var progressEl = $("#update-progress");
-    var errorEl = $("#update-error");
-    var downloadLink = $("#update-download-link");
-
-    installBtn.disabled = true;
-    installBtn.textContent = "Installing...";
-    hide(errorEl);
-    hide(downloadLink);
-    show(progressEl);
-
-    try {
-        var result = await window.pywebview.api.install_update(_updateState.downloadUrl);
-        if (result && !result.success) {
-            hide(progressEl);
-            errorEl.textContent = result.error || "Update failed.";
-            show(errorEl);
-
-            if (result.fallback_url) {
-                downloadLink.href = result.fallback_url;
-                show(downloadLink);
-            }
-            installBtn.textContent = "Install Update";
-            installBtn.disabled = false;
-            _updateState.installing = false;
-        }
-        // If success, the app is relaunching — nothing more to do
-    } catch (e) {
-        hide(progressEl);
-        errorEl.textContent = "Update failed: " + (e.message || e);
-        show(errorEl);
-        downloadLink.href = _updateState.downloadUrl;
-        show(downloadLink);
-        installBtn.textContent = "Install Update";
-        installBtn.disabled = false;
-        _updateState.installing = false;
-    }
-}
-
-function toggleWhatsNew() {
-    var notesEl = $("#update-notes");
-    if (notesEl.hidden) {
-        notesEl.textContent = _updateState.releaseNotes || "No release notes available.";
-        show(notesEl);
-    } else {
-        hide(notesEl);
-    }
-}
-
-function setupUpdateBanner() {
-    $("#update-dismiss").addEventListener("click", function() {
-        hide($("#update-banner"));
-    });
-    $("#update-install-btn").addEventListener("click", installUpdate);
-    $("#update-whats-new-btn").addEventListener("click", toggleWhatsNew);
-}
-
 // ── Login ────────────────────────────────────────────────────────────
 
 async function initLogin() {
-    await waitForApi();
 
     // Show this congregation's name from the profile
     try {
-        var profileResult = await window.pywebview.api.get_profile();
+        var profileResult = await api.get_profile();
         if (profileResult.success && profileResult.church_name) {
             var subtitle = document.querySelector(".subtitle");
             if (subtitle) subtitle.textContent = profileResult.church_name;
-        }
-    } catch (_) {}
-
-    // Restore saved output directory
-    try {
-        var dirResult = await window.pywebview.api.get_saved_output_dir();
-        if (dirResult.success && dirResult.path) {
-            state.outputDir = dirResult.path;
-            $("#output-dir-path").textContent = dirResult.path;
         }
     } catch (_) {}
 
@@ -796,12 +822,11 @@ function setupLogin() {
         show(spinner);
 
         try {
-            const result = await window.pywebview.api.login(username, password);
+            const result = await api.login(username, password);
             if (result && result.success) {
                 hide($("#login-overlay"));
                 show($("#app"));
                 $("#user-display").textContent = result.username;
-                checkForUpdate();
             } else {
                 hide(spinner);
                 show(form);
@@ -828,17 +853,9 @@ function setupNewBulletin() {
 }
 
 function setupHelp() {
-    async function openHelp(e) {
+    function openHelp(e) {
         e.preventDefault();
-        const api = window.pywebview && window.pywebview.api;
-        if (!api || !api.open_help_window) {
-            alert("Help is still loading — please wait a moment and try again.");
-            return;
-        }
-        const result = await api.open_help_window();
-        if (result && result.success === false) {
-            alert("Could not open help: " + (result.error || "unknown error"));
-        }
+        window.open("/help.html", "_blank");
     }
     const helpLink = $("#help-link");
     if (helpLink) helpLink.addEventListener("click", openHelp);
@@ -850,7 +867,7 @@ function setupLogout() {
     $("#logout-link").addEventListener("click", async function(e) {
         e.preventDefault();
         if (!confirm("Log out? Any unsaved work will be lost.")) return;
-        await window.pywebview.api.logout();
+        await api.logout();
         // Show login overlay again
         show($("#login-overlay"));
         hide($("#app"));
@@ -908,7 +925,6 @@ function resetAll() {
     hideError($("#texts-error"));
 
     resetFormUI();
-    $("#output-dir-path").textContent = "./output";
 
     // Reset generate section
     $$('input[name="doc_select"]').forEach(function(el) { el.checked = true; });
@@ -1009,7 +1025,7 @@ async function handleDateFetchResult(result) {
                 var citation = input.value.trim();
                 if (!citation) return;
                 showBtnSpinner(fetchBtn);
-                var result = await window.pywebview.api.fetch_custom_reading(citation);
+                var result = await api.fetch_custom_reading(citation);
                 hideBtnSpinner(fetchBtn, "Fetch");
                 var msg = area.querySelector(".reading-edit-msg");
                 if (!msg) {
@@ -1071,7 +1087,7 @@ async function handleDateFetchResult(result) {
             }
             showBtnSpinner(previewBtn);
             try {
-                var res = await window.pywebview.api.get_reading_preview(slot);
+                var res = await api.get_reading_preview(slot);
                 hideBtnSpinner(previewBtn, "Preview");
                 if (!res.success) {
                     return;
@@ -1105,7 +1121,7 @@ async function handleDateFetchResult(result) {
 
     // Show filename preview
     try {
-        var prefixResult = await window.pywebview.api.get_file_prefix();
+        var prefixResult = await api.get_file_prefix();
         if (prefixResult.success) {
             $("#filename-prefix").textContent = "[Document] - " + prefixResult.prefix + ".pdf";
             show($("#filename-preview"));
@@ -1169,7 +1185,7 @@ function setupDateFetch() {
         state.dateStr = dateStr;
         state.dateDisplay = dateDisplay;
 
-        const result = await window.pywebview.api.fetch_day_content(dateStr, dateDisplay);
+        const result = await api.fetch_day_content(dateStr, dateDisplay);
 
         hide(spinner);
         this.disabled = false;
@@ -1244,7 +1260,7 @@ async function populatePrefaceDropdown(defaultKey) {
     select.innerHTML = "";
 
     try {
-        var result = await window.pywebview.api.get_preface_options();
+        var result = await api.get_preface_options();
         if (!result.success) return;
 
         var prefaces = result.prefaces;
@@ -1405,7 +1421,7 @@ function setupHymnFetch() {
 
             try {
                 // Search first
-                const searchResult = await window.pywebview.api.search_hymn(number, collection);
+                const searchResult = await api.search_hymn(number, collection);
 
                 if (!searchResult.success) {
                     hideBtnSpinner(this, "Fetch");
@@ -1429,7 +1445,7 @@ function setupHymnFetch() {
                 }
 
                 // Then fetch lyrics
-                const lyricsResult = await window.pywebview.api.fetch_hymn_lyrics(
+                const lyricsResult = await api.fetch_hymn_lyrics(
                     number, state.dateStr, collection
                 );
 
@@ -1483,7 +1499,7 @@ async function loadPastRuns() {
     container.innerHTML = "";
 
     try {
-        var result = await window.pywebview.api.get_past_runs();
+        var result = await api.get_past_runs();
         if (!result.success || !result.runs.length) {
             hide($("#past-runs-section"));
             return;
@@ -1533,7 +1549,7 @@ async function loadPastRuns() {
 
 async function deletePastRun(runId) {
     try {
-        await window.pywebview.api.delete_past_run(runId);
+        await api.delete_past_run(runId);
         loadPastRuns();
     } catch (_) {}
 }
@@ -1560,14 +1576,14 @@ async function savePastRun(formData) {
     };
 
     try {
-        await window.pywebview.api.save_past_run(saveData, metadata);
+        await api.save_past_run(saveData, metadata);
         loadPastRuns();
     } catch (_) {}
 }
 
 async function restorePastRun(runId) {
     try {
-        var result = await window.pywebview.api.get_past_run(runId);
+        var result = await api.get_past_run(runId);
         if (!result.success) return;
     } catch (_) {
         showError($("#date-error"), "Failed to load past run.");
@@ -1589,7 +1605,7 @@ async function restorePastRun(runId) {
     show(spinner);
     $("#fetch-btn").disabled = true;
 
-    var fetchResult = await window.pywebview.api.fetch_day_content(fd.date, state.dateDisplay);
+    var fetchResult = await api.fetch_day_content(fd.date, state.dateDisplay);
 
     hide(spinner);
     $("#fetch-btn").disabled = false;
@@ -1749,27 +1765,32 @@ function setupPastRuns() {
 // ── File Pickers ─────────────────────────────────────────────────────
 
 function setupFilePickers() {
-    $("#cover-image-btn").addEventListener("click", async function() {
-        this.disabled = true;
+    var fileInput = $("#cover-file-input");
+
+    $("#cover-image-btn").addEventListener("click", function() {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener("change", async function() {
+        var file = this.files && this.files[0];
+        this.value = "";
+        if (!file) return;
+        var btn = $("#cover-image-btn");
+        btn.disabled = true;
         try {
-            const result = await window.pywebview.api.choose_cover_image();
-            if (result.success) {
-                state.coverImage = result.path;
-                const name = result.path.split("/").pop().split("\\").pop();
-                $("#cover-image-path").textContent = name;
-                show($("#cover-image-clear"));
-                // Load thumbnail preview
-                var preview = await window.pywebview.api.get_cover_preview(result.path);
-                var img = $("#cover-image-preview");
-                if (preview.success) {
-                    img.src = preview.data_uri;
-                    show(img);
-                } else {
-                    hide(img);
-                }
+            var result = await api.upload_cover(file);
+            if (!result.success) {
+                alert(result.error || "Could not upload the cover image.");
+                return;
             }
+            state.coverImage = result.cover_token;
+            $("#cover-image-path").textContent = file.name;
+            show($("#cover-image-clear"));
+            var img = $("#cover-image-preview");
+            img.src = URL.createObjectURL(file);
+            show(img);
         } finally {
-            this.disabled = false;
+            btn.disabled = false;
         }
     });
 
@@ -1777,21 +1798,9 @@ function setupFilePickers() {
         state.coverImage = "";
         $("#cover-image-path").textContent = "None selected";
         hide(this);
-        hide($("#cover-image-preview"));
-    });
-
-    $("#output-dir-btn").addEventListener("click", async function() {
-        this.disabled = true;
-        try {
-            const result = await window.pywebview.api.choose_output_directory();
-            if (result.success) {
-                state.outputDir = result.path;
-                $("#output-dir-path").textContent = result.path;
-                window.pywebview.api.save_output_dir(result.path);
-            }
-        } finally {
-            this.disabled = false;
-        }
+        var img = $("#cover-image-preview");
+        hide(img);
+        img.removeAttribute("src");
     });
 }
 
@@ -1906,7 +1915,7 @@ async function loadLiturgicalTexts() {
     show(spinner);
 
     try {
-        var result = await window.pywebview.api.get_liturgical_texts();
+        var result = await api.get_liturgical_texts();
         hide(spinner);
 
         if (!result.success) {
@@ -2098,7 +2107,6 @@ function collectFormData() {
         choral_title: $("#choral-title").value.trim(),
         choral_composer: $("#choral-composer").value.trim(),
         cover_image: state.coverImage,
-        output_dir: state.outputDir || "output",
         selected_docs: Array.from($$('input[name="doc_select"]:checked')).map(function(el) { return el.value; }),
     };
 
@@ -2162,12 +2170,6 @@ async function runGeneration() {
         return;
     }
 
-    // Validate output directory
-    if (!state.outputDir) {
-        showError(errorEl, "Please choose an output directory first.");
-        return;
-    }
-
     var selectedDocs = $$('input[name="doc_select"]:checked');
     if (selectedDocs.length === 0) {
         showError(errorEl, "Select at least one document to generate.");
@@ -2199,19 +2201,6 @@ async function runGeneration() {
         if (!proceed) return;
     }
 
-    // Check for existing files before generating
-    var checkResult = await window.pywebview.api.check_existing_files(
-        formData.output_dir, formData.selected_docs
-    );
-    if (checkResult.existing && checkResult.existing.length > 0) {
-        var ok = confirm(
-            "The following files will be overwritten:\n\n" +
-            checkResult.existing.join("\n") +
-            "\n\nContinue?"
-        );
-        if (!ok) return;
-    }
-
     generateBtn.disabled = true;
     show($("#progress-area"));
     $("#progress-fill").style.width = "0%";
@@ -2219,7 +2208,7 @@ async function runGeneration() {
     const bar = document.querySelector(".progress-bar");
     if (bar) bar.setAttribute("aria-valuenow", 0);
 
-    const result = await window.pywebview.api.generate_all(formData);
+    const result = await api.generate_all(formData);
 
     generateBtn.disabled = false;
 
@@ -2237,12 +2226,13 @@ async function runGeneration() {
     if (result.results) {
         Object.keys(result.results).forEach(function(key) {
             const li = document.createElement("li");
-            const path = result.results[key];
-            const name = path.split("/").pop().split("\\").pop();
+            const name = result.results[key];
 
-            var textSpan = document.createElement("span");
-            textSpan.textContent = (DOC_LABELS[key] || key) + " \u2014 " + name;
-            li.appendChild(textSpan);
+            var link = document.createElement("a");
+            link.href = api.file_url(key);
+            link.textContent = (DOC_LABELS[key] || key) + " \u2014 " + name;
+            link.setAttribute("download", name);
+            li.appendChild(link);
 
             // Single-doc regenerate link
             var regenLink = document.createElement("button");
@@ -2285,9 +2275,7 @@ async function runGeneration() {
     }
 
     // Store output dir for open folder button
-    if (result.output_dir) {
-        $("#open-folder-btn").dataset.path = result.output_dir;
-    }
+
 
     show($("#results-area"));
 
@@ -2323,12 +2311,9 @@ function setupGenerate() {
         $$('input[name="doc_select"]').forEach(function(el) { el.checked = true; });
     });
 
-    // Open folder button
-    $("#open-folder-btn").addEventListener("click", async function() {
-        const path = this.dataset.path;
-        if (path) {
-            await window.pywebview.api.open_output_folder(path);
-        }
+    // Download-all button
+    $("#download-zip-btn").addEventListener("click", function() {
+        window.location.href = api.zip_url();
     });
 }
 
@@ -2366,7 +2351,6 @@ document.addEventListener("DOMContentLoaded", function() {
     setupLogout();
     setupNewBulletin();
     setupHelp();
-    setupUpdateBanner();
     setupDateFetch();
     setupResetDefaults();
     setupHymnFetch();
