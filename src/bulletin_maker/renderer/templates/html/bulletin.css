@@ -128,6 +128,12 @@ p { margin: 0; }
     max-height: 7in;
 }
 
+/* Kyrie shares a page with the Greeting, so cap it shorter to keep the
+   pair together on one page rather than orphaning the Greeting. */
+.notation-image.kyrie-notation img {
+    max-height: 6.6in;
+}
+
 /* ── Readings ── */
 .reading-intro {
     font-style: italic;

@@ -80,7 +80,8 @@
 {% endif %}
 
 
-{# ── Greeting (P/C dialog, no heading) ── #}
+{# ── Greeting + Kyrie (kept together so the Greeting isn't orphaned) ── #}
+<div class="flow-group">
 {% if greeting_entries %}
 {% for role, text in greeting_entries %}
 {% if role.value == "P" %}
@@ -91,12 +92,11 @@
 {% endfor %}
 {% endif %}
 
-
-{# ── Kyrie (notation image) ── #}
 {% if kyrie_image_uri %}
 <div class="section-heading"><span>*KYRIE</span></div>
-<div class="notation-image"><img src="{{ kyrie_image_uri }}" alt="Kyrie"></div>
+<div class="notation-image kyrie-notation"><img src="{{ kyrie_image_uri }}" alt="Kyrie"></div>
 {% endif %}
+</div>
 
 
 {# ── Canticle of Praise (notation image) ── #}
@@ -118,6 +118,7 @@
 
 
 {# ── Prayer of the Day ── #}
+<div class="flow-group">
 <div class="section-heading red-heading">
     <span>*PRAYER OF THE DAY</span>
     <span class="heading-role">Pastor</span>
@@ -125,6 +126,7 @@
 {% if prayer_of_day_html %}
 <div>{{ prayer_of_day_html | terminal_amen_html | safe }}</div>
 {% endif %}
+</div>
 
 
 {# ════════════════════════════════════════════════════════════════════
@@ -272,6 +274,7 @@
 <p><strong>{{ baptism_welcome_response | terminal_amen(false) }}</strong></p>
 
 {% else %}
+<div class="flow-group">
 <div class="section-heading red-heading">
     <span>*{{ creed_name }}</span>
     <span class="heading-role">Prayer Leader</span>
@@ -281,6 +284,7 @@
 {% for stanza in creed_stanzas %}
 <p class="creed-stanza">{{ stanza | terminal_amen }}</p>
 {% endfor %}
+</div>
 </div>
 {% endif %}
 
