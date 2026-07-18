@@ -53,7 +53,6 @@ function initialState() {
         currentStep: 1,
         dateStr: "",          // "2026-02-22" (HTML input value)
         dateDisplay: "",      // "February 22, 2026"
-        apiDate: "",          // "2026-2-22" (for S&S API)
         season: "",
         defaults: null,       // seasonal liturgical defaults
         hymns: {              // {slot: {number, collection, title}}
@@ -2176,7 +2175,6 @@ async function runGeneration() {
     ["gathering", "sermon", "communion", "sending"].forEach(function(slot) {
         var hymn = state.hymns[slot];
         if (!hymn || !hymn.number) return;
-        var cache_key = hymn.collection + "_" + hymn.number;
         // The hymn was fetched but lyrics may not have loaded
         if (hymn.title && !hymn.hasLyrics) {
             var label = slot.charAt(0).toUpperCase() + slot.slice(1);

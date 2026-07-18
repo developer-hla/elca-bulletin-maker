@@ -9,7 +9,6 @@ from bulletin_maker.renderer.image_manager import (
     get_gospel_acclamation_image,
     get_offertory_image,
     get_preface_image,
-    load_asset_catalog,
     SETTING_TWO_DIR,
     GOSPEL_ACCLAMATION_DIR,
     _SETTING_TWO_ATOM_CODES,
@@ -82,12 +81,6 @@ class TestGetOffertoryImage:
 
 
 class TestAssetCatalog:
-
-    def test_load_asset_catalog_returns_dict(self):
-        catalog = load_asset_catalog()
-        assert "gospel_acclamation" in catalog
-        assert "setting_pieces" in catalog
-        assert "sung_liturgy" in catalog
 
     def test_preface_options_has_groups(self):
         options = get_preface_options()

@@ -233,7 +233,6 @@
 {# ── Creed / Baptism ── #}
 {% if include_baptism | default(false) %}
 <div class="section-heading red-heading"><span>*HOLY BAPTISM</span></div>
-<span class="creed-marker">CREED_PAGE_MARKER</span>
 
 <p class="instruction mb-2">{{ baptism_presentation }}</p>
 
@@ -279,7 +278,6 @@
     <span>*{{ creed_name }}</span>
     <span class="heading-role">Prayer Leader</span>
 </div>
-<span class="creed-marker">CREED_PAGE_MARKER</span>
 <div class="two-col">
 {% for stanza in creed_stanzas %}
 <p class="creed-stanza">{{ stanza | terminal_amen }}</p>

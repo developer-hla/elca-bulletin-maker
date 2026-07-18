@@ -278,7 +278,6 @@ class SundaysClient:
             prayer_after_communion_html=prayer_after,
             blessing_html=blessing,
             dismissal_html=dismissal,
-            raw_html=content,
         )
 
     # -- Bible Passage Search ------------------------------------------------

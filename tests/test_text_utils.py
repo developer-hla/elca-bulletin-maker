@@ -9,12 +9,9 @@ from bulletin_maker.renderer.text_utils import (
     clean_sns_html,
     strip_tags,
     preprocess_html,
-    html_to_runs,
     parse_dialog_html,
-    split_runs_by_paragraph,
     parse_psalm_verses,
     extract_book_name,
-    RunSpec,
 )
 
 
@@ -54,57 +51,6 @@ class TestPreprocessHtml:
         result = preprocess_html("a\u2003b\u00a0c")
         assert "\u2003" not in result
         assert "\u00a0" not in result
-
-
-class TestHtmlToRuns:
-
-    def test_bold_text(self):
-        runs = html_to_runs("<strong>Bold</strong> normal")
-        bold_runs = [r for r in runs if r.bold]
-        assert len(bold_runs) == 1
-        assert bold_runs[0].text == "Bold"
-
-    def test_italic_text(self):
-        runs = html_to_runs("<em>Italic</em>")
-        italic_runs = [r for r in runs if r.italic]
-        assert len(italic_runs) == 1
-
-    def test_paragraph_breaks(self):
-        runs = html_to_runs("<p>One</p><p>Two</p>")
-        groups = split_runs_by_paragraph(runs)
-        assert len(groups) == 2
-
-    def test_superscript_verses(self):
-        runs = html_to_runs("<sup>1</sup>In the beginning", superscript_verses=True)
-        sup_runs = [r for r in runs if r.superscript]
-        assert len(sup_runs) >= 1
-
-    def test_superscript_disabled(self):
-        runs = html_to_runs("<sup>1</sup>Text", superscript_verses=False)
-        sup_runs = [r for r in runs if r.superscript]
-        assert len(sup_runs) == 0
-
-
-class TestSplitRunsByParagraph:
-
-    def test_single_paragraph(self):
-        runs = [RunSpec(text="hello")]
-        groups = split_runs_by_paragraph(runs)
-        assert len(groups) == 1
-
-    def test_multiple_paragraphs(self):
-        runs = [
-            RunSpec(text="first"),
-            RunSpec(text="\n\n"),
-            RunSpec(text="second"),
-        ]
-        groups = split_runs_by_paragraph(runs)
-        assert len(groups) == 2
-        assert groups[0][0].text == "first"
-        assert groups[1][0].text == "second"
-
-    def test_empty_input(self):
-        assert split_runs_by_paragraph([]) == []
 
 
 class TestParsePsalmVerses:

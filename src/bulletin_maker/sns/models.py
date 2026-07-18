@@ -52,7 +52,6 @@ class DayContent:
     prayer_after_communion_html: str = ""
     blessing_html: str = ""             # Aaronic blessing text
     dismissal_html: str = ""            # "Go in peace..."
-    raw_html: str = ""                  # full rightpanel HTML for fallback
 
     def content_warnings(self) -> list[str]:
         """Detect expected sections that came back empty from S&S.

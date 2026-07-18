@@ -12,7 +12,6 @@ The standard bulletin needs all setting pieces + communion hymn.
 
 from __future__ import annotations
 
-import json
 import logging
 import sys
 from pathlib import Path
@@ -203,18 +202,6 @@ def get_preface_image(preface: PrefaceType) -> Path:
             f"Run download_setting_assets() or see assets/README.md"
         )
     return found
-
-
-# ── Asset catalog ────────────────────────────────────────────────────
-
-def load_asset_catalog() -> dict:
-    """Load the asset catalog JSON."""
-    catalog_path = ASSETS_DIR / "catalog.json"
-    try:
-        with open(catalog_path) as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        raise ContentNotFoundError(f"Asset catalog error: {e}") from e
 
 
 # ── Bulk download from S&S Library ───────────────────────────────────
