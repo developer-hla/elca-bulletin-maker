@@ -5,6 +5,7 @@
 <style>{{ css }}</style>
 </head>
 <body>
+{% import "_macros.html" as m %}
 
 {% set is_leader_guide = is_leader_guide | default(false) %}
 
@@ -44,24 +45,9 @@
 {# ════════════════════════════════════════════════════════════════════
    COVER PAGE
    ════════════════════════════════════════════════════════════════════ #}
-<div class="cover">
-    <div class="cover-header">
-        <h1 class="cover-church-name">{{ church_name }}</h1>
-        <p class="cover-address">{{ church_address | nl2br }}</p>
-    </div>
-    {% if cover_image_uri %}
-    <div class="cover-image">
-        <img src="{{ cover_image_uri }}" alt="Cover Image">
-    </div>
-    {% else %}
-    <div class="cover-image"></div>
-    {% endif %}
-    <div class="cover-footer">
-        <p class="cover-date">{{ service_time }} &mdash; {{ date_display }}</p>
-        <p class="cover-day-name">The {{ day_name }}</p>
-        <p class="cover-format-label">{% if is_leader_guide %}Leader Guide{% else %}Large Print{% endif %}</p>
-    </div>
-</div>
+{{ m.cover(church_name, church_address, cover_image_uri, service_time,
+           date_display, day_name,
+           format_label="Leader Guide" if is_leader_guide else "Large Print") }}
 
 
 {# ════════════════════════════════════════════════════════════════════
@@ -80,14 +66,14 @@
 
 <div class="liturgy-heading"><span>PRELUDE</span></div>
 {% if prelude_title %}
-<p class="music-citation">{{ prelude_title }}{% if prelude_composer %} &mdash; {{ prelude_composer }}{% endif %}{% if prelude_performer %} / {{ prelude_performer }}{% endif %}</p>
+{{ m.music_line(prelude_title, prelude_composer, prelude_performer, em=false, css_class="music-citation") }}
 {% else %}
 <div class="spacer"></div>
 {% endif %}
 
 {% if choral_title %}
 <div class="liturgy-heading"><span>CHORAL CALL TO WORSHIP</span></div>
-<p class="music-citation">{{ choral_title }}{% if choral_composer %} &mdash; {{ choral_composer }}{% endif %}</p>
+{{ m.music_line(choral_title, choral_composer, em=false, css_class="music-citation") }}
 {% endif %}
 
 <div class="liturgy-heading"><span>WELCOME</span></div>
@@ -122,13 +108,7 @@
 
 {# ── Greeting (P/C dialog, no heading) ── #}
 {% if greeting_entries %}
-{% for role, text in greeting_entries %}
-{% if role.value == "P" %}
-<p><span class="role-label">P: </span>{{ text | terminal_amen }}</p>
-{% elif role.value == "C" %}
-<p><strong>{{ text | terminal_amen(false) }}</strong></p>
-{% endif %}
-{% endfor %}
+{{ m.dialog_lines(greeting_entries) }}
 {% endif %}
 
 
@@ -139,13 +119,7 @@
 {% elif kyrie_entries %}
 <div class="liturgy-heading"><span>*KYRIE</span></div>
 <div class="two-col">
-{% for role, text in kyrie_entries %}
-{% if role.value == "P" %}
-<p><span class="role-label">P: </span>{{ text | terminal_amen }}</p>
-{% elif role.value == "C" %}
-<p><strong>{{ text | terminal_amen(false) }}</strong></p>
-{% endif %}
-{% endfor %}
+{{ m.dialog_lines(kyrie_entries) }}
 </div>
 {% endif %}
 
@@ -216,18 +190,7 @@
 {% if psalm_data.intro %}
 <p class="reading-intro">{{ psalm_data.intro }}</p>
 {% endif %}
-{% for verse in psalm_data.verses %}
-{% if verse.continuation %}
-{# continuation lines are appended to previous verse via <br> in context builder #}
-{% else %}
-<p class="psalm-verse">
-    <sup>{{ verse.verse_num }}&thinsp;</sup>{% if verse.bold %}<strong>{{ verse.text }}</strong>{% else %}{{ verse.text }}{% endif %}
-    {%- for cont in verse.continuations %}
-    <br>{% if cont.bold %}<strong>{{ cont.text }}</strong>{% else %}{{ cont.text }}{% endif %}
-    {%- endfor %}
-</p>
-{% endif %}
-{% endfor %}
+{{ m.psalm_verses(psalm_data.verses) }}
 {% endif %}
 
 
@@ -294,43 +257,17 @@
 
 {# ── Creed / Baptism ── #}
 {% if include_baptism | default(false) %}
-<div class="scripture-heading mt-24"><span>*HOLY BAPTISM</span></div>
-
-<p class="instruction mb-6">{{ baptism_presentation }}</p>
-
-<div class="scripture-heading"><span>Renunciation</span></div>
-{% for role, text in baptism_renunciation %}
-{% if role.value == "P" %}
-<p><span class="role-label">P: </span>{{ text | terminal_amen }}</p>
-{% elif role.value == "C" %}
-<p><strong>{{ text | terminal_amen(false) }}</strong></p>
-{% else %}
-<p>{{ text | terminal_amen }}</p>
-{% endif %}
-{% endfor %}
-
-<div class="scripture-heading"><span>Profession of Faith</span></div>
-{% for role, text in baptism_profession %}
-{% if role.value == "P" %}
-<p><span class="role-label">P: </span>{{ text | terminal_amen }}</p>
-{% elif role.value == "C" %}
-<p><strong>{{ text | terminal_amen(false) }}</strong></p>
-{% else %}
-<p>{{ text | terminal_amen }}</p>
-{% endif %}
-{% endfor %}
-
-<div class="scripture-heading"><span>Thanksgiving at the Font</span></div>
-<p>{{ baptism_flood_prayer | terminal_amen }}</p>
-
-<div class="scripture-heading"><span>The Baptism</span></div>
-{% for formula in baptism_formulas %}
-<p><span class="role-label">P: </span>{{ formula | terminal_amen }}</p>
-{% endfor %}
-
-<div class="scripture-heading"><span>Welcome</span></div>
-<p><span class="role-label">P: </span>{{ baptism_welcome | terminal_amen }}</p>
-<p><strong>{{ baptism_welcome_response | terminal_amen(false) }}</strong></p>
+{{ m.baptism_rite(
+    {"baptism_presentation": baptism_presentation,
+     "baptism_renunciation": baptism_renunciation,
+     "baptism_profession": baptism_profession,
+     "baptism_flood_prayer": baptism_flood_prayer,
+     "baptism_formulas": baptism_formulas,
+     "baptism_welcome": baptism_welcome,
+     "baptism_welcome_response": baptism_welcome_response},
+    first_class="scripture-heading mt-24",
+    sub_class="scripture-heading",
+    presentation_class="instruction mb-6") }}
 
 {% else %}
 <div class="creed-section">
@@ -339,9 +276,7 @@
     <span class="heading-role">Prayer Leader</span>
 </div>
 <div class="two-col">
-{% for stanza in creed_stanzas %}
-<p class="creed-stanza">{{ stanza | terminal_amen }}</p>
-{% endfor %}
+{{ m.creed_stanzas(creed_stanzas) }}
 </div>
 </div>
 {% endif %}
@@ -385,7 +320,7 @@
 
 <div class="liturgy-heading"><span>{% if offertory_type == "choral_anthem" %}CHORAL ANTHEM{% else %}OFFERTORY{% endif %}</span></div>
 {% if offertory_title %}
-<p class="music-citation">{{ offertory_title }}{% if offertory_composer %} &mdash; {{ offertory_composer }}{% endif %}{% if offertory_performer %} / {{ offertory_performer }}{% endif %}</p>
+{{ m.music_line(offertory_title, offertory_composer, offertory_performer, em=false, css_class="music-citation") }}
 {% else %}
 <div class="spacer"></div>
 {% endif %}
@@ -577,17 +512,11 @@
     <span>SENDING</span>
     <span class="heading-role">Pastor</span>
 </div>
-{% for role, text in dismissal_entries %}
-{% if role.value == "C" %}
-<p><strong>{{ text | terminal_amen(false) }}</strong></p>
-{% else %}
-<p>{{ text | terminal_amen }}</p>
-{% endif %}
-{% endfor %}
+{{ m.dialog_lines(dismissal_entries, p_label=false) }}
 
 <div class="liturgy-heading"><span>*POSTLUDE</span></div>
 {% if postlude_title %}
-<p class="music-citation">{{ postlude_title }}{% if postlude_composer %} &mdash; {{ postlude_composer }}{% endif %}{% if postlude_performer %} / {{ postlude_performer }}{% endif %}</p>
+{{ m.music_line(postlude_title, postlude_composer, postlude_performer, em=false, css_class="music-citation") }}
 {% endif %}
 </div>
 

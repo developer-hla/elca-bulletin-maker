@@ -1,0 +1,113 @@
+{# Shared macros for bulletin.html and large_print.html.
+
+   These two documents print the same service order with different
+   typography; everything structural that appeared in both lives here
+   so the copies cannot drift apart again. #}
+
+
+{# ── P/C dialog block ──
+   Renders (DialogRole, text) tuples. instruction_class styles
+   instruction lines ("" renders them as plain paragraphs);
+   p_label=false suppresses the red "P: " prefix (dismissal style). #}
+{% macro dialog_lines(entries, instruction_class="", p_label=true) %}
+{% for role, text in entries %}
+{% if role.value == "instruction" and instruction_class %}
+<p class="{{ instruction_class }}">{{ text }}</p>
+{% elif role.value == "P" and p_label %}
+<p><span class="role-label">P: </span>{{ text | terminal_amen }}</p>
+{% elif role.value == "C" %}
+<p><strong>{{ text | terminal_amen(false) }}</strong></p>
+{% else %}
+<p>{{ text | terminal_amen }}</p>
+{% endif %}
+{% endfor %}
+{% endmacro %}
+
+
+{# ── Cover page ── #}
+{% macro cover(church_name, church_address, cover_image_uri, service_time,
+               date_display, day_name, format_label="") %}
+<div class="cover">
+    <div class="cover-header">
+        <h1 class="cover-church-name">{{ church_name }}</h1>
+        <p class="cover-address">{{ church_address | nl2br }}</p>
+    </div>
+    {% if cover_image_uri %}
+    <div class="cover-image">
+        <img src="{{ cover_image_uri }}" alt="Cover Image">
+    </div>
+    {% else %}
+    <div class="cover-image"></div>
+    {% endif %}
+    <div class="cover-footer">
+        <p class="cover-date">{{ service_time }} &mdash; {{ date_display }}</p>
+        <p class="cover-day-name">The {{ day_name }}</p>
+        {% if format_label %}
+        <p class="cover-format-label">{{ format_label }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+
+{# ── Psalm verse loop (caller supplies any column wrapper) ── #}
+{% macro psalm_verses(verses) %}
+{% for verse in verses %}
+{% if not verse.continuation %}
+<p class="psalm-verse">
+    <sup>{{ verse.verse_num }}&thinsp;</sup>{% if verse.bold %}<strong>{{ verse.text }}</strong>{% else %}{{ verse.text }}{% endif %}
+    {%- for cont in verse.continuations %}
+    <br>{% if cont.bold %}<strong>{{ cont.text }}</strong>{% else %}{{ cont.text }}{% endif %}
+    {%- endfor %}
+</p>
+{% endif %}
+{% endfor %}
+{% endmacro %}
+
+
+{# ── Creed stanzas ── #}
+{% macro creed_stanzas(stanzas) %}
+{% for stanza in stanzas %}
+<p class="creed-stanza">{{ stanza | terminal_amen }}</p>
+{% endfor %}
+{% endmacro %}
+
+
+{# ── Holy Baptism rite ──
+   first_class/sub_class carry each document's heading taxonomy;
+   flood_two_col wraps the flood prayer in columns (bulletin only). #}
+{% macro baptism_rite(ctx, first_class, sub_class, presentation_class, flood_two_col=false) %}
+<div class="{{ first_class }}"><span>*HOLY BAPTISM</span></div>
+
+<p class="{{ presentation_class }}">{{ ctx.baptism_presentation }}</p>
+
+<div class="{{ sub_class }}"><span>Renunciation</span></div>
+{{ dialog_lines(ctx.baptism_renunciation) }}
+
+<div class="{{ sub_class }}"><span>Profession of Faith</span></div>
+{{ dialog_lines(ctx.baptism_profession) }}
+
+<div class="{{ sub_class }}"><span>Thanksgiving at the Font</span></div>
+{% if flood_two_col %}
+<div class="two-col">
+<p>{{ ctx.baptism_flood_prayer | terminal_amen }}</p>
+</div>
+{% else %}
+<p>{{ ctx.baptism_flood_prayer | terminal_amen }}</p>
+{% endif %}
+
+<div class="{{ sub_class }}"><span>The Baptism</span></div>
+{% for formula in ctx.baptism_formulas %}
+<p><span class="role-label">P: </span>{{ formula | terminal_amen }}</p>
+{% endfor %}
+
+<div class="{{ sub_class }}"><span>Welcome</span></div>
+<p><span class="role-label">P: </span>{{ ctx.baptism_welcome | terminal_amen }}</p>
+<p><strong>{{ ctx.baptism_welcome_response | terminal_amen(false) }}</strong></p>
+{% endmacro %}
+
+
+{# ── Music citation line (prelude/offertory/postlude/choral) ── #}
+{% macro music_line(title, composer="", performer="", em=true, css_class="") %}
+<p{% if css_class %} class="{{ css_class }}"{% endif %}>{% if em %}<em>{{ title }}</em>{% else %}{{ title }}{% endif %}{% if composer %} &mdash; {{ composer }}{% endif %}{% if performer %} / {{ performer }}{% endif %}</p>
+{% endmacro %}
