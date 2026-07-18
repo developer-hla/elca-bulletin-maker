@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from bulletin_maker.exceptions import ParseError
-from bulletin_maker.sns.rtf_parser import parse_rtf_lyrics
+from bulletin_maker.sns.rtf_parser import _strip_rtf, parse_rtf_lyrics
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "rtf"
 
@@ -183,3 +183,39 @@ class TestEdgeCases:
         lyrics = parse_rtf_lyrics(_read(ELW512_PATH))
         assert lyrics.number == ""
         assert lyrics.title  # title should still parse
+
+
+# ── Windows-1252 hex escape decoding ───────────────────────────────
+
+
+class TestCp1252HexEscapes:
+    """\\'XY escapes decode via the cp1252 codec, not a partial hand-map."""
+
+    def _strip(self, rtf: str) -> str:
+        return _strip_rtf(rtf)
+
+    @pytest.mark.parametrize("escape,expected", [
+        (r"\'85", "…"),  # ellipsis
+        (r"\'91", "‘"),  # left single quote
+        (r"\'92", "’"),  # right single quote
+        (r"\'93", "“"),  # left double quote
+        (r"\'94", "”"),  # right double quote
+        (r"\'96", "–"),  # en dash
+        (r"\'97", "—"),  # em dash
+        (r"\'99", "™"),  # trademark
+        (r"\'a9", "©"),  # copyright
+        (r"\'e9", "é"),  # e acute
+    ])
+    def test_known_escapes(self, escape, expected):
+        result = self._strip(r"\pard " + escape + " end")
+        assert expected in result
+
+    def test_undefined_byte_falls_back_to_code_point(self):
+        result = self._strip(r"\pard \'81 end")
+        assert "\x81" in result
+
+    def test_no_c1_control_chars_from_common_escapes(self):
+        # The old 5-entry map let 0x85/0x91/0x97 through as C1 controls
+        result = self._strip(r"\pard \'85\'91\'97 end")
+        for ch in result:
+            assert not (0x80 <= ord(ch) <= 0x9F), f"C1 control {ord(ch):#x} leaked"

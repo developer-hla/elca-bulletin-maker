@@ -303,16 +303,22 @@ class SundaysClient:
 
         # Extract the passage content from the response HTML
         passage_match = re.search(
-            r'<div[^>]*class="passage"[^>]*>(.*?)</div>\s*(?=<div|$)',
+            r'<div[^>]*class="passage"[^>]*>(.*?)</div>\s*(?=<div|</|$)',
             resp.text,
             re.DOTALL,
         )
         if passage_match:
             return passage_match.group(1).strip()
 
-        # Fallback: return entire response if no passage div found
-        # (the endpoint may return just the passage HTML directly)
-        return resp.text
+        # The endpoint may return just the passage fragment directly
+        if not re.search(r"<(?:html|head|body)\b", resp.text, re.IGNORECASE):
+            return resp.text
+
+        # A full page without a passage div means the search failed —
+        # never let a whole S&S webpage flow into a bulletin as reading text.
+        raise ContentNotFoundError(
+            f"No passage found for citation: {citation!r}"
+        )
 
     # -- Music Search -------------------------------------------------------
 

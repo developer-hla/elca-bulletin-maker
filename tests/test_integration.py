@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from bulletin_maker.exceptions import ContentNotFoundError
 from bulletin_maker.sns.client import SundaysClient
 from bulletin_maker.sns.models import DayContent
 
@@ -206,6 +207,30 @@ class TestClientIntegration:
 
         result = client.search_passage("Genesis 1:1")
         assert "Actual passage" in result
+
+    def test_search_passage_bare_fragment_returned(self):
+        """search_passage() returns a bare passage fragment as-is."""
+        client = SundaysClient()
+        client._logged_in = True
+
+        fragment = "<p><sup>1</sup>In the beginning...</p>"
+        resp = self._make_response(fragment)
+        client.client.request = MagicMock(return_value=resp)
+
+        result = client.search_passage("Genesis 1:1")
+        assert result == fragment
+
+    def test_search_passage_full_page_without_div_raises(self):
+        """search_passage() raises instead of returning a whole S&S page."""
+        client = SundaysClient()
+        client._logged_in = True
+
+        html = "<html><head><title>Search</title></head><body>No results.</body></html>"
+        resp = self._make_response(html)
+        client.client.request = MagicMock(return_value=resp)
+
+        with pytest.raises(ContentNotFoundError):
+            client.search_passage("Nonexistent 99:99")
 
     def test_search_passage_empty_citation_raises(self):
         """search_passage() raises ValueError on empty citation."""

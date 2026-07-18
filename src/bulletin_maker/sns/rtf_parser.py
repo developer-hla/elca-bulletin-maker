@@ -76,19 +76,15 @@ def _strip_rtf(rtf: str) -> str:
     if body_match:
         rtf = rtf[body_match.start() :]
 
-    # Pre-decode \'XY hex escapes (Windows-1252 code page)
+    # Pre-decode \'XY hex escapes via the Windows-1252 codec, which maps
+    # the full 0x80-0x9F range (curly quotes, dashes, ellipsis, ...).
+    # Bytes undefined in cp1252 fall back to their raw code point.
     def _hex_replace(m: re.Match) -> str:
         code = int(m.group(1), 16)
-        cp1252 = {
-            0x92: "\u2019",  # right single quote
-            0x93: "\u201c",  # left double quote
-            0x94: "\u201d",  # right double quote
-            0x96: "\u2013",  # en dash
-            0xA9: "\u00a9",  # copyright symbol
-        }
-        if code in cp1252:
-            return cp1252[code]
-        return chr(code)
+        try:
+            return bytes([code]).decode("cp1252")
+        except UnicodeDecodeError:
+            return chr(code)
 
     rtf = re.sub(r"\\'([0-9a-fA-F]{2})", _hex_replace, rtf)
 
