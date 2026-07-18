@@ -5,12 +5,13 @@ the tool (name, address, service time, welcome text, license footer)
 plus the two bounded options (liturgical setting, paper size). All
 other content is fixed house style by design.
 
-Resolution order: explicit path → ~/.bulletin-maker/profile.toml →
-the bundled Ascension default.
+Resolution order: explicit path → $BULLETIN_PROFILE →
+~/.bulletin-maker/profile.toml → the bundled Ascension default.
 """
 
 from __future__ import annotations
 
+import os
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -62,7 +63,9 @@ def load_profile(path: Path | str | None = None) -> CongregationProfile:
             Ascension default.
     """
     if path is None:
-        path = USER_PROFILE if USER_PROFILE.exists() else BUNDLED_PROFILE
+        path = os.environ.get("BULLETIN_PROFILE") or (
+            USER_PROFILE if USER_PROFILE.exists() else BUNDLED_PROFILE
+        )
     path = Path(path)
 
     try:

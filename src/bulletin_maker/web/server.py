@@ -8,8 +8,10 @@ for progress and downloads the finished PDFs.
 from __future__ import annotations
 
 import logging
+import os
 import secrets
 import tempfile
+import time
 import threading
 import zipfile
 from datetime import datetime
@@ -61,9 +63,38 @@ def _fail(status: int, error: Exception) -> HTTPException:
     return HTTPException(status_code=status, detail=detail)
 
 
+LOGIN_ATTEMPT_LIMIT = 10
+LOGIN_ATTEMPT_WINDOW_SECONDS = 300
+
+
+class LoginRateLimiter:
+    """Per-address sliding-window limiter for the login endpoint."""
+
+    def __init__(self, limit: int = LOGIN_ATTEMPT_LIMIT,
+                 window: float = LOGIN_ATTEMPT_WINDOW_SECONDS) -> None:
+        self._attempts: dict = {}
+        self._lock = threading.Lock()
+        self._limit = limit
+        self._window = window
+
+    def check(self, address: str) -> bool:
+        now = time.monotonic()
+        with self._lock:
+            attempts = [t for t in self._attempts.get(address, [])
+                        if now - t < self._window]
+            if len(attempts) >= self._limit:
+                self._attempts[address] = attempts
+                return False
+            attempts.append(now)
+            self._attempts[address] = attempts
+            return True
+
+
 def create_app() -> FastAPI:
     app = FastAPI(title="Bulletin Maker", docs_url=None, redoc_url=None)
     store = SessionStore()
+    hosted = os.environ.get("BULLETIN_HOSTED") == "1"
+    login_limiter = LoginRateLimiter()
 
     def session_dep(request: Request, response: Response) -> Session:
         sid = request.cookies.get(SESSION_COOKIE)
@@ -71,7 +102,7 @@ def create_app() -> FastAPI:
         if session.id != sid:
             response.set_cookie(
                 SESSION_COOKIE, session.id,
-                httponly=True, samesite="lax",
+                httponly=True, samesite="lax", secure=hosted,
             )
         return session
 
@@ -90,7 +121,15 @@ def create_app() -> FastAPI:
     # ── Auth ──────────────────────────────────────────────────────────
 
     @app.post("/api/session")
-    def login(payload: dict, session: Session = Depends(session_dep)):
+    def login(payload: dict, request: Request,
+              session: Session = Depends(session_dep)):
+        if hosted:
+            address = request.client.host if request.client else "unknown"
+            if not login_limiter.check(address):
+                raise HTTPException(status_code=429, detail={
+                    "error": "Too many sign-in attempts — wait a few minutes.",
+                    "error_type": "validation",
+                })
         username = payload.get("username", "")
         password = payload.get("password", "")
         try:

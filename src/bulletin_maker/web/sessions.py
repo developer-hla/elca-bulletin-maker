@@ -9,6 +9,7 @@ S&S session cookie lives only inside the client instance.
 from __future__ import annotations
 
 import secrets
+import shutil
 import threading
 import time
 from dataclasses import dataclass, field
@@ -43,6 +44,9 @@ class Session:
         if self.client is not None:
             self.client.close()
             self.client = None
+        for job in self.jobs.values():
+            shutil.rmtree(job.get("dir", ""), ignore_errors=True)
+        self.jobs.clear()
 
 
 class SessionStore:

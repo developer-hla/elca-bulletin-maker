@@ -232,3 +232,47 @@ class TestSpa:
         resp = client.get("/")
         assert resp.status_code == 200
         assert "Bulletin Maker" in resp.text
+
+
+class TestHostedHardening:
+
+    def test_rate_limiter_blocks_after_limit(self):
+        from bulletin_maker.web.server import LoginRateLimiter
+        limiter = LoginRateLimiter(limit=3, window=60)
+        assert all(limiter.check("1.2.3.4") for _ in range(3))
+        assert limiter.check("1.2.3.4") is False
+        assert limiter.check("5.6.7.8") is True  # other addresses unaffected
+
+    def test_hosted_login_rate_limited(self, monkeypatch):
+        monkeypatch.setenv("BULLETIN_HOSTED", "1")
+        app = create_app()
+        instance = MagicMock()
+        instance.login.side_effect = AuthError("nope")
+        monkeypatch.setattr(
+            "bulletin_maker.web.sessions.SundaysClient", lambda: instance)
+        with TestClient(app) as tc:
+            for _ in range(10):
+                tc.post("/api/session", json={"username": "u", "password": "x"})
+            resp = tc.post("/api/session", json={"username": "u", "password": "x"})
+        assert resp.status_code == 429
+
+    def test_profile_env_override(self, monkeypatch, tmp_path):
+        from bulletin_maker.core.profile import load_profile
+        other = tmp_path / "other.toml"
+        other.write_text(
+            '[church]\nname = "St. Test"\naddress_lines = ["x"]\n'
+            'service_time = "9:00 AM"\n[texts]\nwelcome_message = "hi"\n'
+            'standing_instructions = "stand"\n'
+        )
+        monkeypatch.setenv("BULLETIN_PROFILE", str(other))
+        assert load_profile().church_name == "St. Test"
+
+    def test_session_close_removes_job_dirs(self, tmp_path):
+        from bulletin_maker.web.sessions import Session
+        job_dir = tmp_path / "job1"
+        job_dir.mkdir()
+        (job_dir / "out.pdf").write_bytes(b"%PDF")
+        session = Session(id="s1")
+        session.jobs["j1"] = {"dir": str(job_dir)}
+        session.close()
+        assert not job_dir.exists()
