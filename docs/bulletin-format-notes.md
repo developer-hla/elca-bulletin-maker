@@ -1,20 +1,22 @@
 # Bulletin Format Notes
 
 ## Output Documents
-The tool generates **4 documents** per Sunday from the same S&S data:
+The tool generates **5 documents** per Sunday from the same S&S data:
 
 | # | Document | Description | Paper | Layout |
 |---|----------|-------------|-------|--------|
 | 1 | **Bulletin for Congregation** | Main worship bulletin with notation images | Legal (8.5×14) saddle-stitched booklet | Two-column |
 | 2 | **Full with Hymns LARGE PRINT** | Vision-accessible version, all text, full hymn lyrics | Letter (8.5×11) | Single-column, large font |
-| 3 | **Pulpit Scripture** | Readings + psalm for scripture reader volunteer | Letter (8.5×11), front/back | Two-column, large font |
-| 4 | **Pulpit Prayers** | Creed + prayers of intercession for prayer leader | Letter (8.5×11), front/back | Two-column, large font |
+| 3 | **Leader Guide** | Large print plus sung notation pages for the pastor | Letter (8.5×11) | Single-column, large font |
+| 4 | **Pulpit Scripture** | Readings + psalm for scripture reader volunteer | Letter (8.5×11), front/back | Two-column, large font |
+| 5 | **Pulpit Prayers** | Creed + prayers of intercession for prayer leader | Letter (8.5×11), front/back | Two-column, large font |
 
 ### Generation Order
 1. **Bulletin for Congregation** — generated first (determines page numbers)
 2. **Pulpit Scripture** — independent, can generate in parallel with prayers
 3. **Pulpit Prayers** — needs creed page number from step 1 (auto-fills "Please turn to page ___ of your Bulletin")
 4. **Full with Hymns LARGE PRINT** — independent
+5. **Leader Guide** — independent (large print + notation images)
 
 ### Hymn Handling by Document
 

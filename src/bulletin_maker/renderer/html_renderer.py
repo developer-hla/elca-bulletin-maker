@@ -1,6 +1,7 @@
 """HTML-based document renderers using Jinja2 + Playwright.
 
 Produces print-ready PDFs for:
+  - Bulletin for Congregation (saddle-stitched booklet)
   - Full with Hymns LARGE PRINT
   - Leader Guide (large print + sung notation for pastor)
   - Pulpit SCRIPTURE
