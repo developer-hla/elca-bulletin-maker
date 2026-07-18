@@ -92,10 +92,7 @@ function hideError(el) {
 function handleAuthError(result) {
     if (!result || !result.auth_error) return false;
     show($("#login-overlay"));
-    var form = $("#login-form");
-    show(form);
-    hide($("#login-spinner"));
-    hideError($("#login-error"));
+    showAuthForm("#login-form");
     showError($("#login-error"), "Session expired. Please sign in again.");
     $("#login-btn").disabled = false;
     return true;
@@ -260,9 +257,22 @@ var api = (function() {
     }
 
     var methods = {
-        login: function(u, pw) { return req("POST", "/api/session", { username: u, password: pw }); },
+        login: function(email, password) {
+            return req("POST", "/api/session", { email: email, password: password });
+        },
+        register: function(payload) { return req("POST", "/api/register", payload); },
+        join: function(payload) { return req("POST", "/api/join", payload); },
+        whoami: function() { return req("GET", "/api/session"); },
+        instance_info: function() { return req("GET", "/api/instance"); },
         logout: function() { return req("DELETE", "/api/session"); },
-        get_profile: function() { return req("GET", "/api/profile"); },
+        get_church: function() { return req("GET", "/api/church"); },
+        update_church_profile: function(payload) {
+            return req("PUT", "/api/church/profile", payload);
+        },
+        link_sns: function(username, password) {
+            return req("PUT", "/api/church/sns-link",
+                       { username: username, password: password });
+        },
         get_preface_options: function() { return req("GET", "/api/prefaces"); },
 
         fetch_day_content: async function(dateStr, dateDisplay) {
@@ -823,55 +833,249 @@ var _updateState = { downloadUrl: null, releaseNotes: null, installing: false };
 
 // ── Login ────────────────────────────────────────────────────────────
 
-async function initLogin() {
+function _authForms() {
+    return [$("#login-form"), $("#register-form"), $("#join-form")];
+}
 
-    // Show this congregation's name from the profile
-    try {
-        var profileResult = await api.get_profile();
-        if (profileResult.success && profileResult.church_name) {
-            var subtitle = document.querySelector(".subtitle");
-            if (subtitle) subtitle.textContent = profileResult.church_name;
-        }
-    } catch (_) {}
+function showAuthForm(id) {
+    _authForms().forEach(function(f) { hide(f); });
+    ["#login-error", "#register-error", "#join-error"].forEach(function(sel) {
+        hideError($(sel));
+    });
+    hide($("#login-spinner"));
+    show($(id));
+}
 
+/** Post-auth entry: reveal the app and personalize the header. */
+function enterApp(auth) {
+    hide($("#login-overlay"));
+    show($("#app"));
+    var user = auth.user || {};
+    $("#user-display").textContent = user.display_name || user.email || "";
+    $("#church-display").textContent = (auth.church && auth.church.name) || "";
+    document.title = "Bulletin Maker — " + ((auth.church && auth.church.name) || "");
+    state.isAdmin = user.role === "admin";
+    state.snsLinked = !!auth.sns_linked;
+    if (!state.snsLinked) {
+        showWarning($("#date-warning"),
+            state.isAdmin
+                ? "No Sundays & Seasons account is linked yet — open Settings to link one before fetching content."
+                : "No Sundays & Seasons account is linked yet — ask your church admin to link one under Settings.");
+    }
     loadPastRuns();
 }
 
-function setupLogin() {
-    const form = $("#login-form");
-    const btn = $("#login-btn");
-    const errorEl = $("#login-error");
-    const spinner = $("#login-spinner");
+async function initAuth() {
+    var who = await api.whoami();
+    if (who.success && who.authenticated) {
+        enterApp(who);
+        return;
+    }
+    // Show the registration-code field only when this server requires it
+    var info = await api.instance_info();
+    if (info.success && info.has_churches) {
+        show($("#register-code-field"));
+    }
+}
 
-    form.addEventListener("submit", async function(e) {
+async function _submitAuth(action, errorEl, form) {
+    hideError(errorEl);
+    hide(form);
+    show($("#login-spinner"));
+    var result = await action();
+    hide($("#login-spinner"));
+    if (result && result.success) {
+        enterApp(result);
+    } else {
+        show(form);
+        showError(errorEl, (result && result.error) || "Something went wrong.");
+    }
+}
+
+function setupAuth() {
+    $("#show-register-link").addEventListener("click", function(e) {
         e.preventDefault();
-        const username = $("#login-username").value.trim();
-        const password = $("#login-password").value;
-        if (!username || !password) return;
+        showAuthForm("#register-form");
+    });
+    $("#show-join-link").addEventListener("click", function(e) {
+        e.preventDefault();
+        showAuthForm("#join-form");
+    });
+    $$(".show-login-link").forEach(function(link) {
+        link.addEventListener("click", function(e) {
+            e.preventDefault();
+            showAuthForm("#login-form");
+        });
+    });
 
-        hideError(errorEl);
-        btn.disabled = true;
-        hide(form);
-        show(spinner);
+    $("#login-form").addEventListener("submit", function(e) {
+        e.preventDefault();
+        var email = $("#login-email").value.trim();
+        var password = $("#login-password").value;
+        if (!email || !password) return;
+        _submitAuth(function() { return api.login(email, password); },
+                    $("#login-error"), $("#login-form"));
+    });
 
-        try {
-            const result = await api.login(username, password);
-            if (result && result.success) {
-                hide($("#login-overlay"));
-                show($("#app"));
-                $("#user-display").textContent = result.username;
-            } else {
-                hide(spinner);
-                show(form);
-                btn.disabled = false;
-                showError(errorEl, (result && result.error) || "Login failed");
-            }
-        } catch (err) {
-            hide(spinner);
-            show(form);
-            btn.disabled = false;
-            showError(errorEl, "Connection error: " + (err.message || "Could not reach S&S"));
+    $("#register-form").addEventListener("submit", function(e) {
+        e.preventDefault();
+        _submitAuth(function() {
+            return api.register({
+                church_name: $("#register-church").value.trim(),
+                display_name: $("#register-name").value.trim(),
+                email: $("#register-email").value.trim(),
+                password: $("#register-password").value,
+                registration_code: $("#register-code").value.trim(),
+            });
+        }, $("#register-error"), $("#register-form"));
+    });
+
+    $("#join-form").addEventListener("submit", function(e) {
+        e.preventDefault();
+        _submitAuth(function() {
+            return api.join({
+                invite_code: $("#join-code").value.trim(),
+                display_name: $("#join-name").value.trim(),
+                email: $("#join-email").value.trim(),
+                password: $("#join-password").value,
+            });
+        }, $("#join-error"), $("#join-form"));
+    });
+}
+
+// ── Church settings panel ────────────────────────────────────────────
+
+function showSettingsPanel(visible) {
+    // Hide the wizard via inline display so its own active-class state
+    // is untouched and restores exactly when settings closes.
+    document.querySelector(".wizard-nav").hidden = visible;
+    $$(".wizard-panel").forEach(function(panel) {
+        panel.style.display = visible ? "none" : "";
+    });
+    $("#settings-panel").hidden = !visible;
+    if (visible) window.scrollTo(0, 0);
+}
+
+function _fillSelect(select, options, selectedKey) {
+    select.innerHTML = "";
+    options.forEach(function(opt) {
+        var el = document.createElement("option");
+        el.value = opt.key;
+        el.textContent = opt.label;
+        if (opt.key === selectedKey) el.selected = true;
+        select.appendChild(el);
+    });
+}
+
+async function openSettings() {
+    var result = await api.get_church();
+    if (!result.success) {
+        showError($("#generate-error"), result.error || "Could not load settings.");
+        return;
+    }
+    var profile = result.profile || {};
+    $("#set-church-name").value = profile.church_name || "";
+    $("#set-address").value = (profile.address_lines || []).join("\n");
+    $("#set-service-time").value = profile.service_time || "";
+    $("#set-welcome").value = profile.welcome_message || "";
+    $("#set-standing").value = profile.standing_instructions || "";
+    $("#set-copyright").value = (profile.copyright_paragraphs || []).join("\n");
+    _fillSelect($("#set-setting"), result.options.liturgical_setting,
+                profile.liturgical_setting);
+    _fillSelect($("#set-paper"), result.options.paper_size, profile.paper_size);
+
+    var editable = !!result.is_admin;
+    $$("#settings-panel input, #settings-panel textarea, #settings-panel select")
+        .forEach(function(el) { el.disabled = !editable; });
+    $("#settings-save-btn").hidden = !editable;
+    $("#settings-admin-hint").textContent = editable
+        ? "These details print on every bulletin."
+        : "These details print on every bulletin. Only a church admin can change them.";
+
+    $("#sns-card").hidden = !editable;
+    $("#invite-card").hidden = !editable;
+    if (editable) {
+        var status = $("#sns-status");
+        if (result.sns_linked) {
+            status.textContent = "Linked (" + (result.sns_username || "") + ")";
+            status.className = "sns-status-linked";
+        } else {
+            status.textContent = "Not linked";
+            status.className = "sns-status-unlinked";
         }
+        $("#sns-username").value = result.sns_username || "";
+        $("#sns-password").value = "";
+        $("#invite-code").textContent = result.invite_code || "";
+    }
+
+    hide($("#settings-saved"));
+    hideError($("#settings-error"));
+    hide($("#sns-saved"));
+    hideError($("#sns-error"));
+    showSettingsPanel(true);
+}
+
+function _linesToList(value) {
+    return value.split("\n")
+        .map(function(line) { return line.trim(); })
+        .filter(Boolean);
+}
+
+function setupSettings() {
+    $("#settings-link").addEventListener("click", function(e) {
+        e.preventDefault();
+        openSettings();
+    });
+    $("#settings-back-btn").addEventListener("click", function() {
+        showSettingsPanel(false);
+    });
+
+    $("#settings-save-btn").addEventListener("click", async function() {
+        hide($("#settings-saved"));
+        hideError($("#settings-error"));
+        showBtnSpinner(this);
+        var result = await api.update_church_profile({
+            church_name: $("#set-church-name").value.trim(),
+            address_lines: _linesToList($("#set-address").value),
+            service_time: $("#set-service-time").value.trim(),
+            welcome_message: $("#set-welcome").value.trim(),
+            standing_instructions: $("#set-standing").value,
+            copyright_paragraphs: _linesToList($("#set-copyright").value),
+            liturgical_setting: $("#set-setting").value,
+            paper_size: $("#set-paper").value,
+        });
+        hideBtnSpinner(this, "Save Settings");
+        if (!result.success) {
+            showError($("#settings-error"), result.error || "Could not save.");
+            return;
+        }
+        show($("#settings-saved"));
+        $("#church-display").textContent = result.profile.church_name;
+    });
+
+    $("#sns-link-btn").addEventListener("click", async function() {
+        hide($("#sns-saved"));
+        hideError($("#sns-error"));
+        var username = $("#sns-username").value.trim();
+        var password = $("#sns-password").value;
+        if (!username || !password) {
+            showError($("#sns-error"), "Enter the S&S email and password.");
+            return;
+        }
+        showBtnSpinner(this);
+        var result = await api.link_sns(username, password);
+        hideBtnSpinner(this, "Link Account");
+        if (!result.success) {
+            showError($("#sns-error"), result.error || "Could not link the account.");
+            return;
+        }
+        show($("#sns-saved"));
+        state.snsLinked = true;
+        hideWarning($("#date-warning"));
+        var status = $("#sns-status");
+        status.textContent = "Linked (" + result.sns_username + ")";
+        status.className = "sns-status-linked";
+        $("#sns-password").value = "";
     });
 }
 
@@ -901,15 +1105,13 @@ function setupLogout() {
         e.preventDefault();
         if (!confirm("Log out? Any unsaved work will be lost.")) return;
         await api.logout();
-        // Show login overlay again
+        // Show the auth overlay again
         show($("#login-overlay"));
         hide($("#app"));
-        const form = $("#login-form");
-        show(form);
-        hide($("#login-spinner"));
-        $("#login-username").value = "";
+        showSettingsPanel(false);
+        showAuthForm("#login-form");
+        $("#login-email").value = "";
         $("#login-password").value = "";
-        hideError($("#login-error"));
         $("#login-btn").disabled = false;
 
         // Reset state
@@ -2374,7 +2576,8 @@ document.addEventListener("DOMContentLoaded", function() {
     // Pre-fill date with next Sunday
     $("#date-input").value = getNextSunday();
 
-    setupLogin();
+    setupAuth();
+    setupSettings();
     setupLogout();
     setupNewBulletin();
     setupHelp();
@@ -2388,5 +2591,5 @@ document.addEventListener("DOMContentLoaded", function() {
     setupMemorialAcclamationModeToggle();
     setupPastRuns();
     setupWizardNav();
-    initLogin();
+    initAuth();
 });

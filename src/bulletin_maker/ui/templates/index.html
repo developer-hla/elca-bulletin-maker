@@ -8,25 +8,69 @@
 </head>
 <body>
 
-<!-- Login overlay -->
+<!-- Auth overlay: sign in / register church / join with invite -->
 <div id="login-overlay" class="overlay">
     <div class="login-card">
         <div class="login-rose" aria-hidden="true">
             <img src="luther-rose.svg" alt="" width="80" height="80">
         </div>
         <h1>Bulletin Maker</h1>
-        <p class="subtitle">Ascension Lutheran Church</p>
-        <form id="login-form">
-            <label for="login-username">Sundays &amp; Seasons Username</label>
-            <input type="text" id="login-username" autocomplete="username" required>
+        <p class="subtitle">Weekly bulletins, made simple</p>
+
+        <!-- Sign in -->
+        <form id="login-form" class="auth-form">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" autocomplete="username" required>
             <label for="login-password">Password</label>
             <input type="password" id="login-password" autocomplete="current-password" required>
             <div id="login-error" class="error-msg" hidden></div>
             <button type="submit" id="login-btn" class="btn primary">Sign In</button>
+            <p class="auth-switch">
+                <a href="#" id="show-register-link">Register your church</a>
+                &middot;
+                <a href="#" id="show-join-link">Join with an invite code</a>
+            </p>
         </form>
+
+        <!-- Register church -->
+        <form id="register-form" class="auth-form" hidden>
+            <label for="register-church">Church Name</label>
+            <input type="text" id="register-church" maxlength="120" required>
+            <label for="register-name">Your Name</label>
+            <input type="text" id="register-name" maxlength="80">
+            <label for="register-email">Email</label>
+            <input type="email" id="register-email" autocomplete="username" required>
+            <label for="register-password">Password (8+ characters)</label>
+            <input type="password" id="register-password" autocomplete="new-password" minlength="8" required>
+            <div id="register-code-field" hidden>
+                <label for="register-code">Registration Code</label>
+                <input type="text" id="register-code" autocomplete="off">
+                <p class="auth-hint">This server requires a code for new churches — ask the person who runs it.</p>
+            </div>
+            <div id="register-error" class="error-msg" hidden></div>
+            <button type="submit" id="register-btn" class="btn primary">Register Church</button>
+            <p class="auth-switch"><a href="#" class="show-login-link">Back to sign in</a></p>
+        </form>
+
+        <!-- Join with invite -->
+        <form id="join-form" class="auth-form" hidden>
+            <label for="join-code">Invite Code</label>
+            <input type="text" id="join-code" autocomplete="off" required>
+            <p class="auth-hint">Your church admin can find this under Settings.</p>
+            <label for="join-name">Your Name</label>
+            <input type="text" id="join-name" maxlength="80">
+            <label for="join-email">Email</label>
+            <input type="email" id="join-email" autocomplete="username" required>
+            <label for="join-password">Password (8+ characters)</label>
+            <input type="password" id="join-password" autocomplete="new-password" minlength="8" required>
+            <div id="join-error" class="error-msg" hidden></div>
+            <button type="submit" id="join-btn" class="btn primary">Join Your Church</button>
+            <p class="auth-switch"><a href="#" class="show-login-link">Back to sign in</a></p>
+        </form>
+
         <div id="login-spinner" class="spinner" hidden>
             <div class="spinner-ring"></div>
-            <span>Signing in...</span>
+            <span>Working...</span>
         </div>
         <p class="login-help">
             <a href="#" id="login-help-link">Need help?</a>
@@ -48,10 +92,12 @@
         <div class="header-left">
             <img class="header-rose" src="luther-rose.svg" alt="" width="26" height="26">
             <h1>Bulletin Maker</h1>
+            <span id="church-display" class="church-display"></span>
         </div>
         <div class="header-right">
             <span id="user-display"></span>
             <a href="#" id="new-bulletin-link" class="header-link">New Bulletin</a>
+            <a href="#" id="settings-link" class="header-link">Settings</a>
             <a href="#" id="help-link" class="header-link">Help</a>
             <a href="#" id="logout-link" class="logout-link">Logout</a>
         </div>
@@ -512,6 +558,84 @@
             <div class="wizard-buttons">
                 <button type="button" class="btn wizard-back-btn">Back</button>
                 <span></span>
+            </div>
+        </div>
+
+
+        <!-- Settings (church profile) — shown instead of the wizard -->
+        <div id="settings-panel" hidden>
+            <section class="card">
+                <h2>Church Settings</h2>
+                <p class="section-hint" id="settings-admin-hint">These details print on every bulletin.</p>
+
+                <div class="field">
+                    <label for="set-church-name">Church Name</label>
+                    <input type="text" id="set-church-name" maxlength="120">
+                </div>
+                <div class="field">
+                    <label for="set-address">Address (one line per row: street, phone, website)</label>
+                    <textarea id="set-address" rows="3"></textarea>
+                </div>
+                <div class="field">
+                    <label for="set-service-time">Service Time</label>
+                    <input type="text" id="set-service-time" maxlength="40" placeholder="e.g. 10:00 AM">
+                </div>
+                <div class="field">
+                    <label for="set-welcome">Welcome Message (bulletin page 2)</label>
+                    <textarea id="set-welcome" rows="3"></textarea>
+                </div>
+                <div class="field">
+                    <label for="set-standing">Standing Instructions</label>
+                    <textarea id="set-standing" rows="2"></textarea>
+                </div>
+                <div class="field">
+                    <label for="set-copyright">Copyright / License Footer (one paragraph per row)</label>
+                    <textarea id="set-copyright" rows="3"></textarea>
+                </div>
+                <div class="field">
+                    <label for="set-setting">Liturgical Setting (sheet music style)</label>
+                    <select id="set-setting"></select>
+                </div>
+                <div class="field">
+                    <label for="set-paper">Paper Size</label>
+                    <select id="set-paper"></select>
+                </div>
+
+                <div id="settings-error" class="error-msg" hidden></div>
+                <div id="settings-saved" class="success-msg" hidden>Settings saved.</div>
+                <button id="settings-save-btn" class="btn primary">Save Settings</button>
+            </section>
+
+            <section class="card" id="sns-card" hidden>
+                <h2>Sundays &amp; Seasons Account</h2>
+                <p class="section-hint">
+                    Linked once by an admin; volunteers never need this password.
+                    Status: <span id="sns-status"></span>
+                </p>
+                <div class="field">
+                    <label for="sns-username">S&amp;S Email</label>
+                    <input type="text" id="sns-username" autocomplete="off">
+                </div>
+                <div class="field">
+                    <label for="sns-password">S&amp;S Password</label>
+                    <input type="password" id="sns-password" autocomplete="new-password">
+                </div>
+                <div id="sns-error" class="error-msg" hidden></div>
+                <div id="sns-saved" class="success-msg" hidden>Account linked.</div>
+                <button id="sns-link-btn" class="btn primary">Link Account</button>
+            </section>
+
+            <section class="card" id="invite-card" hidden>
+                <h2>Invite Volunteers</h2>
+                <p class="section-hint">
+                    Share this code — volunteers use it with "Join with an invite code"
+                    on the sign-in screen to get their own account.
+                </p>
+                <span class="invite-code-box" id="invite-code"></span>
+            </section>
+
+            <div class="wizard-buttons">
+                <button type="button" class="btn" id="settings-back-btn">Back to Bulletin</button>
             </div>
         </div>
 

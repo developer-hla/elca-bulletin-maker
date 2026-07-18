@@ -92,6 +92,7 @@ h1, h2, h3, .login-card h1 {
 }
 
 .login-card input[type="text"],
+.login-card input[type="email"],
 .login-card input[type="password"] {
     width: 100%;
     padding: 8px 10px;
@@ -1443,4 +1444,82 @@ main {
     white-space: pre-wrap;
     max-height: 200px;
     overflow-y: auto;
+}
+
+
+/* ── Auth overlay additions ─────────────────────────────── */
+.auth-switch {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 13px;
+}
+
+.auth-hint {
+    font-size: 12px;
+    color: var(--text-light);
+    margin: 4px 0 0;
+}
+
+.church-display {
+    font-size: 13px;
+    color: var(--text-light);
+    border-left: 1px solid var(--border);
+    padding-left: 12px;
+    margin-left: 4px;
+}
+
+/* ── Settings panel ─────────────────────────────────────── */
+#settings-panel .field {
+    margin-bottom: 14px;
+}
+
+#settings-panel textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+#settings-panel select,
+#settings-panel input[type="text"] {
+    width: 100%;
+    max-width: 420px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.invite-code-box {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 16px;
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: inline-block;
+    letter-spacing: 1px;
+}
+
+.sns-status-linked {
+    color: #1e7a38;
+    font-weight: 600;
+}
+
+.sns-status-unlinked {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.success-msg {
+    background: #e8f5ec;
+    color: #1e7a38;
+    border: 1px solid #bfe3ca;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 13px;
+    margin: 10px 0;
 }
