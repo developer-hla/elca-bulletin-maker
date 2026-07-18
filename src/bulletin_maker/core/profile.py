@@ -54,6 +54,43 @@ def _require(table: dict, section: str, key: str):
         ) from None
 
 
+PROFILE_FIELDS = (
+    "church_name", "address_lines", "service_time", "welcome_message",
+    "standing_instructions", "copyright_paragraphs", "liturgical_setting",
+    "paper_size", "cover_image",
+)
+
+
+def profile_from_dict(data: dict, source: str = "account") -> CongregationProfile:
+    """Build a profile from a stored dict (per-church account storage)."""
+    return CongregationProfile(
+        church_name=data.get("church_name", ""),
+        address_lines=tuple(data.get("address_lines", ())),
+        service_time=data.get("service_time", ""),
+        welcome_message=data.get("welcome_message", ""),
+        standing_instructions=data.get("standing_instructions", ""),
+        copyright_paragraphs=tuple(data.get("copyright_paragraphs", ())),
+        liturgical_setting=data.get("liturgical_setting", "setting_two"),
+        paper_size=data.get("paper_size", "legal_booklet"),
+        cover_image=data.get("cover_image", ""),
+        source_path=source,
+    )
+
+
+def profile_to_dict(profile: CongregationProfile) -> dict:
+    return {
+        "church_name": profile.church_name,
+        "address_lines": list(profile.address_lines),
+        "service_time": profile.service_time,
+        "welcome_message": profile.welcome_message,
+        "standing_instructions": profile.standing_instructions,
+        "copyright_paragraphs": list(profile.copyright_paragraphs),
+        "liturgical_setting": profile.liturgical_setting,
+        "paper_size": profile.paper_size,
+        "cover_image": profile.cover_image,
+    }
+
+
 def load_profile(path: Path | str | None = None) -> CongregationProfile:
     """Load a congregation profile TOML.
 

@@ -19,6 +19,7 @@ dependencies = [
     "fastapi",
     "uvicorn[standard]",
     "python-multipart",
+    "cryptography>=42",
 ]
 
 [project.optional-dependencies]

@@ -25,6 +25,8 @@ SESSION_TTL_SECONDS = 8 * 60 * 60  # a working day
 @dataclass
 class Session:
     id: str
+    user_id: Optional[int] = None
+    church_id: Optional[int] = None
     client: Optional[SundaysClient] = None
     day: Optional[DayContent] = None
     date_str: Optional[str] = None          # "YYYY-MM-DD" from last fetch
@@ -39,6 +41,14 @@ class Session:
         if self.client is None:
             self.client = SundaysClient()
         return self.client
+
+    def sign_out(self) -> None:
+        self.user_id = None
+        self.church_id = None
+        self.day = None
+        self.date_str = None
+        self.hymn_cache.clear()
+        self.close()
 
     def close(self) -> None:
         if self.client is not None:
