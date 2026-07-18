@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from bulletin_maker.core.models import ServiceConfig
 from bulletin_maker.renderer.season import (
     LiturgicalSeason,
     PrefaceType,
@@ -14,7 +15,6 @@ from bulletin_maker.renderer.season import (
 )
 from bulletin_maker.sns.models import (
     CANTICLE_GLORY_TO_GOD,
-    ServiceConfig,
 )
 
 

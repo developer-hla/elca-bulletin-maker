@@ -16,19 +16,19 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 import webview
 from PIL import Image
 
-from bulletin_maker.exceptions import AuthError, BulletinError, NetworkError, UpdateError
-from bulletin_maker.renderer import (
-    generate_bulletin,
-    generate_large_print,
-    generate_leader_guide,
-    generate_pulpit_prayers,
-    generate_pulpit_scripture,
+from bulletin_maker.core.documents import (
+    DEFAULT_SELECTION,
+    document_label,
+    generate_documents,
 )
+from bulletin_maker.core.models import ServiceConfig
+from bulletin_maker.core.naming import build_date_suffix, build_filename, extract_day_name
+from bulletin_maker.exceptions import AuthError, BulletinError, NetworkError, UpdateError
 from bulletin_maker.renderer.season import (
     PrefaceType,
     detect_season,
@@ -49,7 +49,7 @@ from bulletin_maker.renderer.text_utils import (
     preprocess_html,
 )
 from bulletin_maker.sns.client import SundaysClient
-from bulletin_maker.sns.models import DayContent, HymnLyrics, ServiceConfig
+from bulletin_maker.sns.models import DayContent, HymnLyrics
 from bulletin_maker.updater import check_for_update, install_update, is_install_writable
 
 logger = logging.getLogger(__name__)
@@ -130,44 +130,14 @@ class BulletinAPI:
             payload = json.dumps({"step": step, "detail": detail, "pct": pct})
             self._window.evaluate_js(f"updateProgress({payload})")
 
-    def _build_date_suffix(self) -> str:
-        """Build the date + day portion of a filename.
-
-        Returns e.g. ``2026.03.01 - First Sunday in Lent Year A``.
-        If the selected date is not a Sunday, the weekday is prepended.
-        """
-        if not self._date_str:
-            raise ValueError("No date selected")
-        dt = datetime.strptime(self._date_str, "%Y-%m-%d")
-        date_dot = dt.strftime("%Y.%m.%d")
-        day_label = self._day.title
-        title_match = re.search(r'\d{4}\s+(.+)', day_label)
-        if title_match:
-            day_label = title_match.group(1).strip()
-        year_match = re.search(r',?\s*Year\s+([ABC])$', day_label)
-        year_letter = year_match.group(1) if year_match else ""
-        day_label = re.sub(r',?\s*Year\s+[ABC]$', '', day_label).strip()
-
-        # If the date isn't a Sunday, prepend the weekday to clarify
-        if dt.weekday() != 6:  # 6 = Sunday in Python
-            weekday = dt.strftime("%A")
-            day_label = f"{weekday} - {day_label}"
-
-        if year_letter:
-            day_label += " Year " + year_letter
-        return f"{date_dot} - {day_label}"
-
-    def _build_filename(self, doc_label: str) -> str:
-        """Build a full filename like ``Bulletin - 2026.03.01 - First Sunday in Lent Year A.pdf``."""
-        return f"{doc_label} - {self._build_date_suffix()}.pdf"
-
     def get_file_prefix(self) -> dict:
         """Return the date-suffix portion of filenames (for UI preview)."""
         try:
             if self._day is None or self._date_str is None:
                 return {"success": False, "error": "No content fetched yet.",
                         "error_type": "validation"}
-            return {"success": True, "prefix": self._build_date_suffix()}
+            prefix = build_date_suffix(self._date_str, self._day.title)
+            return {"success": True, "prefix": prefix}
         except (ValueError, BulletinError) as e:
             return {"success": False, "error": str(e),
                     "error_type": self._classify_error(e)}
@@ -382,12 +352,7 @@ class BulletinAPI:
             season = detect_season(self._day.title)
             seasonal = get_seasonal_config(season)
 
-            # Extract day name from title
-            day_name = self._day.title
-            date_match = re.search(r'\d{4}\s+(.+)', day_name)
-            if date_match:
-                day_name = date_match.group(1).strip()
-            day_name = re.sub(r',?\s*Year\s+[ABC]$', '', day_name).strip()
+            day_name = extract_day_name(self._day.title)
 
             readings = []
             for r in self._day.readings:
@@ -839,28 +804,12 @@ class BulletinAPI:
 
     # ── Generation ────────────────────────────────────────────────────
 
-    def _generate_one(
-        self, key: str, label: str, gen_fn: Callable, results: dict,
-        errors: dict, step: int, total: int,
-    ) -> None:
-        """Run a single document generation with progress + error handling.
-
-        Catches all exceptions to isolate individual document failures —
-        one failing document must not prevent the others from generating.
-        """
-        pct = int(step / total * 95) if total else 0
-        self._push_progress(key, f"[{step}/{total}] Generating {label}...", pct)
-        try:
-            path = gen_fn()
-            results[key] = str(path)
-            self._push_progress(key, f"[{step}/{total}] {label} saved", pct)
-        except Exception as e:
-            logger.exception("%s generation failed", label)
-            errors[key] = str(e)
-            self._push_progress(key, f"[{step}/{total}] {label} failed: {e}", pct)
-
     def generate_all(self, form_data: dict) -> dict:
-        """Generate all 5 documents from the wizard form data."""
+        """Generate the selected documents from the wizard form data.
+
+        Thin adapter over core.documents.generate_documents — validates
+        form data, builds the ServiceConfig, and adapts progress pushes.
+        """
         try:
             if self._day is None:
                 return {"success": False, "error": "No content fetched. Pick a date first.",
@@ -874,108 +823,25 @@ class BulletinAPI:
                         "error_type": "validation"}
 
             output_dir = Path(form_data.get("output_dir", "output"))
-            output_dir.mkdir(parents=True, exist_ok=True)
-
             config = self._build_service_config(form_data)
             season = detect_season(self._day.title)
             fill_seasonal_defaults(config, season)
 
-            selected = set(form_data.get("selected_docs") or [
-                "bulletin", "prayers", "scripture", "large_print", "leader_guide",
-            ])
+            selected = set(form_data.get("selected_docs") or DEFAULT_SELECTION)
 
-            results: dict = {}
-            errors: dict = {}
-            creed_page = None
-            total = len(selected)
-            step = 0
-
-            # 1. Bulletin (must be first — determines creed page)
-            if "bulletin" in selected:
-                step += 1
-                pct = int(step / total * 95) if total else 0
-
-                def _bulletin_progress(detail: str) -> None:
-                    self._push_progress("bulletin", f"[{step}/{total}] Bulletin: {detail}", pct)
-
-                def _gen_bulletin() -> Path:
-                    nonlocal creed_page
-                    path, creed_page = generate_bulletin(
-                        self._day, config,
-                        output_path=output_dir / self._build_filename("Bulletin for Congregation"),
-                        season=season,
-                        client=self._client,
-                        keep_intermediates=self._debug,
-                        on_progress=_bulletin_progress,
-                    )
-                    return path
-
-                self._generate_one("bulletin", "Bulletin booklet", _gen_bulletin,
-                                   results, errors, step, total)
-
-            # 2. Pulpit Prayers (needs creed page from bulletin)
-            if "prayers" in selected:
-                step += 1
-                creed_type = config.creed_type or "apostles"
-                prayers_label = "NICENE" if creed_type == "nicene" else "APOSTLES"
-                self._generate_one(
-                    "prayers", "Pulpit prayers",
-                    lambda: generate_pulpit_prayers(
-                        self._day, config.date_display,
-                        creed_type=creed_type, creed_page_num=creed_page,
-                        output_path=output_dir / self._build_filename(f"Pulpit PRAYERS + {prayers_label}"),
-                        keep_intermediates=self._debug,
-                    ),
-                    results, errors, step, total,
-                )
-
-            # 3. Pulpit Scripture
-            if "scripture" in selected:
-                step += 1
-                self._generate_one(
-                    "scripture", "Pulpit scripture",
-                    lambda: generate_pulpit_scripture(
-                        self._day, config.date_display,
-                        output_path=output_dir / self._build_filename("Pulpit SCRIPTURE"),
-                        config=config, keep_intermediates=self._debug,
-                    ),
-                    results, errors, step, total,
-                )
-
-            # 4. Large Print
-            if "large_print" in selected:
-                step += 1
-                self._generate_one(
-                    "large_print", "Large print",
-                    lambda: generate_large_print(
-                        self._day, config,
-                        output_path=output_dir / self._build_filename("Full with Hymns LARGE PRINT"),
-                        season=season, client=self._client,
-                        keep_intermediates=self._debug,
-                    ),
-                    results, errors, step, total,
-                )
-
-            # 5. Leader Guide
-            if "leader_guide" in selected:
-                step += 1
-                self._generate_one(
-                    "leader_guide", "Leader guide",
-                    lambda: generate_leader_guide(
-                        self._day, config,
-                        output_path=output_dir / self._build_filename("Leader Guide"),
-                        season=season, client=self._client,
-                        keep_intermediates=self._debug,
-                    ),
-                    results, errors, step, total,
-                )
-
-            self._push_progress("done", "Generation complete!", 100)
+            outcome = generate_documents(
+                self._day, config, output_dir,
+                season=season,
+                client=self._client,
+                selected=selected,
+                keep_intermediates=self._debug,
+                on_progress=self._push_progress,
+            )
 
             return {
-                "success": len(errors) == 0,
-                "results": results,
-                "errors": errors,
+                "success": outcome.success,
+                "results": outcome.results,
+                "errors": outcome.errors,
                 "output_dir": str(output_dir),
             }
         except AuthError as e:
@@ -994,32 +860,24 @@ class BulletinAPI:
             if not folder.exists() or self._day is None:
                 return {"success": True, "existing": []}
 
-            # Map doc keys to document labels
-            doc_labels = {
-                "bulletin": "Bulletin for Congregation",
-                "scripture": "Pulpit SCRIPTURE",
-                "large_print": "Full with Hymns LARGE PRINT",
-                "leader_guide": "Leader Guide",
-            }
-
             existing = []
             for doc in (selected_docs or []):
                 if doc == "prayers":
                     # Prayers filename varies by creed type
-                    suffix = self._build_date_suffix()
+                    suffix = build_date_suffix(self._date_str, self._day.title)
                     for f in folder.glob("Pulpit PRAYERS*"):
                         if f.is_file() and suffix in f.name:
                             existing.append(f.name)
                             break
                 else:
-                    label = doc_labels.get(doc, "")
-                    if label:
-                        target = folder / self._build_filename(label)
-                        if target.exists():
-                            existing.append(target.name)
+                    label = document_label(doc)
+                    target = folder / build_filename(
+                        label, self._date_str, self._day.title)
+                    if target.exists():
+                        existing.append(target.name)
 
             return {"success": True, "existing": existing}
-        except (OSError, ValueError) as e:
+        except (KeyError, OSError, ValueError):
             logger.exception("Error checking existing files")
             return {"success": True, "existing": []}
 

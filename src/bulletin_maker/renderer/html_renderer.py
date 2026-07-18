@@ -22,6 +22,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
 
+from bulletin_maker.core.models import ServiceConfig
+from bulletin_maker.core.naming import extract_day_name
 from bulletin_maker.exceptions import BulletinError, ContentNotFoundError
 from bulletin_maker.sns.models import (
     CANTICLE_GLORY_TO_GOD,
@@ -33,7 +35,6 @@ from bulletin_maker.sns.models import (
     DayContent,
     HymnLyrics,
     Reading,
-    ServiceConfig,
 )
 from bulletin_maker.renderer.season import LiturgicalSeason
 from bulletin_maker.renderer.image_manager import (
@@ -185,20 +186,6 @@ def _load_offertory_image_uri() -> str:
 
 
 # ── Text helpers ──────────────────────────────────────────────────────
-
-def _extract_day_name(title: str) -> str:
-    """Extract liturgical day name from S&S title.
-
-    "Sunday, February 22, 2026 First Sunday in Lent, Year A"
-    -> "First Sunday in Lent"
-    """
-    day_name = title
-    date_match = re.search(r'\d{4}\s+(.+)', day_name)
-    if date_match:
-        day_name = date_match.group(1).strip()
-    day_name = re.sub(r',?\s*Year\s+[ABC]$', '', day_name).strip()
-    return day_name
-
 
 def _format_block_quotes(html: str) -> str:
     """Wrap S&S scripture block quotes in styled divs."""
@@ -826,7 +813,7 @@ def _build_common_context(
         "church_address": CHURCH_ADDRESS,
         "cover_image_uri": cover_image_uri,
         "date_display": config.date_display,
-        "day_name": _extract_day_name(day.title),
+        "day_name": extract_day_name(day.title),
         "welcome_message": WELCOME_MESSAGE,
         "standing_instructions": STANDING_INSTRUCTIONS,
         "show_confession": config.show_confession,

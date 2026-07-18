@@ -19,7 +19,7 @@ from bulletin_maker.sns.models import (
 )
 
 if TYPE_CHECKING:
-    from bulletin_maker.sns.models import ServiceConfig
+    from bulletin_maker.core.models import ServiceConfig
 
 
 class LiturgicalSeason(Enum):

@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from bulletin_maker.core.models import ServiceConfig
 from bulletin_maker.exceptions import ContentNotFoundError, NetworkError
 from bulletin_maker.sns.models import (
     SLOT_FIRST,
@@ -14,7 +15,6 @@ from bulletin_maker.sns.models import (
     DayContent,
     HymnLyrics,
     Reading,
-    ServiceConfig,
 )
 from bulletin_maker.renderer.html_renderer import (
     AdjustProfile,

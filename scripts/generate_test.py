@@ -16,7 +16,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from bulletin_maker.sns import SundaysClient, HymnLyrics, ServiceConfig
+from bulletin_maker.core.models import ServiceConfig
+from bulletin_maker.sns import SundaysClient, HymnLyrics
 from bulletin_maker.renderer import (
     generate_bulletin,
     generate_large_print,

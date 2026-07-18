@@ -12,6 +12,7 @@
 - Layout regression suite (slow, renders real PDFs via Chromium): `venv/bin/python -m pytest tests/ -m layout -v` — run before committing renderer/template/CSS changes; update its pinned page counts only for intentional layout changes
 
 ## Project Structure
+- `src/bulletin_maker/core/` — Domain layer: ServiceConfig, document registry, generate_documents() workflow, filename rules. UI shells adapt to this package; it never imports them.
 - `src/bulletin_maker/sns/` — Sundays & Seasons API client
 - `src/bulletin_maker/renderer/` — HTML/CSS + Playwright PDF generation
 - `src/bulletin_maker/exceptions.py` — Custom exception hierarchy

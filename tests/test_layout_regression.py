@@ -28,7 +28,8 @@ from bulletin_maker.renderer import (
     generate_pulpit_scripture,
 )
 from bulletin_maker.renderer.season import detect_season, fill_seasonal_defaults
-from bulletin_maker.sns.models import DayContent, HymnLyrics, Reading, ServiceConfig
+from bulletin_maker.core.models import ServiceConfig
+from bulletin_maker.sns.models import DayContent, HymnLyrics, Reading
 
 pytestmark = pytest.mark.layout
 
