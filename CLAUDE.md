@@ -9,12 +9,13 @@
 - Target Python 3.9.6 — always use `from __future__ import annotations`
 - Virtual env: `venv/bin/python`
 - Run tests: `venv/bin/python -m pytest tests/ -v`
+- Layout regression suite (slow, renders real PDFs via Chromium): `venv/bin/python -m pytest tests/ -m layout -v` — run before committing renderer/template/CSS changes; update its pinned page counts only for intentional layout changes
 
 ## Project Structure
 - `src/bulletin_maker/sns/` — Sundays & Seasons API client
 - `src/bulletin_maker/renderer/` — HTML/CSS + Playwright PDF generation
 - `src/bulletin_maker/exceptions.py` — Custom exception hierarchy
-- `scripts/` — Dev utilities (generate_test, visual_diff, test_sns_client, explore_and_download)
+- `scripts/` — Dev utilities (generate_test, test_sns_client, explore_and_download)
 - `scripts/data/` — Exploration output (JSON dumps, API responses) — scripts should save here
 - `docs/` — API discovery notes and reference docs
 - `tests/` — Pytest test suite with fixtures in `tests/fixtures/`

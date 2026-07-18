@@ -54,4 +54,4 @@ venv/bin/python -m pytest tests/ -v
 - `src/bulletin_maker/ui/` — pywebview desktop wizard application
 - `src/bulletin_maker/exceptions.py` — Custom exception hierarchy
 - `tests/` — Pytest test suite with fixtures in `tests/fixtures/`
-- `scripts/` — Dev utilities (generate_test, visual_diff, test_sns_client)
+- `scripts/` — Dev utilities (generate_test, test_sns_client)
