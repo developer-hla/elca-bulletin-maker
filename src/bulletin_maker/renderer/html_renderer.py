@@ -38,6 +38,7 @@ from bulletin_maker.sns.models import (
     Reading,
 )
 from bulletin_maker.renderer.season import LiturgicalSeason
+from bulletin_maker.renderer.settings import LiturgicalSetting, get_setting
 from bulletin_maker.renderer.image_manager import (
     fetch_hymn_image,
     get_gospel_acclamation_image,
@@ -723,6 +724,8 @@ def resolve_text_defaults(config: ServiceConfig, day: DayContent) -> None:
 
 def _build_readings_context(
     day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
+    setting: LiturgicalSetting | None = None,
+    client: SundaysClient | None = None,
 ) -> dict:
     """Build template context for readings + Gospel Acclamation image."""
     first_reading = _reading_data(_get_reading_with_override(day, config, SLOT_FIRST))
@@ -735,10 +738,10 @@ def _build_readings_context(
 
     ga_image_uri = ""
     try:
-        path = get_gospel_acclamation_image(season)
+        path = get_gospel_acclamation_image(season, setting=setting, client=client)
         ga_image_uri = _image_to_data_uri(path)
-    except FileNotFoundError:
-        logger.warning("Gospel Acclamation image not found for season %s", season)
+    except (BulletinError, OSError):
+        logger.warning("Gospel Acclamation image not available for season %s", season)
     except ImportError:
         logger.warning("Pillow not installed — cannot convert GA image to data URI")
 
@@ -787,6 +790,7 @@ def _build_eucharistic_context(config: ServiceConfig) -> dict:
 def _build_common_context(
     day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
     profile: CongregationProfile | None = None,
+    client: SundaysClient | None = None,
 ) -> dict:
     """Build context keys shared by bulletin, large print, and leader guide."""
     prayers_call = DEFAULT_PRAYERS_CALL
@@ -836,7 +840,8 @@ def _build_common_context(
         "blessing_lines": (config.blessing_text or AARONIC_BLESSING).split("\n"),
         "dismissal_entries": config.dismissal_entries or DISMISSAL_ENTRIES,
     }
-    ctx.update(_build_readings_context(day, config, season))
+    setting = get_setting(profile.liturgical_setting)
+    ctx.update(_build_readings_context(day, config, season, setting, client))
     ctx.update(_build_creed_context(config))
     ctx.update(_build_eucharistic_context(config))
     return ctx
@@ -850,9 +855,10 @@ def _build_large_print_context(
     communion_hymn_image_uri: str = "",
     sending_hymn_image_uri: str = "",
     profile: CongregationProfile | None = None,
+    client: SundaysClient | None = None,
 ) -> dict:
     """Build the full template context for the Large Print document."""
-    ctx = _build_common_context(day, config, season, profile)
+    ctx = _build_common_context(day, config, season, profile, client)
 
     ga_text = ""
     if day.gospel_acclamation:
@@ -968,13 +974,17 @@ def _hymn_title_str(hymn: HymnLyrics | None) -> str:
     return label
 
 
-def _safe_setting_image_uri(piece: str) -> str:
+def _safe_setting_image_uri(
+    piece: str,
+    setting: LiturgicalSetting | None = None,
+    client: SundaysClient | None = None,
+) -> str:
     """Try to load a setting image as data URI; return empty on failure."""
     try:
-        path = get_setting_image(piece)
+        path = get_setting_image(piece, setting=setting, client=client)
         return _image_to_data_uri(path)
-    except (FileNotFoundError, ValueError):
-        logger.warning("Setting image not found for '%s'", piece)
+    except (BulletinError, OSError, ValueError):
+        logger.warning("Setting image not available for '%s'", piece)
         return ""
 
 
@@ -987,10 +997,14 @@ def _canticle_text_for_config(config: ServiceConfig) -> dict | None:
     return None
 
 
-def _canticle_image_uri_for_config(config: ServiceConfig) -> str:
+def _canticle_image_uri_for_config(
+    config: ServiceConfig,
+    setting: LiturgicalSetting | None = None,
+    client: SundaysClient | None = None,
+) -> str:
     """Return the notation image URI for the configured canticle, or ''."""
     if config.canticle in (CANTICLE_GLORY_TO_GOD, CANTICLE_THIS_IS_THE_FEAST):
-        return _safe_setting_image_uri(config.canticle)
+        return _safe_setting_image_uri(config.canticle, setting, client)
     return ""
 
 
@@ -1001,24 +1015,31 @@ def _build_bulletin_context(
     *,
     communion_hymn_image_uri: str = "",
     profile: CongregationProfile | None = None,
+    client: SundaysClient | None = None,
 ) -> dict:
     """Build template context for the standard Bulletin for Congregation."""
-    ctx = _build_common_context(day, config, season, profile)
+    if profile is None:
+        profile = load_profile()
+    setting = get_setting(profile.liturgical_setting)
+    ctx = _build_common_context(day, config, season, profile, client)
 
     # Notation images for liturgical setting pieces
-    kyrie_uri = _safe_setting_image_uri("kyrie") if config.include_kyrie else ""
-    canticle_uri = _canticle_image_uri_for_config(config)
+    kyrie_uri = (
+        _safe_setting_image_uri("kyrie", setting, client)
+        if config.include_kyrie else ""
+    )
+    canticle_uri = _canticle_image_uri_for_config(config, setting, client)
 
-    great_thanksgiving_uri = _safe_setting_image_uri("great_thanksgiving")
-    sanctus_uri = _safe_setting_image_uri("sanctus")
-    agnus_dei_uri = _safe_setting_image_uri("agnus_dei")
-    nunc_dimittis_uri = _safe_setting_image_uri("nunc_dimittis")
+    great_thanksgiving_uri = _safe_setting_image_uri("great_thanksgiving", setting, client)
+    sanctus_uri = _safe_setting_image_uri("sanctus", setting, client)
+    agnus_dei_uri = _safe_setting_image_uri("agnus_dei", setting, client)
+    nunc_dimittis_uri = _safe_setting_image_uri("nunc_dimittis", setting, client)
 
     memorial_acc_uri = ""
     amen_uri = ""
     if config.include_memorial_acclamation:
-        memorial_acc_uri = _safe_setting_image_uri("memorial_acclamation")
-        amen_uri = _safe_setting_image_uri("amen")
+        memorial_acc_uri = _safe_setting_image_uri("memorial_acclamation", setting, client)
+        amen_uri = _safe_setting_image_uri("amen", setting, client)
 
     ctx.update({
         "css": (TEMPLATE_DIR / "bulletin.css").read_text(),
@@ -1163,7 +1184,7 @@ def generate_large_print(
     ctx = _build_large_print_context(
         day, config, season,
         communion_hymn_image_uri=_fetch_hymn_image_uri(client, config.communion_hymn),
-        profile=profile,
+        profile=profile, client=client,
     )
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
@@ -1179,8 +1200,12 @@ def _build_leader_guide_context(
     communion_hymn_image_uri: str = "",
     sending_hymn_image_uri: str = "",
     profile: CongregationProfile | None = None,
+    client: SundaysClient | None = None,
 ) -> dict:
     """Build template context for the Leader Guide (large print + notation)."""
+    if profile is None:
+        profile = load_profile()
+    setting = get_setting(profile.liturgical_setting)
     ctx = _build_large_print_context(
         day, config, season,
         gathering_hymn_image_uri=gathering_hymn_image_uri,
@@ -1188,25 +1213,26 @@ def _build_leader_guide_context(
         communion_hymn_image_uri=communion_hymn_image_uri,
         sending_hymn_image_uri=sending_hymn_image_uri,
         profile=profile,
+        client=client,
     )
     ctx["is_leader_guide"] = True
 
     preface_image_uri = ""
     if config.preface:
         try:
-            path = get_preface_image(config.preface)
+            path = get_preface_image(config.preface, setting=setting, client=client)
             preface_image_uri = _image_to_data_uri(path)
-        except FileNotFoundError:
-            logger.warning("Preface image not found: %s", config.preface)
+        except (BulletinError, OSError):
+            logger.warning("Preface image not available: %s", config.preface)
         except ImportError:
             logger.warning("Pillow not installed — cannot convert preface image")
 
     ctx["preface_image_uri"] = preface_image_uri
     ctx["great_thanksgiving_preface"] = GREAT_THANKSGIVING_PREFACE
     ctx["kyrie_image_uri"] = (
-        _safe_setting_image_uri("kyrie") if config.include_kyrie else ""
+        _safe_setting_image_uri("kyrie", setting, client) if config.include_kyrie else ""
     )
-    ctx["canticle_image_uri"] = _canticle_image_uri_for_config(config)
+    ctx["canticle_image_uri"] = _canticle_image_uri_for_config(config, setting, client)
     return ctx
 
 
@@ -1245,7 +1271,7 @@ def generate_leader_guide(
         sermon_hymn_image_uri=_fetch_hymn_image_uri(client, config.sermon_hymn),
         communion_hymn_image_uri=_fetch_hymn_image_uri(client, config.communion_hymn),
         sending_hymn_image_uri=_fetch_hymn_image_uri(client, config.sending_hymn),
-        profile=profile,
+        profile=profile, client=client,
     )
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
@@ -1367,7 +1393,7 @@ def generate_bulletin(
     template = env.get_template("bulletin.html")
     ctx = _build_bulletin_context(
         day, config, season, communion_hymn_image_uri=communion_hymn_image_uri,
-        profile=profile,
+        profile=profile, client=client,
     )
     html_string = template.render(**ctx)
 

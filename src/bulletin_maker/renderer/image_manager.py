@@ -1,13 +1,12 @@
 """Notation image management — static assets and dynamic hymn fetching.
 
 Handles two kinds of notation images:
-  1. Static liturgical setting images (Kyrie, Sanctus, etc.) — downloaded
-     once from S&S Library via atom codes, stored in assets/
+  1. Liturgical setting images (Kyrie, Sanctus, etc.) — resolved per
+     LiturgicalSetting. Setting Two ships bundled in assets/; other
+     settings download on demand (via the user's S&S login) into
+     ~/.bulletin-maker/assets/{setting}/.
   2. Dynamic hymn images (communion hymn) — fetched from S&S per Sunday,
-     cached to output/images/
-
-The Large Print document only needs the Gospel Acclamation image.
-The standard bulletin needs all setting pieces + communion hymn.
+     cached to output/images/.
 """
 
 from __future__ import annotations
@@ -22,6 +21,12 @@ if TYPE_CHECKING:
 
 from bulletin_maker.exceptions import ContentNotFoundError
 from bulletin_maker.renderer.season import LiturgicalSeason, PrefaceType
+from bulletin_maker.renderer.settings import (
+    DEFAULT_SETTING_KEY,
+    USER_ASSETS_DIR,
+    LiturgicalSetting,
+    get_setting,
+)
 from bulletin_maker.sns.models import (
     CANTICLE_GLORY_TO_GOD,
     CANTICLE_THIS_IS_THE_FEAST,
@@ -33,41 +38,33 @@ if getattr(sys, "frozen", False):
     ASSETS_DIR = Path(sys._MEIPASS) / "bulletin_maker" / "renderer" / "assets"
 else:
     ASSETS_DIR = Path(__file__).resolve().parent / "assets"
-SETTING_TWO_DIR = ASSETS_DIR / "setting_two"
 GOSPEL_ACCLAMATION_DIR = ASSETS_DIR / "gospel_acclamation"
 
-# ── S&S Library atom codes ───────────────────────────────────────────
+# ── S&S Library atom-code suffixes ───────────────────────────────────
 
-# Maps our canonical piece names → S&S Library atom codes
-# These are used with /File/GetImage?atomCode={code} to download images.
-_SETTING_TWO_ATOM_CODES = {
-    "kyrie":              "elw_hc2_kyrie_m",
-    CANTICLE_GLORY_TO_GOD:       "elw_hc2_glory_m",
-    CANTICLE_THIS_IS_THE_FEAST:  "elw_hc2_feast_m",
-    "great_thanksgiving": "elw_hc2_dialogue_m",
-    "sanctus":            "elw_hc2_holy_m",
-    "agnus_dei":          "elw_hc2_lamb_m",
-    "nunc_dimittis":      "elw_hc2_nowlord_m",
-    "memorial_acclamation": "elw_hc2_christ_m",
-    "amen":               "elw_hc2_amen_m",
+# Canonical piece name → atom-code piece segment. Full code is
+# f"{setting.atom_prefix}_{segment}_m" (melody/assembly edition).
+_PIECE_ATOM_SEGMENTS = {
+    "kyrie":                     "kyrie",
+    CANTICLE_GLORY_TO_GOD:       "glory",
+    CANTICLE_THIS_IS_THE_FEAST:  "feast",
+    "great_thanksgiving":        "dialogue",
+    "sanctus":                   "holy",
+    "agnus_dei":                 "lamb",
+    "nunc_dimittis":             "nowlord",
+    "memorial_acclamation":      "christ",
+    "amen":                      "amen",
 }
 
-_GOSPEL_ACCLAMATION_ATOM_CODES = {
-    "alleluia":      "elw_hc2_accltext_m",   # Standard (Ordinary, Epiphany, Easter)
-    "lenten_verse":  "elw_hc2_lentaccl_m",   # Lent ("Return to the Lord")
-    "advent":        "elw_hc2_accltext_m",    # Advent uses same alleluia melody
-}
+def _ga_atom_segment(setting: LiturgicalSetting, variant: str) -> str:
+    """Atom segment for a Gospel Acclamation variant.
 
-# Preface atom codes (seasonal) — for future bulletin use
-_PREFACE_ATOM_CODES = {
-    "sundays":     "elw_hc2_pref_sundays_m",
-    "advent":      "elw_hc2_pref_advent_m",
-    "christmas":   "elw_hc2_pref_christmas_m",
-    "epiphany":    "elw_hc2_pref_epiphany_m",
-    "lent":        "elw_hc2_pref_lent_m",
-    "easter":      "elw_hc2_pref_easter_m",
-    "pentecost":   "elw_hc2_pref_pentecost_m",
-}
+    The Lenten verse is "lentaccl" in every setting; the standard
+    acclamation segment varies per setting ("accltext" vs "alleluia").
+    """
+    if variant == "lenten_verse":
+        return "lentaccl"
+    return setting.ga_segment
 
 # Season → Gospel Acclamation variant name
 _GA_SEASON_MAP = {
@@ -84,6 +81,23 @@ _IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".tif", ".tiff")
 
 
 # ── Internal helpers ─────────────────────────────────────────────────
+
+def _resolve_setting(setting: LiturgicalSetting | None) -> LiturgicalSetting:
+    return setting if setting is not None else get_setting(DEFAULT_SETTING_KEY)
+
+
+def _setting_dir(setting: LiturgicalSetting) -> Path:
+    """Notation directory for a setting — bundled assets or user cache."""
+    if setting.bundled:
+        return ASSETS_DIR / setting.key
+    return USER_ASSETS_DIR / setting.key
+
+
+def _ga_dir(setting: LiturgicalSetting) -> Path:
+    if setting.bundled:
+        return GOSPEL_ACCLAMATION_DIR
+    return USER_ASSETS_DIR / setting.key / "gospel_acclamation"
+
 
 def _find_image(directory: Path, stem: str) -> Path | None:
     """Find an image file with the given stem in directory, any extension."""
@@ -118,57 +132,75 @@ def _download_library_image(client: SundaysClient, atom_code: str,
     return out_path
 
 
-# ── Static setting image lookup ──────────────────────────────────────
+def _resolve_image(
+    directory: Path, stem: str, atom_code: str,
+    client: SundaysClient | None, missing_hint: str,
+) -> Path:
+    """Find an image on disk, downloading it on miss when a client is given."""
+    found = _find_image(directory, stem)
+    if found is not None:
+        return found
+    if client is not None:
+        logger.debug("Downloading %s (atom: %s)...", stem, atom_code)
+        return _download_library_image(client, atom_code, directory, stem)
+    raise FileNotFoundError(
+        f"Notation image not found for '{stem}' in {directory}\n{missing_hint}"
+    )
 
-def get_setting_image(piece: str) -> Path:
-    """Return the path to a Setting Two notation image.
+
+# ── Setting image lookup ─────────────────────────────────────────────
+
+def get_setting_image(
+    piece: str,
+    *,
+    setting: LiturgicalSetting | None = None,
+    client: SundaysClient | None = None,
+) -> Path:
+    """Return the notation image path for a liturgical setting piece.
 
     Args:
-        piece: One of the keys in _SETTING_TWO_ATOM_CODES (e.g., "kyrie",
+        piece: One of the keys in _PIECE_ATOM_SEGMENTS (e.g., "kyrie",
                "sanctus", "agnus_dei").
-
-    Returns:
-        Path to the image file.
+        setting: The liturgical setting (defaults to Setting Two).
+        client: Optional authenticated S&S client — enables on-demand
+            download for settings whose assets aren't bundled.
 
     Raises:
         ValueError: If piece name is not recognized.
-        FileNotFoundError: If the asset file hasn't been downloaded yet.
+        FileNotFoundError: If the asset is missing and no client given.
     """
-    if piece not in _SETTING_TWO_ATOM_CODES:
+    if piece not in _PIECE_ATOM_SEGMENTS:
         raise ValueError(
             f"Unknown setting piece: {piece!r}. "
-            f"Valid pieces: {', '.join(_SETTING_TWO_ATOM_CODES)}"
+            f"Valid pieces: {', '.join(_PIECE_ATOM_SEGMENTS)}"
         )
-    found = _find_image(SETTING_TWO_DIR, piece)
-    if found is None:
-        raise FileNotFoundError(
-            f"Setting image not found for '{piece}' in {SETTING_TWO_DIR}\n"
-            f"Run download_setting_assets() or see assets/README.md"
+    setting = _resolve_setting(setting)
+    if piece in setting.missing_pieces:
+        raise ContentNotFoundError(
+            f"{setting.label} does not include a '{piece}' — "
+            "the section will be omitted."
         )
-    return found
+    atom_code = f"{setting.atom_prefix}_{_PIECE_ATOM_SEGMENTS[piece]}_m"
+    return _resolve_image(
+        _setting_dir(setting), piece, atom_code, client,
+        "Sign in to S&S so the notation can be downloaded, or see assets/README.md",
+    )
 
 
-def get_gospel_acclamation_image(season: LiturgicalSeason) -> Path:
-    """Return the path to the Gospel Acclamation image for the given season.
-
-    Args:
-        season: The liturgical season.
-
-    Returns:
-        Path to the image file.
-
-    Raises:
-        FileNotFoundError: If the asset file hasn't been downloaded yet.
-    """
+def get_gospel_acclamation_image(
+    season: LiturgicalSeason,
+    *,
+    setting: LiturgicalSetting | None = None,
+    client: SundaysClient | None = None,
+) -> Path:
+    """Return the Gospel Acclamation image path for the given season."""
+    setting = _resolve_setting(setting)
     variant = _GA_SEASON_MAP.get(season, "alleluia")
-    found = _find_image(GOSPEL_ACCLAMATION_DIR, variant)
-    if found is None:
-        raise FileNotFoundError(
-            f"Gospel Acclamation image not found for '{variant}' in "
-            f"{GOSPEL_ACCLAMATION_DIR}\n"
-            f"Run download_setting_assets() or see assets/README.md"
-        )
-    return found
+    atom_code = f"{setting.atom_prefix}_{_ga_atom_segment(setting, variant)}_m"
+    return _resolve_image(
+        _ga_dir(setting), variant, atom_code, client,
+        "Sign in to S&S so the notation can be downloaded, or see assets/README.md",
+    )
 
 
 def get_offertory_image() -> Path:
@@ -182,57 +214,40 @@ def get_offertory_image() -> Path:
     return found
 
 
-def get_preface_image(preface: PrefaceType) -> Path:
-    """Return the path to the sung preface notation image.
-
-    Args:
-        preface: The preface type.
-
-    Returns:
-        Path to the image file.
-
-    Raises:
-        FileNotFoundError: If the asset file hasn't been downloaded yet.
-    """
+def get_preface_image(
+    preface: PrefaceType,
+    *,
+    setting: LiturgicalSetting | None = None,
+    client: SundaysClient | None = None,
+) -> Path:
+    """Return the sung preface notation image path."""
+    setting = _resolve_setting(setting)
     stem = f"preface_{preface.value}"
-    found = _find_image(SETTING_TWO_DIR, stem)
-    if found is None:
-        raise FileNotFoundError(
-            f"Preface image not found for '{stem}' in {SETTING_TWO_DIR}\n"
-            f"Run download_setting_assets() or see assets/README.md"
-        )
-    return found
+    atom_code = f"{setting.atom_prefix}_pref_{preface.value}_m"
+    return _resolve_image(
+        _setting_dir(setting), stem, atom_code, client,
+        "Sign in to S&S so the notation can be downloaded, or see assets/README.md",
+    )
 
 
 # ── Bulk download from S&S Library ───────────────────────────────────
 
-def _download_batch(
-    client: SundaysClient, codes: dict[str, str], dest_dir: Path,
-    prefix: str = "",
+def download_setting_assets(
+    client: SundaysClient,
+    setting: LiturgicalSetting | None = None,
 ) -> dict[str, Path]:
-    """Download a batch of images from S&S Library, skipping existing files."""
+    """Download a setting's pieces + Gospel Acclamation images from S&S."""
+    setting = _resolve_setting(setting)
     downloaded: dict[str, Path] = {}
-    for name, atom_code in codes.items():
-        key = f"{prefix}{name}" if prefix else name
-        existing = _find_image(dest_dir, name)
-        if existing:
-            logger.debug("Already have: %s", existing.name)
-            downloaded[key] = existing
+    for piece in _PIECE_ATOM_SEGMENTS:
+        if piece in setting.missing_pieces:
             continue
-        logger.debug("Downloading %s (atom: %s)...", name, atom_code)
-        path = _download_library_image(client, atom_code, dest_dir, name)
-        downloaded[key] = path
-        logger.debug("  Saved: %s", path.name)
-    return downloaded
-
-
-def download_setting_assets(client: SundaysClient) -> dict[str, Path]:
-    """Download all Setting Two + Gospel Acclamation images from S&S Library."""
-    downloaded = _download_batch(client, _SETTING_TWO_ATOM_CODES, SETTING_TWO_DIR)
-    ga = _download_batch(
-        client, _GOSPEL_ACCLAMATION_ATOM_CODES, GOSPEL_ACCLAMATION_DIR, prefix="ga_",
-    )
-    downloaded.update(ga)
+        downloaded[piece] = get_setting_image(
+            piece, setting=setting, client=client)
+    for variant in ("alleluia", "lenten_verse"):
+        atom_code = f"{setting.atom_prefix}_{_ga_atom_segment(setting, variant)}_m"
+        downloaded[f"ga_{variant}"] = _resolve_image(
+            _ga_dir(setting), variant, atom_code, client, "")
     return downloaded
 
 

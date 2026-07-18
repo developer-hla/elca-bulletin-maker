@@ -843,7 +843,7 @@ class TestCanticleImageUriForConfig:
         mock_safe.return_value = f"data:image/jpeg;base64,{canticle}"
         result = _canticle_image_uri_for_config(_canticle_config(canticle))
         assert result == f"data:image/jpeg;base64,{canticle}"
-        mock_safe.assert_called_once_with(canticle)
+        mock_safe.assert_called_once_with(canticle, None, None)
 
     @pytest.mark.parametrize("canticle", [CANTICLE_NONE, None])
     @patch("bulletin_maker.renderer.html_renderer._safe_setting_image_uri")

@@ -9,9 +9,8 @@ from bulletin_maker.renderer.image_manager import (
     get_gospel_acclamation_image,
     get_offertory_image,
     get_preface_image,
-    SETTING_TWO_DIR,
     GOSPEL_ACCLAMATION_DIR,
-    _SETTING_TWO_ATOM_CODES,
+    _PIECE_ATOM_SEGMENTS,
     _GA_SEASON_MAP,
 )
 from bulletin_maker.renderer.season import (
@@ -25,7 +24,7 @@ class TestGetSettingImage:
 
     def test_valid_pieces_resolve(self):
         """All known pieces should resolve to an existing file (assets downloaded)."""
-        for piece in _SETTING_TWO_ATOM_CODES:
+        for piece in _PIECE_ATOM_SEGMENTS:
             path = get_setting_image(piece)
             assert path.exists(), f"Missing asset: {path}"
 
