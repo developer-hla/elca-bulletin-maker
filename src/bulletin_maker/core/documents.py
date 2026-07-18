@@ -16,6 +16,7 @@ from typing import Callable, Optional
 from bulletin_maker.core.models import ServiceConfig
 from bulletin_maker.core.naming import build_filename
 from bulletin_maker.core.profile import CongregationProfile, load_profile
+from bulletin_maker.renderer.paper import get_paper_preset
 from bulletin_maker.renderer import (
     generate_bulletin,
     generate_large_print,
@@ -135,6 +136,7 @@ def generate_documents(
         profile = load_profile()
     if not config.cover_image and profile.cover_image:
         config.cover_image = profile.cover_image
+    paper = get_paper_preset(profile.paper_size)
 
     outcome = GenerationResult()
     total = len(selected)
@@ -181,6 +183,7 @@ def generate_documents(
                 creed_page_num=outcome.creed_page,
                 output_path=output_dir / _filename("prayers"),
                 keep_intermediates=keep_intermediates,
+                page_size=paper.flat_page_size,
             ),
             outcome, _report_step,
         )
@@ -194,6 +197,7 @@ def generate_documents(
                 output_path=output_dir / _filename("scripture"),
                 config=config,
                 keep_intermediates=keep_intermediates,
+                page_size=paper.flat_page_size,
             ),
             outcome, _report_step,
         )

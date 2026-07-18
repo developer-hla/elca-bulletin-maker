@@ -184,3 +184,54 @@ class TestPulpitLayout:
     def test_pulpit_prayers_references_creed_page(self, rendered):
         pages = _page_texts(rendered["pulpit_prayers"])
         assert f"page {rendered['creed_page']}" in pages[0]
+
+
+class TestPaperPresetSmoke:
+    """Non-default presets must generate successfully with sane geometry.
+
+    Only legal_booklet (the default) has pinned page counts; these are
+    adoption-readiness smoke checks for the other presets.
+    """
+
+    @pytest.mark.parametrize("preset_key", ["letter_booklet", "a4_booklet"])
+    def test_bulletin_generates_on_preset(self, tmp_path, preset_key):
+        import dataclasses
+        from bulletin_maker.core.profile import load_profile
+        from bulletin_maker.renderer.paper import get_paper_preset
+
+        day, hymns = _load_fixture()
+        config = _make_config(hymns)
+        season = detect_season(day.title)
+        fill_seasonal_defaults(config, season)
+        profile = dataclasses.replace(load_profile(), paper_size=preset_key)
+        preset = get_paper_preset(preset_key)
+
+        path, creed_page = generate_bulletin(
+            day, config, tmp_path / "bulletin.pdf",
+            season=season, profile=profile,
+        )
+        reader = PdfReader(str(path))
+        assert len(reader.pages) >= 4
+        assert creed_page is not None
+        page = reader.pages[0]
+        assert float(page.mediabox.width) == pytest.approx(
+            preset.half_page_width_pt * 2, abs=0.5)
+        assert float(page.mediabox.height) == pytest.approx(
+            preset.page_height_pt, abs=0.5)
+
+    def test_a4_flat_documents_render_a4(self, tmp_path):
+        import dataclasses
+        from bulletin_maker.core.profile import load_profile
+
+        day, hymns = _load_fixture()
+        config = _make_config(hymns)
+        season = detect_season(day.title)
+        fill_seasonal_defaults(config, season)
+        profile = dataclasses.replace(load_profile(), paper_size="a4_booklet")
+
+        lp = generate_large_print(
+            day, config, tmp_path / "lp.pdf", season=season, profile=profile)
+        page = PdfReader(str(lp)).pages[0]
+        # A4 = 595.28 x 841.89 pt
+        assert float(page.mediabox.width) == pytest.approx(595.3, abs=1.0)
+        assert float(page.mediabox.height) == pytest.approx(841.9, abs=1.0)

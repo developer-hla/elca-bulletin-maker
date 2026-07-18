@@ -38,6 +38,7 @@ from bulletin_maker.sns.models import (
     Reading,
 )
 from bulletin_maker.renderer.season import LiturgicalSeason
+from bulletin_maker.renderer.paper import PaperPreset, get_paper_preset
 from bulletin_maker.renderer.settings import LiturgicalSetting, get_setting
 from bulletin_maker.renderer.image_manager import (
     fetch_hymn_image,
@@ -1112,6 +1113,7 @@ def _render_large_format(
     *,
     keep_intermediates: bool = False,
     label: str,
+    page_size: str = "Letter",
 ) -> Path:
     """Shared rendering logic for large print and leader guide documents.
 
@@ -1130,7 +1132,8 @@ def _render_large_format(
         debug_name = label.lower().replace(" ", "_") + ".html"
         (debug_dir / debug_name).write_text(html_string)
 
-    render_to_pdf(html_string, output_path, margins=MARGINS_DEFAULT, display_footer=True)
+    render_to_pdf(html_string, output_path, margins=MARGINS_DEFAULT,
+                  display_footer=True, page_size=page_size)
 
     # Auto-tighten: try progressively tighter CSS to reduce page count
     pages = count_pages(output_path)
@@ -1140,7 +1143,7 @@ def _render_large_format(
         for level_css in LP_TIGHTEN_CSS:
             candidate = _inject_css(html_string, level_css)
             render_to_pdf(candidate, output_path, margins=MARGINS_DEFAULT,
-                          display_footer=True)
+                          display_footer=True, page_size=page_size)
             n = count_pages(output_path)
             if n and n < best_pages:
                 best_html = candidate
@@ -1148,7 +1151,7 @@ def _render_large_format(
         if best_pages < pages:
             logger.debug("%s auto-tighten: %d -> %d pages", label, pages, best_pages)
             render_to_pdf(best_html, output_path, margins=MARGINS_DEFAULT,
-                          display_footer=True)
+                          display_footer=True, page_size=page_size)
 
     logger.debug("%s PDF saved: %s", label, output_path)
     return output_path
@@ -1181,6 +1184,9 @@ def generate_large_print(
         Path to the saved PDF file.
     """
     resolve_text_defaults(config, day)
+    if profile is None:
+        profile = load_profile()
+    paper = get_paper_preset(profile.paper_size)
     ctx = _build_large_print_context(
         day, config, season,
         communion_hymn_image_uri=_fetch_hymn_image_uri(client, config.communion_hymn),
@@ -1188,7 +1194,7 @@ def generate_large_print(
     )
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
-        label="Large Print",
+        label="Large Print", page_size=paper.flat_page_size,
     )
 
 
@@ -1265,6 +1271,9 @@ def generate_leader_guide(
         Path to the saved PDF file.
     """
     resolve_text_defaults(config, day)
+    if profile is None:
+        profile = load_profile()
+    paper = get_paper_preset(profile.paper_size)
     ctx = _build_leader_guide_context(
         day, config, season,
         gathering_hymn_image_uri=_fetch_hymn_image_uri(client, config.gathering_hymn),
@@ -1275,7 +1284,7 @@ def generate_leader_guide(
     )
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
-        label="Leader Guide",
+        label="Leader Guide", page_size=paper.flat_page_size,
     )
 
 
@@ -1286,6 +1295,7 @@ def generate_pulpit_scripture(
     *,
     config: ServiceConfig | None = None,
     keep_intermediates: bool = False,
+    page_size: str = "Letter",
 ) -> Path:
     """Generate the Pulpit Scripture PDF via HTML + Playwright."""
     if not day.readings:
@@ -1311,6 +1321,7 @@ def generate_pulpit_scripture(
         max_pages=2,
         header_left=f"SCRIPTURE Readings \u2013 {date_display}",
         pulpit_header=True,
+        page_size=page_size,
     )
 
     logger.debug("Pulpit Scripture PDF saved: %s", result)
@@ -1325,6 +1336,7 @@ def generate_pulpit_prayers(
     output_path: Path = Path("pulpit_prayers.pdf"),
     *,
     keep_intermediates: bool = False,
+    page_size: str = "Letter",
 ) -> Path:
     """Generate the Pulpit Prayers PDF via HTML + Playwright."""
     if not day.prayers_html:
@@ -1350,6 +1362,7 @@ def generate_pulpit_prayers(
         max_pages=2,
         header_left=f"CREED & PRAYERS \u2013 {date_display}",
         pulpit_header=True,
+        page_size=page_size,
     )
 
     logger.debug("Pulpit Prayers PDF saved: %s", result)
@@ -1386,6 +1399,9 @@ def generate_bulletin(
         Tuple of (path to booklet PDF, creed page number or None).
     """
     resolve_text_defaults(config, day)
+    if profile is None:
+        profile = load_profile()
+    paper = get_paper_preset(profile.paper_size)
 
     communion_hymn_image_uri = _fetch_hymn_image_uri(client, config.communion_hymn)
 
@@ -1405,9 +1421,9 @@ def generate_bulletin(
         debug_dir.mkdir(exist_ok=True)
         (debug_dir / "bulletin.html").write_text(html_string)
 
-    # Render sequential half-pages (7" x 8.5") with auto-adjustment
+    # Render sequential half-pages with auto-adjustment
     seq_path = output_path.parent / f".{output_path.stem}_sequential.pdf"
-    bulletin_page_size = {"width": "7in", "height": "8.5in"}
+    bulletin_page_size = paper.half_page_css
 
     adjust_meta = _auto_adjust_bulletin(html_string, seq_path, bulletin_page_size,
                                         on_progress=on_progress)
@@ -1430,7 +1446,11 @@ def generate_bulletin(
         logger.warning("Could not find creed page marker in bulletin")
 
     # Impose into booklet
-    result = impose_booklet(seq_path, output_path)
+    result = impose_booklet(
+        seq_path, output_path,
+        half_page_width_pt=paper.half_page_width_pt,
+        page_height_pt=paper.page_height_pt,
+    )
 
     # Clean up sequential PDF unless keeping intermediates
     if not keep_intermediates and seq_path.exists():

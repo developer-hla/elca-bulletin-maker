@@ -195,7 +195,13 @@ def count_pages(pdf_path: Path) -> int | None:
         return None
 
 
-def impose_booklet(input_pdf: Path, output_pdf: Path) -> Path:
+def impose_booklet(
+    input_pdf: Path,
+    output_pdf: Path,
+    *,
+    half_page_width_pt: float = HALF_PAGE_WIDTH_PT,
+    page_height_pt: float = PAGE_HEIGHT_PT,
+) -> Path:
     """Rearrange sequential half-pages into saddle-stitched booklet spreads.
 
     Takes a PDF of sequential 7"x8.5" pages and produces legal-landscape
@@ -220,8 +226,8 @@ def impose_booklet(input_pdf: Path, output_pdf: Path) -> Path:
     # Pad to multiple of 4
     padded = n + (4 - n % 4) % 4
 
-    half_w = HALF_PAGE_WIDTH_PT
-    page_h = PAGE_HEIGHT_PT
+    half_w = half_page_width_pt
+    page_h = page_height_pt
     full_w = half_w * 2
 
     writer = PdfWriter()
@@ -282,6 +288,7 @@ def render_with_shrink(
     header_left: str = "",
     header_right: str = "",
     pulpit_header: bool = False,
+    page_size: str | dict = "Letter",
 ) -> Path:
     """Render HTML to PDF, auto-shrinking if it exceeds max_pages.
 
@@ -295,6 +302,7 @@ def render_with_shrink(
         margins=margins, display_footer=True,
         header_left=header_left, header_right=header_right,
         pulpit_header=pulpit_header,
+        page_size=page_size,
     )
 
     pages = count_pages(result)
@@ -308,6 +316,7 @@ def render_with_shrink(
             header_left=header_left, header_right=header_right,
             pulpit_header=pulpit_header,
             scale=scale,
+            page_size=page_size,
         )
         pages = count_pages(result)
         if pages is not None and pages <= max_pages:
