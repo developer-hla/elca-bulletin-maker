@@ -1,10 +1,11 @@
-"""Resolve the bulletin's ordered, condition-filtered rite blocks (LWS-0c).
+"""Resolve a document's ordered, condition-filtered rite blocks (LWS-0c/0d).
 
-The bulletin document is rendered by iterating the library rite
-(``elw_sunday_communion``) block by block, in order, keeping only the blocks
-whose ``condition`` applies to the current service.  Order and conditions come
-from the rite; the per-block markup and the ``.flow-group`` pagination grouping
-stay with the renderer (``templates/html/bulletin.html``).
+Each document (bulletin, large print, leader guide) is rendered by iterating the
+library rite (``elw_sunday_communion``) block by block, in order, keeping only
+the blocks whose ``condition`` applies to the current service.  Order and
+conditions come from the rite — one shared source; the per-block markup and the
+``.flow-group`` pagination grouping stay with each document's template
+(``templates/html/bulletin.html``, ``templates/html/large_print.html``).
 
 This module owns two renderer-side concerns:
 
@@ -12,9 +13,9 @@ This module owns two renderer-side concerns:
   rite conditions use (``canticle`` -> ``canticle_glory_to_god`` /
   ``canticle_this_is_the_feast``; ``creed_type`` -> ``creed_nicene`` /
   ``creed_apostles``; ``eucharistic_form`` -> ``eucharistic_extended``), and
-* the flow-group membership — which consecutive blocks the bulletin keeps
-  together on a page (``break-inside: avoid``).  This is pagination, not rite
-  structure.
+* the flow-group membership — which consecutive blocks a document keeps
+  together on a page (``break-inside: avoid``).  This is per-document
+  pagination, not rite structure, so each document supplies its own groups.
 """
 
 from __future__ import annotations
@@ -31,10 +32,11 @@ from bulletin_maker.sns.models import (
     CANTICLE_THIS_IS_THE_FEAST,
 )
 
-# Renderer-side pagination: consecutive blocks the bulletin wraps in a single
-# ``.flow-group`` so they stay together across a page break.  Mirrors the
-# ``<div class="flow-group">`` runs of the pre-refactor bulletin.html exactly.
-_FLOW_GROUPS: Tuple[Tuple[str, ...], ...] = (
+# Renderer-side pagination: consecutive blocks a document wraps in a single
+# ``.flow-group`` so they stay together across a page break.  Each tuple mirrors
+# the ``<div class="flow-group">`` runs of the corresponding pre-refactor
+# template exactly; the groupings differ per document.
+_BULLETIN_FLOW_GROUPS: Tuple[Tuple[str, ...], ...] = (
     ("gathering_chimes", "prelude", "choral_call_to_worship", "welcome_spoken"),
     ("greeting", "kyrie"),
     ("prayer_of_day",),
@@ -51,15 +53,40 @@ _FLOW_GROUPS: Tuple[Tuple[str, ...], ...] = (
     ("announcements", "sending_hymn", "dismissal", "postlude", "copyright"),
 )
 
-_FLOW_GROUP_OF: Dict[str, int] = {
-    block_id: index
-    for index, group in enumerate(_FLOW_GROUPS)
-    for block_id in group
-}
+# Large print (and the leader guide, which shares this template) groups
+# differently from the bulletin: the sermon hymn is not grouped with the
+# sermon, the great-thanksgiving/sanctus run is ungrouped, the nunc dimittis is
+# its own group, and there is no copyright block (large print ends at the
+# postlude).  Mirrors ``large_print.html`` exactly.
+_LARGE_PRINT_FLOW_GROUPS: Tuple[Tuple[str, ...], ...] = (
+    ("gathering_chimes", "prelude", "choral_call_to_worship", "welcome_spoken"),
+    ("sermon_seated_rubric", "sermon"),
+    ("prayers_of_intercession",),
+    ("peace",),
+    ("offering", "offertory"),
+    ("offering_prayer",),
+    ("invitation_to_communion", "invitation_seated_rubric"),
+    ("post_communion_stand_rubric", "post_communion_blessing"),
+    ("nunc_dimittis",),
+    ("prayer_after_communion", "blessing"),
+    ("announcements", "sending_hymn", "dismissal", "postlude"),
+)
+
+
+def _flow_group_index(groups: Tuple[Tuple[str, ...], ...]) -> Dict[str, int]:
+    return {
+        block_id: index
+        for index, group in enumerate(groups)
+        for block_id in group
+    }
+
+
+_BULLETIN_FLOW_GROUP_OF: Dict[str, int] = _flow_group_index(_BULLETIN_FLOW_GROUPS)
+_LARGE_PRINT_FLOW_GROUP_OF: Dict[str, int] = _flow_group_index(_LARGE_PRINT_FLOW_GROUPS)
 
 
 @lru_cache(maxsize=1)
-def _bulletin_rite() -> Rite:
+def _sunday_communion_rite() -> Rite:
     return load_rite(SUNDAY_COMMUNION_RITE_ID)
 
 
@@ -89,7 +116,7 @@ def build_condition_context(
 
 
 def _visible_block_ids(context: Dict[str, Any]) -> List[str]:
-    rite = _bulletin_rite()
+    rite = _sunday_communion_rite()
     return [
         block.id
         for block in rite.blocks
@@ -97,21 +124,23 @@ def _visible_block_ids(context: Dict[str, Any]) -> List[str]:
     ]
 
 
-def _group(block_ids: List[str]) -> List[Dict[str, Any]]:
+def _group(
+    block_ids: List[str], flow_group_of: Dict[str, int],
+) -> List[Dict[str, Any]]:
     """Wrap consecutive same-flow-group block ids; others render standalone."""
     items: List[Dict[str, Any]] = []
     index = 0
     count = len(block_ids)
     while index < count:
         block_id = block_ids[index]
-        group_key = _FLOW_GROUP_OF.get(block_id)
+        group_key = flow_group_of.get(block_id)
         if group_key is None:
             items.append({"flow": False, "ids": [block_id]})
             index += 1
             continue
         run = [block_id]
         cursor = index + 1
-        while cursor < count and _FLOW_GROUP_OF.get(block_ids[cursor]) == group_key:
+        while cursor < count and flow_group_of.get(block_ids[cursor]) == group_key:
             run.append(block_ids[cursor])
             cursor += 1
         items.append({"flow": True, "ids": run})
@@ -128,4 +157,18 @@ def resolve_bulletin_sequence(
     wrapped in a ``.flow-group`` div by the template.
     """
     context = build_condition_context(config, season)
-    return _group(_visible_block_ids(context))
+    return _group(_visible_block_ids(context), _BULLETIN_FLOW_GROUP_OF)
+
+
+def resolve_large_print_sequence(
+    config: ServiceConfig, season: LiturgicalSeason,
+) -> List[Dict[str, Any]]:
+    """Return the large-print / leader-guide render sequence.
+
+    Same rite, order, and conditions as the bulletin — only the flow-group
+    pagination differs (see ``_LARGE_PRINT_FLOW_GROUPS``).  The leader guide
+    shares this sequence and switches individual blocks from text to notation
+    images via ``*_image_uri`` context values, per-block in the template.
+    """
+    context = build_condition_context(config, season)
+    return _group(_visible_block_ids(context), _LARGE_PRINT_FLOW_GROUP_OF)

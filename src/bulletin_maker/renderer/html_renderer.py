@@ -66,7 +66,10 @@ from bulletin_maker.renderer.pdf_engine import (
     render_to_pdf,
     render_with_shrink,
 )
-from bulletin_maker.renderer.rite_resolver import resolve_bulletin_sequence
+from bulletin_maker.renderer.rite_resolver import (
+    resolve_bulletin_sequence,
+    resolve_large_print_sequence,
+)
 from bulletin_maker.renderer.prayers_parser import (
     parse_prayers_call,
     parse_prayers_html,
@@ -868,6 +871,12 @@ def _build_large_print_context(
 
     ctx.update({
         "css": (TEMPLATE_DIR / "large_print.css").read_text(),
+
+        # Rite-driven render sequence: large print (and the leader guide, which
+        # reuses this context) iterates these ordered, condition-filtered blocks
+        # instead of a hardcoded template sequence. Same rite as the bulletin;
+        # only the flow-group pagination differs.
+        "large_print_sequence": resolve_large_print_sequence(config, season),
 
         # Large print uses short preface (leader guide overrides with full)
         "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE_SHORT,

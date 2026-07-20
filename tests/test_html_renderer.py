@@ -51,12 +51,14 @@ from bulletin_maker.renderer.season import LiturgicalSeason
 from bulletin_maker.renderer.text_utils import DialogRole
 
 
-def _bulletin_seq(*block_ids: str) -> list:
-    """Minimal rite-driven render sequence for bulletin.html template tests.
+def _render_seq(*block_ids: str) -> list:
+    """Minimal rite-driven render sequence for template tests.
 
-    The refactored bulletin.html iterates `bulletin_sequence`; tests that render
-    the template with a hand-built context supply just the block ids they check.
-    (large_print.html ignores this key, so parametrized tests can pass it too.)
+    Both bulletin.html (`bulletin_sequence`) and large_print.html
+    (`large_print_sequence`) iterate a resolved sequence; tests that render a
+    template with a hand-built context supply just the block ids they check.
+    A template ignores the other document's sequence key, so parametrized tests
+    can pass both.
     """
     return [{"flow": False, "ids": list(block_ids)}]
 
@@ -292,7 +294,7 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template("bulletin.html")
         return template.render(
-            bulletin_sequence=_bulletin_seq("memorial_acclamation"),
+            bulletin_sequence=_render_seq("memorial_acclamation"),
             css="",
             church_address="",
             eucharistic_form="extended",
@@ -334,7 +336,7 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template("bulletin.html")
         html = template.render(
-            bulletin_sequence=_bulletin_seq("choral_call_to_worship"),
+            bulletin_sequence=_render_seq("choral_call_to_worship"),
             css="",
             church_address="",
             choral_title="Create in Me a Clean Heart",
@@ -351,6 +353,7 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template("large_print.html")
         html = template.render(
+            large_print_sequence=_render_seq("choral_call_to_worship"),
             css="",
             church_address="",
             choral_title="Create in Me a Clean Heart",
@@ -368,7 +371,8 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template(template_name)
         html = template.render(
-            bulletin_sequence=_bulletin_seq("psalm"),
+            bulletin_sequence=_render_seq("psalm"),
+            large_print_sequence=_render_seq("psalm"),
             css="",
             church_address="",
             psalm_data={
@@ -401,7 +405,10 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template(template_name)
         html = template.render(
-            bulletin_sequence=_bulletin_seq(
+            bulletin_sequence=_render_seq(
+                "prelude", "choral_call_to_worship", "welcome_spoken",
+            ),
+            large_print_sequence=_render_seq(
                 "prelude", "choral_call_to_worship", "welcome_spoken",
             ),
             css="",
@@ -492,7 +499,7 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template("bulletin.html")
         html = template.render(
-            bulletin_sequence=_bulletin_seq("confession"),
+            bulletin_sequence=_render_seq("confession"),
             css="",
             church_address="",
             show_confession=True,
@@ -512,7 +519,7 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template("bulletin.html")
         html = template.render(
-            bulletin_sequence=_bulletin_seq("blessing"),
+            bulletin_sequence=_render_seq("blessing"),
             css="",
             church_address="",
             show_confession=False,
@@ -528,7 +535,7 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template("bulletin.html")
         html = template.render(
-            bulletin_sequence=_bulletin_seq(
+            bulletin_sequence=_render_seq(
                 "prayer_of_day", "peace", "offering_prayer", "lords_prayer",
                 "invitation_to_communion", "prayer_after_communion",
             ),
@@ -570,6 +577,9 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template("large_print.html")
         html = template.render(
+            large_print_sequence=_render_seq(
+                "prayer_of_day", "great_thanksgiving", "peace",
+            ),
             css="",
             church_address="",
             show_confession=False,
