@@ -90,3 +90,10 @@ locally-composed Advent-wreath text, sermon).
 4. Good Friday Reproaches & Exsultet — no confirmed PD English; commission-fresh is the recommended path.
 5. "Ubi caritas" — no PD singable English translation confirmed.
 6. 1662 BCP UK Crown-Patent printing restriction — treated as not applicable to US bundling; confirm with counsel if serving UK churches.
+
+---
+## Product-fit note (July 20 2026): USA Protestant only
+Userbase is ~100% USA Protestant (see 07). Two flags above are now MOOT: the UK Crown-Patent
+restriction on the 1662 BCP (US-only userbase), and everything Roman Catholic — NABRE and the USCCB
+paid per-parish lectionary licensing are out of scope (no Catholic parishes). Relevant translations:
+NRSV/NRSVUE (mainline, via S&S entitlement), ESV (LCMS/evangelical), KJV/WEB (PD floor).

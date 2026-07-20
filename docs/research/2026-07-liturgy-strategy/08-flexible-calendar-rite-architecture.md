@@ -151,3 +151,11 @@ ELCA VALUE, proven by the 4-variant parity suite + the credentialed generation g
 provider abstraction gets a conformance test suite (shared by every future provider) asserting
 each returns a well-formed `LiturgicalDay`; the `sns`/`rcl` providers additionally assert
 season-id and proper equality against today's S&S-derived values for a fixture set of dates.
+
+---
+## Product-fit note (July 20 2026): USA Protestant only
+Userbase is ~100% USA Protestant (see 07 "Product-fit constraint"). Roman Catholic is out of
+scope, so the calendar abstraction does NOT need to satisfy Catholic Ordinary-Time forward-numbering
+or the weekday I/II cycle as design targets — the shape-agnostic design still permits them, but
+they are not requirements. The season set to actually support is bounded: Western 7 + Gesima
+(LCMS historic) + Season of Creation overlay + "none" (non-lectionary).

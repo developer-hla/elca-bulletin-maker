@@ -195,3 +195,9 @@ genericModal bundle); download is `/File/Download?atomId=X&atomCode=Y`. **Confir
 
 Gates throughout: parity 4/4 (Ascension byte-identical), credentialed generation, per-source
 conformance tests, entitlement tests (unlicensed church gets PD, never AF text).
+
+---
+## Product-fit note (July 20 2026): USA Protestant only
+Userbase is ~100% USA Protestant (see 07). Scripture translations in scope: NRSV/NRSVUE (mainline,
+entitled via S&S), ESV (LCMS/evangelical), KJV/WEB (PD fallback). NABRE/Catholic sources are out of
+scope. The entitlement model is unchanged; there is simply no Catholic-publisher branch to design for.

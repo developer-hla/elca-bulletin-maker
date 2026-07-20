@@ -153,6 +153,21 @@ current authoritative plan reconciled to what shipped and where the goals moved.
 2. **ELCA / S&S parity for content** — go deep only where we know the domain.
 3. **Do NOT build content or decide for other traditions** — architect so others can add them.
 
+### Product-fit constraint (owner, July 20 2026): userbase is ~100% USA Protestant
+Bounds goal #3's "other traditions" to the USA Protestant set (ELCA, LCMS, Episcopal/Anglican,
+UMC, Presbyterian, evangelical/non-denominational). Consequences:
+- **Roman Catholic is DEFINITIVELY out of scope** (not just deprioritized) — Catholic Ordinary-Time
+  forward-numbering, the weekday I/II cycle, NABRE, and USCCB per-parish lectionary licensing are
+  NOT design requirements. Simplifies the calendar-flexibility surface.
+- **Copyright is US-only** — the UK Crown-Patent 1662-BCP caveat (doc 10) is moot.
+- **Scripture translations that matter:** NRSV/NRSVUE (mainline), ESV (LCMS/evangelical), KJV/WEB
+  (public-domain floor). No NABRE.
+- **Season vocabulary is bounded** — Western 7 + Gesima/pre-Lent (LCMS historic) + Season of
+  Creation overlay + "none" (non-lectionary). RB-1's string-id season model is right-sized for this
+  (bounded extensibility, not arbitrary world-tradition openness).
+Flexibility is still worthwhile: USA Protestant traditions still diverge in rite (Communion / Word /
+Reformed / free-church) and calendar (RCL / LCMS 1-year / Narrative / none).
+
 ### Forward workstreams, in priority order
 **Cluster A — finish the flexibility spine (leads):**
 - **RB-1 Complete season generalization** — season identity becomes a string id carried through
