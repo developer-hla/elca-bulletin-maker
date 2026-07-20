@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional
 
+from bulletin_maker.core.content_source import ContentContext
 from bulletin_maker.core.models import ServiceConfig
 from bulletin_maker.core.naming import build_filename
 from bulletin_maker.core.profile import CongregationProfile, load_profile
@@ -112,6 +113,8 @@ def generate_documents(
     keep_intermediates: bool = False,
     on_progress: Optional[ProgressCallback] = None,
     profile: CongregationProfile | None = None,
+    entitled: bool = True,
+    church_texts: dict | None = None,
 ) -> GenerationResult:
     """Generate the selected documents into output_dir.
 
@@ -120,12 +123,19 @@ def generate_documents(
 
     Args:
         on_progress: Optional callback(key, detail, pct) for UI status.
+        entitled: Whether the church holds a validated S&S link. True (the
+            default, and every offline/parity/generate path) resolves the ELW
+            wording exactly as before; False falls back to public-domain text
+            or a placeholder and never serves the copyrighted ELW text.
+        church_texts: The church's saved text overrides keyed by catalog key.
 
     Returns:
         GenerationResult with per-document paths and isolated errors.
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    content = ContentContext(entitled=entitled, church_texts=church_texts or {})
 
     selected = set(selected) if selected is not None else set(DEFAULT_SELECTION)
     unknown = selected - set(_SPECS_BY_KEY)
@@ -166,6 +176,7 @@ def generate_documents(
                 keep_intermediates=keep_intermediates,
                 on_progress=_bulletin_progress,
                 profile=profile,
+                content=content,
             )
             outcome.creed_page = creed_page
             return path
@@ -184,6 +195,7 @@ def generate_documents(
                 output_path=output_dir / _filename("prayers"),
                 keep_intermediates=keep_intermediates,
                 page_size=paper.flat_page_size,
+                content=content,
             ),
             outcome, _report_step,
         )
@@ -212,6 +224,7 @@ def generate_documents(
                 season=season, client=client,
                 keep_intermediates=keep_intermediates,
                 profile=profile,
+                content=content,
             ),
             outcome, _report_step,
         )
@@ -226,6 +239,7 @@ def generate_documents(
                 season=season, client=client,
                 keep_intermediates=keep_intermediates,
                 profile=profile,
+                content=content,
             ),
             outcome, _report_step,
         )

@@ -1037,6 +1037,13 @@ def create_app() -> FastAPI:
                 jobstore.append_progress(
                     job_id, {"step": key, "detail": detail, "pct": pct})
 
+            # Entitlement gate (CS-1): a validated S&S link resolves the ELW
+            # wording; an unlinked church would fall back to PD/placeholder and
+            # never receive copyrighted ELW text. Generation currently requires
+            # a link (see the /api/generate guard), so this is True in practice.
+            church = church_of(session)
+            entitled = bool(church["sns_username"])
+
             outcome = generate_documents(
                 day, config, job_dir,
                 season=season,
@@ -1044,6 +1051,7 @@ def create_app() -> FastAPI:
                 selected=selected,
                 on_progress=on_progress,
                 profile=profile,
+                entitled=entitled,
             )
             results = _store_results(church_id, job_id, outcome.results)
             status = "done" if outcome.success else "failed"

@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
 
+from bulletin_maker.core.content_source import ContentContext, resolve_text
 from bulletin_maker.core.models import ServiceConfig
 from bulletin_maker.core.naming import extract_day_name
 from bulletin_maker.core.profile import CongregationProfile, load_profile
@@ -75,43 +76,11 @@ from bulletin_maker.renderer.prayers_parser import (
     parse_prayers_html,
     parse_prayers_response,
 )
-from bulletin_maker.renderer.static_text import (
-    AARONIC_BLESSING,
-    AGNUS_DEI,
-    APOSTLES_CREED,
-    BAPTISM_FLOOD_PRAYER,
-    BAPTISM_FORMULA,
-    BAPTISM_PRESENTATION,
-    BAPTISM_PROFESSION,
-    BAPTISM_RENUNCIATION,
-    BAPTISM_WELCOME,
-    BAPTISM_WELCOME_RESPONSE,
-    COME_HOLY_SPIRIT,
-    CONFESSION_AND_FORGIVENESS,
-    DISMISSAL,
-    DISMISSAL_ENTRIES,
-    EUCHARISTIC_PRAYER_CLOSING,
-    EUCHARISTIC_PRAYER_EXTENDED,
-    GLORY_TO_GOD_TEXT,
-    GREAT_THANKSGIVING_DIALOG,
-    GREAT_THANKSGIVING_PREFACE,
-    GREAT_THANKSGIVING_PREFACE_SHORT,
-    GREETING,
-    INVITATION_TO_COMMUNION,
-    INVITATION_TO_LENT,
-    KYRIE_DIALOG,
-    LORDS_PRAYER,
-    MEMORIAL_ACCLAMATION,
-    NICENE_CREED,
-    NUNC_DIMITTIS,
-    OFFERTORY_HYMN_VERSES,
-    THIS_IS_THE_FEAST_TEXT,
-    DEFAULT_PRAYERS_CALL,
-    DEFAULT_PRAYERS_RESPONSE,
-    PRAYERS_INTRO,
-    SANCTUS,
-    WORDS_OF_INSTITUTION,
-)
+# Liturgical ordinary text is now resolved through the entitlement-gated
+# content source (see ``resolve_text`` calls below); the ELW/Setting-Two
+# constants are no longer imported directly here.  ``PRAYERS_INTRO`` is a plain
+# house rubric (not an ELW-catalog text), so it stays a direct import.
+from bulletin_maker.renderer.static_text import PRAYERS_INTRO
 
 logger = logging.getLogger(__name__)
 
@@ -221,9 +190,9 @@ def _split_stanzas(text: str) -> list[str]:
 
 # ── Agnus Dei stanza splitting ────────────────────────────────────────
 
-def _split_agnus_dei() -> list[str]:
+def _split_agnus_dei(agnus_dei_text: str) -> list[str]:
     """Split Agnus Dei text into 3 stanzas (mercy/mercy/peace)."""
-    lines = AGNUS_DEI.split("\n")
+    lines = agnus_dei_text.split("\n")
     assert len(lines) == 6, f"Expected 6 AGNUS_DEI lines, got {len(lines)}"
     stanzas = []
     for i in range(0, len(lines), 2):
@@ -301,21 +270,25 @@ def _build_psalm_data_from_reading(reading: Reading | None) -> dict | None:
     }
 
 
-def _build_baptism_context(config: ServiceConfig) -> dict:
+def _build_baptism_context(
+    config: ServiceConfig, content: ContentContext | None = None,
+) -> dict:
     """Build template-ready dict for the Holy Baptism rite."""
+    content = content or ContentContext()
+    baptism_formula = resolve_text("elw.baptism_formula", content)
     names = [n.strip() for n in config.baptism_candidate_names.split(",") if n.strip()]
-    formulas = [BAPTISM_FORMULA.format(name=name) for name in names] if names else [
-        BAPTISM_FORMULA.format(name="___________")
+    formulas = [baptism_formula.format(name=name) for name in names] if names else [
+        baptism_formula.format(name="___________")
     ]
     return {
         "include_baptism": True,
-        "baptism_presentation": BAPTISM_PRESENTATION,
-        "baptism_renunciation": BAPTISM_RENUNCIATION,
-        "baptism_profession": BAPTISM_PROFESSION,
-        "baptism_flood_prayer": BAPTISM_FLOOD_PRAYER,
+        "baptism_presentation": resolve_text("elw.baptism_presentation", content),
+        "baptism_renunciation": resolve_text("elw.baptism_renunciation", content),
+        "baptism_profession": resolve_text("elw.baptism_profession", content),
+        "baptism_flood_prayer": resolve_text("elw.baptism_flood_prayer", content),
         "baptism_formulas": formulas,
-        "baptism_welcome": BAPTISM_WELCOME,
-        "baptism_welcome_response": BAPTISM_WELCOME_RESPONSE,
+        "baptism_welcome": resolve_text("elw.baptism_welcome", content),
+        "baptism_welcome_response": resolve_text("elw.baptism_welcome_response", content),
     }
 
 
@@ -673,14 +646,19 @@ def _auto_adjust_bulletin(
 
 # ── Liturgical text resolution ────────────────────────────────────────
 
-def resolve_text_defaults(config: ServiceConfig, day: DayContent) -> None:
+def resolve_text_defaults(
+    config: ServiceConfig, day: DayContent,
+    content: ContentContext | None = None,
+) -> None:
     """Populate None liturgical text fields on config from S&S, then static.
 
     For each of the 5 text fields, the priority is:
       1. User-provided value on config (already set) — keep it
       2. S&S DayContent HTML (parsed to plain text) — use if available
-      3. Static fallback from static_text.py — last resort
+      3. Entitlement-gated fallback via the content source — last resort
+         (ELW text for an entitled church, PD/placeholder otherwise)
     """
+    content = content or ContentContext()
     # Confession
     if config.confession_entries is None:
         if day.confession_html:
@@ -688,7 +666,7 @@ def resolve_text_defaults(config: ServiceConfig, day: DayContent) -> None:
             if parsed:
                 config.confession_entries = parsed
         if config.confession_entries is None:
-            config.confession_entries = CONFESSION_AND_FORGIVENESS
+            config.confession_entries = resolve_text("elw.confession_form_a", content)
 
     # Offering Prayer
     if config.offering_prayer_text is None:
@@ -711,7 +689,7 @@ def resolve_text_defaults(config: ServiceConfig, day: DayContent) -> None:
         if day.blessing_html:
             config.blessing_text = clean_sns_html(day.blessing_html)
         if not config.blessing_text:
-            config.blessing_text = AARONIC_BLESSING
+            config.blessing_text = resolve_text("elw.aaronic_blessing", content)
 
     # Dismissal
     if config.dismissal_entries is None:
@@ -720,7 +698,7 @@ def resolve_text_defaults(config: ServiceConfig, day: DayContent) -> None:
             if parsed:
                 config.dismissal_entries = parsed
         if config.dismissal_entries is None:
-            config.dismissal_entries = DISMISSAL_ENTRIES
+            config.dismissal_entries = resolve_text("elw.dismissal", content)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -759,36 +737,47 @@ def _build_readings_context(
     }
 
 
-def _build_creed_context(config: ServiceConfig) -> dict:
+def _build_creed_context(
+    config: ServiceConfig, content: ContentContext | None = None,
+) -> dict:
     """Build template context for the creed + baptism."""
+    content = content or ContentContext()
     creed_name = "NICENE CREED" if config.creed_type == "nicene" else "APOSTLES CREED"
-    creed_text = NICENE_CREED if config.creed_type == "nicene" else APOSTLES_CREED
+    creed_key = "elw.nicene_creed" if config.creed_type == "nicene" else "elw.apostles_creed"
+    creed_text = resolve_text(creed_key, content)
     ctx = {
         "include_baptism": config.include_baptism,
         "creed_name": creed_name,
         "creed_stanzas": _split_stanzas(creed_text),
     }
     if config.include_baptism:
-        ctx.update(_build_baptism_context(config))
+        ctx.update(_build_baptism_context(config, content))
     return ctx
 
 
-def _build_eucharistic_context(config: ServiceConfig) -> dict:
+def _build_eucharistic_context(
+    config: ServiceConfig, content: ContentContext | None = None,
+) -> dict:
     """Build template context for the Eucharistic Prayer + communion."""
-    ep_lines = EUCHARISTIC_PRAYER_EXTENDED.split("\n")
+    content = content or ContentContext()
+    ep_lines = resolve_text("elw.eucharistic_prayer_extended", content).split("\n")
     return {
         "eucharistic_form": config.eucharistic_form,
         "eucharistic_prayer_first_line": ep_lines[0],
         "eucharistic_prayer_lines": [
             line.strip() for line in ep_lines[1:] if line.strip()
         ],
-        "words_of_institution_paragraphs": _split_stanzas(WORDS_OF_INSTITUTION),
+        "words_of_institution_paragraphs": _split_stanzas(
+            resolve_text("elw.words_of_institution", content)
+        ),
         "has_memorial_acclamation": config.include_memorial_acclamation,
         "memorial_acclamation_mode": config.memorial_acclamation_mode,
-        "memorial_acclamation": MEMORIAL_ACCLAMATION,
-        "eucharistic_prayer_closing_stanzas": _split_stanzas(EUCHARISTIC_PRAYER_CLOSING),
-        "come_holy_spirit": COME_HOLY_SPIRIT,
-        "lords_prayer_stanzas": _split_stanzas(LORDS_PRAYER),
+        "memorial_acclamation": resolve_text("elw.memorial_acclamation", content),
+        "eucharistic_prayer_closing_stanzas": _split_stanzas(
+            resolve_text("elw.eucharistic_prayer_closing", content)
+        ),
+        "come_holy_spirit": resolve_text("elw.come_holy_spirit", content),
+        "lords_prayer_stanzas": _split_stanzas(resolve_text("elw.lords_prayer", content)),
     }
 
 
@@ -796,10 +785,12 @@ def _build_common_context(
     day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
     profile: CongregationProfile | None = None,
     client: SundaysClient | None = None,
+    content: ContentContext | None = None,
 ) -> dict:
     """Build context keys shared by bulletin, large print, and leader guide."""
-    prayers_call = DEFAULT_PRAYERS_CALL
-    prayers_response = DEFAULT_PRAYERS_RESPONSE
+    content = content or ContentContext()
+    prayers_call = resolve_text("elw.default_prayers_call", content)
+    prayers_response = resolve_text("elw.default_prayers_response", content)
     if day.prayers_html:
         prayers_call = parse_prayers_call(day.prayers_html)
         prayers_response = parse_prayers_response(day.prayers_html)
@@ -830,25 +821,29 @@ def _build_common_context(
         "standing_instructions": profile.standing_instructions,
         "show_confession": config.show_confession,
         "confession_entries": config.confession_entries,
-        "greeting_entries": GREETING if config.show_greeting else None,
+        "greeting_entries": resolve_text("elw.greeting", content) if config.show_greeting else None,
         "is_lent": season == LiturgicalSeason.LENT,
-        "invitation_to_lent_paragraphs": _split_stanzas(INVITATION_TO_LENT),
+        "invitation_to_lent_paragraphs": _split_stanzas(
+            resolve_text("elw.invitation_to_lent", content)
+        ),
         "prayer_of_day_html": _clean_html(day.prayer_of_the_day_html),
         "prayers_call": prayers_call,
         "prayers_response": prayers_response,
-        "offertory_hymn_verses": OFFERTORY_HYMN_VERSES,
-        "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE,
-        "invitation_to_communion_text": INVITATION_TO_COMMUNION,
+        "offertory_hymn_verses": resolve_text("elw.offertory_hymn_verses", content),
+        "great_thanksgiving_preface": resolve_text("elw.great_thanksgiving_preface", content),
+        "invitation_to_communion_text": resolve_text("house.invitation_to_communion", content),
         "show_nunc_dimittis": config.show_nunc_dimittis,
         "offering_prayer_text": config.offering_prayer_text or "",
         "prayer_after_communion_text": config.prayer_after_communion_text or "",
-        "blessing_lines": (config.blessing_text or AARONIC_BLESSING).split("\n"),
-        "dismissal_entries": config.dismissal_entries or DISMISSAL_ENTRIES,
+        "blessing_lines": (
+            config.blessing_text or resolve_text("elw.aaronic_blessing", content)
+        ).split("\n"),
+        "dismissal_entries": config.dismissal_entries or resolve_text("elw.dismissal", content),
     }
     setting = get_setting(profile.liturgical_setting)
     ctx.update(_build_readings_context(day, config, season, setting, client))
-    ctx.update(_build_creed_context(config))
-    ctx.update(_build_eucharistic_context(config))
+    ctx.update(_build_creed_context(config, content))
+    ctx.update(_build_eucharistic_context(config, content))
     return ctx
 
 
@@ -861,9 +856,11 @@ def _build_large_print_context(
     sending_hymn_image_uri: str = "",
     profile: CongregationProfile | None = None,
     client: SundaysClient | None = None,
+    content: ContentContext | None = None,
 ) -> dict:
     """Build the full template context for the Large Print document."""
-    ctx = _build_common_context(day, config, season, profile, client)
+    content = content or ContentContext()
+    ctx = _build_common_context(day, config, season, profile, client, content)
 
     ga_text = ""
     if day.gospel_acclamation:
@@ -879,7 +876,7 @@ def _build_large_print_context(
         "large_print_sequence": resolve_large_print_sequence(config, season),
 
         # Large print uses short preface (leader guide overrides with full)
-        "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE_SHORT,
+        "great_thanksgiving_preface": resolve_text("elw.great_thanksgiving_preface_short", content),
 
         # Citations
         "prelude_title": config.prelude_title,
@@ -897,17 +894,17 @@ def _build_large_print_context(
         "choral_composer": config.choral_composer,
         "gathering_hymn": config.gathering_hymn,
         "gathering_hymn_image_uri": gathering_hymn_image_uri,
-        "kyrie_entries": KYRIE_DIALOG if config.include_kyrie else None,
-        "canticle_text": _canticle_text_for_config(config),
+        "kyrie_entries": resolve_text("elw.kyrie_dialog", content) if config.include_kyrie else None,
+        "canticle_text": _canticle_text_for_config(config, content),
         "ga_text_fallback": ga_text,
         "sermon_hymn": config.sermon_hymn,
         "sermon_hymn_image_uri": sermon_hymn_image_uri,
-        "great_thanksgiving_dialog": GREAT_THANKSGIVING_DIALOG,
-        "sanctus_stanzas": _split_stanzas(SANCTUS),
-        "agnus_dei_stanzas": _split_agnus_dei(),
+        "great_thanksgiving_dialog": resolve_text("elw.great_thanksgiving_dialog", content),
+        "sanctus_stanzas": _split_stanzas(resolve_text("elw.sanctus", content)),
+        "agnus_dei_stanzas": _split_agnus_dei(resolve_text("elw.agnus_dei", content)),
         "communion_hymn": config.communion_hymn,
         "communion_hymn_image_uri": communion_hymn_image_uri,
-        "nunc_dimittis_lines": NUNC_DIMITTIS.split("\n"),
+        "nunc_dimittis_lines": resolve_text("elw.nunc_dimittis", content).split("\n"),
         "sending_hymn": config.sending_hymn,
         "sending_hymn_image_uri": sending_hymn_image_uri,
         "offertory_image_uri": _load_offertory_image_uri(),
@@ -946,10 +943,13 @@ def _build_pulpit_prayers_context(
     date_display: str,
     creed_type: str,
     creed_page_num: int | None,
+    content: ContentContext | None = None,
 ) -> dict:
     """Build template context for the Pulpit Prayers document."""
+    content = content or ContentContext()
     creed_name = "NICENE CREED" if creed_type.lower() == "nicene" else "APOSTLES CREED"
-    creed_text = NICENE_CREED if creed_type.lower() == "nicene" else APOSTLES_CREED
+    creed_key = "elw.nicene_creed" if creed_type.lower() == "nicene" else "elw.apostles_creed"
+    creed_text = resolve_text(creed_key, content)
 
     page_ref = str(creed_page_num) if creed_page_num else "_____"
 
@@ -999,12 +999,15 @@ def _safe_setting_image_uri(
         return ""
 
 
-def _canticle_text_for_config(config: ServiceConfig) -> dict | None:
+def _canticle_text_for_config(
+    config: ServiceConfig, content: ContentContext | None = None,
+) -> dict | None:
     """Return the canticle text dict for the configured canticle, or None."""
+    content = content or ContentContext()
     if config.canticle == CANTICLE_GLORY_TO_GOD:
-        return GLORY_TO_GOD_TEXT
+        return resolve_text("elw.glory_to_god", content)
     if config.canticle == CANTICLE_THIS_IS_THE_FEAST:
-        return THIS_IS_THE_FEAST_TEXT
+        return resolve_text("elw.this_is_the_feast", content)
     return None
 
 
@@ -1027,12 +1030,14 @@ def _build_bulletin_context(
     communion_hymn_image_uri: str = "",
     profile: CongregationProfile | None = None,
     client: SundaysClient | None = None,
+    content: ContentContext | None = None,
 ) -> dict:
     """Build template context for the standard Bulletin for Congregation."""
+    content = content or ContentContext()
     if profile is None:
         profile = load_profile()
     setting = get_setting(profile.liturgical_setting)
-    ctx = _build_common_context(day, config, season, profile, client)
+    ctx = _build_common_context(day, config, season, profile, client, content)
 
     # Notation images for liturgical setting pieces
     kyrie_uri = (
@@ -1060,7 +1065,7 @@ def _build_bulletin_context(
         "bulletin_sequence": resolve_bulletin_sequence(config, season),
 
         # Bulletin uses short preface (truncated with ending cue)
-        "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE_SHORT,
+        "great_thanksgiving_preface": resolve_text("elw.great_thanksgiving_preface_short", content),
 
         # Prelude/postlude
         "prelude_title": config.prelude_title,
@@ -1180,6 +1185,7 @@ def generate_large_print(
     client: SundaysClient | None = None,
     keep_intermediates: bool = False,
     profile: CongregationProfile | None = None,
+    content: ContentContext | None = None,
 ) -> Path:
     """Generate the Full with Hymns LARGE PRINT PDF via HTML + Playwright.
 
@@ -1197,14 +1203,15 @@ def generate_large_print(
     Returns:
         Path to the saved PDF file.
     """
-    resolve_text_defaults(config, day)
+    content = content or ContentContext()
+    resolve_text_defaults(config, day, content)
     if profile is None:
         profile = load_profile()
     paper = get_paper_preset(profile.paper_size)
     ctx = _build_large_print_context(
         day, config, season,
         communion_hymn_image_uri=_fetch_hymn_image_uri(client, config.communion_hymn),
-        profile=profile, client=client,
+        profile=profile, client=client, content=content,
     )
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
@@ -1221,8 +1228,10 @@ def _build_leader_guide_context(
     sending_hymn_image_uri: str = "",
     profile: CongregationProfile | None = None,
     client: SundaysClient | None = None,
+    content: ContentContext | None = None,
 ) -> dict:
     """Build template context for the Leader Guide (large print + notation)."""
+    content = content or ContentContext()
     if profile is None:
         profile = load_profile()
     setting = get_setting(profile.liturgical_setting)
@@ -1234,6 +1243,7 @@ def _build_leader_guide_context(
         sending_hymn_image_uri=sending_hymn_image_uri,
         profile=profile,
         client=client,
+        content=content,
     )
     ctx["is_leader_guide"] = True
 
@@ -1248,7 +1258,7 @@ def _build_leader_guide_context(
             logger.warning("Pillow not installed — cannot convert preface image")
 
     ctx["preface_image_uri"] = preface_image_uri
-    ctx["great_thanksgiving_preface"] = GREAT_THANKSGIVING_PREFACE
+    ctx["great_thanksgiving_preface"] = resolve_text("elw.great_thanksgiving_preface", content)
     ctx["kyrie_image_uri"] = (
         _safe_setting_image_uri("kyrie", setting, client) if config.include_kyrie else ""
     )
@@ -1265,6 +1275,7 @@ def generate_leader_guide(
     client: SundaysClient | None = None,
     keep_intermediates: bool = False,
     profile: CongregationProfile | None = None,
+    content: ContentContext | None = None,
 ) -> Path:
     """Generate the Leader Guide PDF — large print with sung notation.
 
@@ -1284,7 +1295,8 @@ def generate_leader_guide(
     Returns:
         Path to the saved PDF file.
     """
-    resolve_text_defaults(config, day)
+    content = content or ContentContext()
+    resolve_text_defaults(config, day, content)
     if profile is None:
         profile = load_profile()
     paper = get_paper_preset(profile.paper_size)
@@ -1294,7 +1306,7 @@ def generate_leader_guide(
         sermon_hymn_image_uri=_fetch_hymn_image_uri(client, config.sermon_hymn),
         communion_hymn_image_uri=_fetch_hymn_image_uri(client, config.communion_hymn),
         sending_hymn_image_uri=_fetch_hymn_image_uri(client, config.sending_hymn),
-        profile=profile, client=client,
+        profile=profile, client=client, content=content,
     )
     return _render_large_format(
         ctx, output_path, keep_intermediates=keep_intermediates,
@@ -1351,14 +1363,18 @@ def generate_pulpit_prayers(
     *,
     keep_intermediates: bool = False,
     page_size: str = "Letter",
+    content: ContentContext | None = None,
 ) -> Path:
     """Generate the Pulpit Prayers PDF via HTML + Playwright."""
     if not day.prayers_html:
         raise ContentNotFoundError("DayContent has no prayers_html.")
 
+    content = content or ContentContext()
     env = setup_jinja_env()
     template = env.get_template("pulpit_prayers.html")
-    ctx = _build_pulpit_prayers_context(day, date_display, creed_type, creed_page_num)
+    ctx = _build_pulpit_prayers_context(
+        day, date_display, creed_type, creed_page_num, content
+    )
     html_string = template.render(**ctx)
 
     output_path = Path(output_path).with_suffix(".pdf")
@@ -1393,6 +1409,7 @@ def generate_bulletin(
     keep_intermediates: bool = False,
     on_progress: Optional[Callable[[str], None]] = None,
     profile: CongregationProfile | None = None,
+    content: ContentContext | None = None,
 ) -> tuple[Path, int | None]:
     """Generate the standard Bulletin for Congregation as a booklet PDF.
 
@@ -1412,7 +1429,8 @@ def generate_bulletin(
     Returns:
         Tuple of (path to booklet PDF, creed page number or None).
     """
-    resolve_text_defaults(config, day)
+    content = content or ContentContext()
+    resolve_text_defaults(config, day, content)
     if profile is None:
         profile = load_profile()
     paper = get_paper_preset(profile.paper_size)
@@ -1423,7 +1441,7 @@ def generate_bulletin(
     template = env.get_template("bulletin.html")
     ctx = _build_bulletin_context(
         day, config, season, communion_hymn_image_uri=communion_hymn_image_uri,
-        profile=profile, client=client,
+        profile=profile, client=client, content=content,
     )
     html_string = template.render(**ctx)
 
