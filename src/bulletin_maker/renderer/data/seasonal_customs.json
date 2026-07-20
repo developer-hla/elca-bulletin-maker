@@ -1,0 +1,79 @@
+{
+  "advent": {
+    "has_kyrie": true,
+    "canticle": "glory_to_god",
+    "creed_default": "apostles",
+    "eucharistic_form": "short",
+    "has_memorial_acclamation": false,
+    "preface": "advent",
+    "show_confession": true,
+    "show_greeting": true,
+    "show_nunc_dimittis": true
+  },
+  "christmas": {
+    "has_kyrie": true,
+    "canticle": "this_is_the_feast",
+    "creed_default": "apostles",
+    "eucharistic_form": "extended",
+    "has_memorial_acclamation": true,
+    "preface": "christmas",
+    "show_confession": true,
+    "show_greeting": true,
+    "show_nunc_dimittis": true
+  },
+  "epiphany": {
+    "has_kyrie": true,
+    "canticle": "this_is_the_feast",
+    "creed_default": "apostles",
+    "eucharistic_form": "extended",
+    "has_memorial_acclamation": true,
+    "preface": "epiphany",
+    "show_confession": true,
+    "show_greeting": true,
+    "show_nunc_dimittis": true
+  },
+  "lent": {
+    "has_kyrie": false,
+    "canticle": "none",
+    "creed_default": "nicene",
+    "eucharistic_form": "extended",
+    "has_memorial_acclamation": true,
+    "preface": "lent",
+    "show_confession": true,
+    "show_greeting": true,
+    "show_nunc_dimittis": true
+  },
+  "easter": {
+    "has_kyrie": true,
+    "canticle": "this_is_the_feast",
+    "creed_default": "nicene",
+    "eucharistic_form": "extended",
+    "has_memorial_acclamation": true,
+    "preface": "easter",
+    "show_confession": true,
+    "show_greeting": true,
+    "show_nunc_dimittis": true
+  },
+  "pentecost": {
+    "has_kyrie": true,
+    "canticle": "glory_to_god",
+    "creed_default": "apostles",
+    "eucharistic_form": "short",
+    "has_memorial_acclamation": false,
+    "preface": "sundays",
+    "show_confession": true,
+    "show_greeting": true,
+    "show_nunc_dimittis": true
+  },
+  "christmas_eve": {
+    "has_kyrie": false,
+    "canticle": "none",
+    "creed_default": "apostles",
+    "eucharistic_form": "short",
+    "has_memorial_acclamation": false,
+    "preface": "christmas",
+    "show_confession": false,
+    "show_greeting": true,
+    "show_nunc_dimittis": true
+  }
+}

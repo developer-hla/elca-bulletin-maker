@@ -7,16 +7,14 @@ which forms are used, etc.).
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 from typing import TYPE_CHECKING
 
-from bulletin_maker.sns.models import (
-    CANTICLE_GLORY_TO_GOD,
-    CANTICLE_NONE,
-    CANTICLE_THIS_IS_THE_FEAST,
-)
+from bulletin_maker.exceptions import BulletinError
 
 if TYPE_CHECKING:
     from bulletin_maker.core.models import ServiceConfig
@@ -112,66 +110,45 @@ class SeasonalConfig:
     show_nunc_dimittis: bool = True  # True always (user can override)
 
 
-# Season -> config mapping (from bulletin-format-notes.md)
-_SEASON_CONFIGS = {
-    LiturgicalSeason.ADVENT: SeasonalConfig(
-        has_kyrie=True,
-        canticle=CANTICLE_GLORY_TO_GOD,
-        creed_default="apostles",
-        eucharistic_form="short",
-        has_memorial_acclamation=False,
-        preface=PrefaceType.ADVENT,
-    ),
-    LiturgicalSeason.CHRISTMAS: SeasonalConfig(
-        has_kyrie=True,
-        canticle=CANTICLE_THIS_IS_THE_FEAST,
-        creed_default="apostles",
-        eucharistic_form="extended",
-        has_memorial_acclamation=True,
-        preface=PrefaceType.CHRISTMAS,
-    ),
-    LiturgicalSeason.EPIPHANY: SeasonalConfig(
-        has_kyrie=True,
-        canticle=CANTICLE_THIS_IS_THE_FEAST,
-        creed_default="apostles",
-        eucharistic_form="extended",
-        has_memorial_acclamation=True,
-        preface=PrefaceType.EPIPHANY,
-    ),
-    LiturgicalSeason.LENT: SeasonalConfig(
-        has_kyrie=False,
-        canticle=CANTICLE_NONE,
-        creed_default="nicene",
-        eucharistic_form="extended",
-        has_memorial_acclamation=True,
-        preface=PrefaceType.LENT,
-    ),
-    LiturgicalSeason.EASTER: SeasonalConfig(
-        has_kyrie=True,
-        canticle=CANTICLE_THIS_IS_THE_FEAST,
-        creed_default="nicene",
-        eucharistic_form="extended",
-        has_memorial_acclamation=True,
-        preface=PrefaceType.EASTER,
-    ),
-    LiturgicalSeason.PENTECOST: SeasonalConfig(
-        has_kyrie=True,
-        canticle=CANTICLE_GLORY_TO_GOD,
-        creed_default="apostles",
-        eucharistic_form="short",
-        has_memorial_acclamation=False,
-        preface=PrefaceType.SUNDAYS,
-    ),
-    LiturgicalSeason.CHRISTMAS_EVE: SeasonalConfig(
-        has_kyrie=False,
-        canticle=CANTICLE_NONE,
-        creed_default="apostles",
-        eucharistic_form="short",
-        has_memorial_acclamation=False,
-        preface=PrefaceType.CHRISTMAS,
-        show_confession=False,
-    ),
-}
+# Season house-customs data (LWS-0d): per-congregation policy, bundled as
+# data rather than hardcoded so a future per-church override (seasonal_rules,
+# see web/seasonal_rules.py) has something to override. Values here must
+# stay identical to the pre-LWS-0d hardcoded dict — this is an
+# output-neutral refactor, not a policy change.
+_SEASONAL_CUSTOMS_FILE = Path(__file__).resolve().parent / "data" / "seasonal_customs.json"
+
+
+def _load_seasonal_customs(path: Path) -> dict[LiturgicalSeason, SeasonalConfig]:
+    """Parse the bundled seasonal-customs data file into SeasonalConfig objects.
+
+    Fails fast (BulletinError) if any LiturgicalSeason member has no entry
+    in the data file.
+    """
+    with path.open(encoding="utf-8") as handle:
+        raw = json.load(handle)
+
+    customs: dict[LiturgicalSeason, SeasonalConfig] = {}
+    for season in LiturgicalSeason:
+        if season.value not in raw:
+            raise BulletinError(
+                f"Missing seasonal customs for season {season.value!r} in {path}"
+            )
+        entry = raw[season.value]
+        customs[season] = SeasonalConfig(
+            has_kyrie=entry["has_kyrie"],
+            canticle=entry["canticle"],
+            creed_default=entry["creed_default"],
+            eucharistic_form=entry["eucharistic_form"],
+            has_memorial_acclamation=entry["has_memorial_acclamation"],
+            preface=PrefaceType(entry["preface"]),
+            show_confession=entry["show_confession"],
+            show_greeting=entry["show_greeting"],
+            show_nunc_dimittis=entry["show_nunc_dimittis"],
+        )
+    return customs
+
+
+_SEASONAL_CUSTOMS = _load_seasonal_customs(_SEASONAL_CUSTOMS_FILE)
 
 
 def detect_season(title: str) -> LiturgicalSeason:
@@ -222,7 +199,7 @@ def get_preface_options() -> dict[str, list[dict[str, str]]]:
 
 def get_seasonal_config(season: LiturgicalSeason) -> SeasonalConfig:
     """Get the liturgical configuration for a season."""
-    return _SEASON_CONFIGS[season]
+    return _SEASONAL_CUSTOMS[season]
 
 
 def fill_seasonal_defaults(config: ServiceConfig, season: LiturgicalSeason) -> None:
@@ -231,7 +208,7 @@ def fill_seasonal_defaults(config: ServiceConfig, season: LiturgicalSeason) -> N
     Mutates ``config`` in place.  Only touches fields that are None;
     values already set by the user/wizard are left unchanged.
     """
-    seasonal = _SEASON_CONFIGS[season]
+    seasonal = _SEASONAL_CUSTOMS[season]
 
     if config.creed_type is None:
         config.creed_type = seasonal.creed_default
