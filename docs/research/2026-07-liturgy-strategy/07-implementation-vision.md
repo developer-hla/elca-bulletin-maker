@@ -124,6 +124,59 @@ PDF pair → owner eyeball → deliberate re-baseline recorded in the commit.
 Now: approve → LWS-0a/0b briefs. End 0c/0d: ratify parity PDFs if needed. During 2: taste pass
 on starter rites/editor. Before 6: pricing + Augsburg letter timing. Before 8: LSB ToS go/no-go.
 
+## RE-BASELINED ROADMAP — July 20, 2026 (supersedes the LWS-0..8 table below, now historical)
+
+The original LWS-0..8 table (bottom of this doc) predates three owner steers; this section is the
+current authoritative plan reconciled to what shipped and where the goals moved.
+
+### Status of the original plan
+- **Foundation LWS-0a–0d: DONE** (parity harness, rite schema, all documents render from rite data,
+  duplicate ordo deleted, seasonal customs → data).
+- **LWS-1: mostly done** (church text library, rite picker, per-service toggles). *Settings 6–10
+  deferred* — needs credentialed S&S atom verification (orchestrator task).
+- **LWS-2: rescoped** — rite editor + CRUD + export/import DONE; starter rites cut from "~10
+  cross-tradition" to **ELCA-only** (Holy Communion, Service of the Word, Morning/Evening/Night
+  Prayer + baptism module). SotW + daily offices are DRAFTS awaiting owner ELW verification.
+- **LWS-3: partial** — calendar seam + `sns`/`manual` providers DONE (LWS-3a). `rcl_local` NOT
+  built; Narrative/LCMS-1yr deferred by design (other-calendar content).
+- **LWS-4: reshaped → CS-1/CS-2** — entitlement-gated content-source layer (CS-1) + S&S pull-live
+  (CS-2) DONE; PD-text layer (`pd_text.py`) added. NET/ESV adapters dropped in favor of
+  NRSVUE-via-S&S entitlement.
+- **LWS-5 (import wizard), LWS-6 (onboarding + licensing helper), LWS-7 (announcements UI): not
+  started.** **LWS-8 (LCMS): deprioritized** (other-tradition).
+- **Added beyond the plan:** flexible calendar/rite architecture (doc 08), the copyright/PD-vs-
+  licensed layer + corrections (doc 10 + CS-1/CS-2), NRSVUE placement (doc 11), rite export/import,
+  and the known-good preservation snapshot (`docs/reference/`, tag `known-good-setup-2026-07-20`).
+
+### Governing goals (the shift)
+1. **Flexible system first** — pluggable rites + calendars, no ELCA/RCL assumptions in core.
+2. **ELCA / S&S parity for content** — go deep only where we know the domain.
+3. **Do NOT build content or decide for other traditions** — architect so others can add them.
+
+### Forward workstreams, in priority order
+**Cluster A — finish the flexibility spine (leads):**
+- **RB-1 Complete season generalization** — season identity becomes a string id carried through
+  `get_seasonal_config`/`fill_seasonal_defaults`, the rite-condition context, and the renderer's
+  season-driven atoms. RCL/Western ids == today's `LiturgicalSeason.value`s → OUTPUT-NEUTRAL (parity
+  4/4 is the gate). Unblocks non-RCL seasons (gesima/creation) existing at all. *The biggest
+  remaining flexibility gap — a half-finished loose end from LWS-3a.*
+- **RB-2 `rcl_local` calendar provider** — real RCL 3-year data (Vanderbilt-seeded owned tables) +
+  Easter computus (python-dateutil), producing `LiturgicalDay`. Proves the calendar seam with a real
+  second provider and gets ELCA calendar resolution in-house (less S&S dependency). Gate: day-names
+  + citations match S&S across the fixture set.
+
+**Cluster B — close ELCA / S&S parity:**
+- **RB-3 child-rite + section-container engine extension** — the structural capability for
+  Funeral+Committal (linked rites) and multi-section services. Parity unchanged.
+- **RB-4 author Funeral + Marriage rites** (drafts, on RB-3) — CS content model (PD scaffold +
+  entitlement pull + VAR slots), owner verifies against ELW.
+- **Owner task:** verify the SotW + daily-office DRAFTS against a physical ELW.
+
+**Parked / on-demand (architecture ready; build when chosen):** CS-2 pull-map population (map real
+atom-codes — credentialed, orchestrator); import wizard (LWS-5); licensing helper (LWS-6);
+announcements UI (LWS-7); settings 6–10. **Other-tradition content (LSB/BCP/Catholic, Narrative/
+LCMS-1yr calendars): architecture-ready, deliberately NOT built.**
+
 ## GOVERNING PRIORITY — July 20, 2026 (owner)
 
 Ordered priorities for all remaining work:
