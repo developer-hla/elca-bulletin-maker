@@ -124,6 +124,27 @@ PDF pair → owner eyeball → deliberate re-baseline recorded in the commit.
 Now: approve → LWS-0a/0b briefs. End 0c/0d: ratify parity PDFs if needed. During 2: taste pass
 on starter rites/editor. Before 6: pricing + Augsburg letter timing. Before 8: LSB ToS go/no-go.
 
+## GOVERNING PRIORITY — July 20, 2026 (owner)
+
+Ordered priorities for all remaining work:
+1. **Build a FLEXIBLE system** — this matters most. Rites and calendars as genuinely pluggable
+   extension points, no ELCA/RCL assumptions baked into core types. Architecture-flexibility work
+   outranks new content.
+2. **ELCA / Sundays & Seasons PARITY for content** — go deep only where we actually know the
+   domain (ELCA + what S&S provides). This is the content we build.
+3. **Do NOT build content or make design decisions for OTHER traditions** (LSB/BCP/Catholic/etc.)
+   — we don't know them well enough to decide for them. The flexible system must let people who DO
+   know them add them later; we don't pre-bake their choices.
+
+Reprioritized next work (flexibility-first, all serving #1 and/or #2; none building other-tradition
+content): (a) content-source registry + entitlement [flexibility + makes the PD-vs-licensed split
+from doc 10 real]; (b) complete the season generalization end-to-end (carry the open SeasonId
+through get_seasonal_config / fill_seasonal_defaults / rite conditions — currently only the
+LiturgicalDay type is opened, the rest still uses the closed enum); (c) child-rite / section-
+container engine extension [flexibility AND unblocks ELCA funeral/wedding, which S&S covers =
+parity]; (d) rcl_local provider [proves the provider model + ELCA calendar in-house]. Explicitly
+NOT: authoring LSB/BCP/Catholic rites.
+
 ## Scope decision — July 20, 2026 (owner)
 
 **CONTENT/DATA is ELCA/RCL-first; ARCHITECTURE is flexible/non-RCL-ready NOW** (owner steer,
