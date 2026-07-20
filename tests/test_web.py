@@ -10,8 +10,15 @@ from fastapi.testclient import TestClient
 
 from bulletin_maker.exceptions import AuthError
 from bulletin_maker.sns.models import DayContent, HymnLyrics, Reading
-from bulletin_maker.web import security
+from bulletin_maker.web import db, security
 from bulletin_maker.web.server import create_app
+
+TEST_DATABASE_URL = "postgresql://localhost/bulletin_maker_test"
+
+_TRUNCATE = (
+    "TRUNCATE churches, users, past_runs, sessions, auth_tokens, jobs,"
+    " artifacts, sns_cache, audit_log RESTART IDENTITY CASCADE"
+)
 
 REG = {
     "church_name": "St. Test Lutheran",
@@ -40,7 +47,12 @@ def _day() -> DayContent:
 
 @pytest.fixture(autouse=True)
 def _isolated_storage(tmp_path, monkeypatch):
-    monkeypatch.setenv("BULLETIN_DB", str(tmp_path / "app.db"))
+    monkeypatch.setenv("DATABASE_URL", TEST_DATABASE_URL)
+    db.reset_for_tests()
+    with db.connect() as conn:
+        conn.execute(_TRUNCATE)
+        conn.execute(
+            "INSERT INTO plans (plan) VALUES ('free') ON CONFLICT DO NOTHING")
     monkeypatch.setattr(security, "KEYFILE", tmp_path / "secret.key")
     monkeypatch.delenv("BULLETIN_SECRET_KEY", raising=False)
     monkeypatch.delenv("BULLETIN_REGISTRATION_CODE", raising=False)
@@ -347,7 +359,6 @@ class TestChurchIsolation:
 class TestHostedRateLimit:
 
     def test_login_rate_limited_when_hosted(self, monkeypatch, tmp_path):
-        monkeypatch.setenv("BULLETIN_DB", str(tmp_path / "rl.db"))
         monkeypatch.setenv("BULLETIN_HOSTED", "1")
         with TestClient(create_app()) as tc:
             for _ in range(10):

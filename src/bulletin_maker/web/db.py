@@ -1,11 +1,16 @@
-"""SQLite store for churches, users, and church-scoped past runs.
+"""PostgreSQL store for churches, users, and church-scoped past runs.
 
-One file at ~/.bulletin-maker/app.db (override with $BULLETIN_DB for
-tests and hosted volumes). Plain sqlite3, WAL mode, no ORM.
+One database at $DATABASE_URL (default postgresql://localhost/bulletin_maker).
+Plain psycopg 3, no ORM. Schema lives in migrations/*.sql and is applied
+lazily on first connection per database URL.
 
 The church row owns everything congregation-scoped: the profile (JSON,
 same fields as CongregationProfile), the encrypted S&S credential, and
 the invite code members use to join.
+
+JSON columns are jsonb. psycopg returns them as parsed Python objects, so
+profile_json is re-serialized to a JSON string on read to preserve the
+contract callers rely on (server.py does json.loads(church["profile_json"])).
 """
 
 from __future__ import annotations
@@ -13,95 +18,114 @@ from __future__ import annotations
 import json
 import os
 import secrets
-import sqlite3
 import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS churches (
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    invite_code TEXT NOT NULL UNIQUE,
-    profile_json TEXT NOT NULL,
-    sns_username TEXT NOT NULL DEFAULT '',
-    sns_password_enc TEXT NOT NULL DEFAULT '',
-    created_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY,
-    church_id INTEGER NOT NULL REFERENCES churches(id),
-    email TEXT NOT NULL UNIQUE COLLATE NOCASE,
-    password_hash TEXT NOT NULL,
-    display_name TEXT NOT NULL DEFAULT '',
-    role TEXT NOT NULL DEFAULT 'member',
-    created_at TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS past_runs (
-    id TEXT NOT NULL,
-    church_id INTEGER NOT NULL REFERENCES churches(id),
-    service_date TEXT NOT NULL,
-    timestamp TEXT NOT NULL,
-    metadata_json TEXT NOT NULL,
-    form_data_json TEXT NOT NULL,
-    PRIMARY KEY (church_id, id)
-);
-"""
+import psycopg
+from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
 
+DEFAULT_DATABASE_URL = "postgresql://localhost/bulletin_maker"
 MAX_PAST_RUNS = 20
+MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
 
 _lock = threading.Lock()
+_migrated_urls: set = set()
 
 
-def db_path() -> Path:
-    override = os.environ.get("BULLETIN_DB")
-    if override:
-        return Path(override)
-    return Path.home() / ".bulletin-maker" / "app.db"
+def database_url() -> str:
+    return os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
 
 
-def connect() -> sqlite3.Connection:
-    path = db_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(path)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    conn.executescript(_SCHEMA)
-    return conn
+def _connect_raw() -> psycopg.Connection:
+    return psycopg.connect(database_url(), row_factory=dict_row)
 
 
-def _now() -> str:
-    return datetime.now().isoformat()
+def connect() -> psycopg.Connection:
+    _ensure_migrated()
+    return _connect_raw()
+
+
+# ── Migrations ───────────────────────────────────────────────────────
+
+def _migration_files() -> list:
+    files = sorted(MIGRATIONS_DIR.glob("*.sql"))
+    return [(int(f.name.split("_", 1)[0]), f) for f in files]
+
+
+def run_migrations() -> None:
+    with _connect_raw() as conn:
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS schema_migrations ("
+            " version int PRIMARY KEY,"
+            " applied_at timestamptz NOT NULL DEFAULT now())")
+        conn.commit()
+        rows = conn.execute("SELECT version FROM schema_migrations").fetchall()
+        applied = {r["version"] for r in rows}
+        for version, path in _migration_files():
+            if version in applied:
+                continue
+            sql = path.read_text()
+            with conn.transaction():
+                conn.execute(sql)
+                conn.execute(
+                    "INSERT INTO schema_migrations (version) VALUES (%s)",
+                    (version,))
+
+
+def _ensure_migrated() -> None:
+    url = database_url()
+    if url in _migrated_urls:
+        return
+    with _lock:
+        if url in _migrated_urls:
+            return
+        run_migrations()
+        _migrated_urls.add(url)
+
+
+def reset_for_tests() -> None:
+    """Force the next connection to re-check/apply migrations (test fixture)."""
+    _migrated_urls.clear()
+
+
+# ── Row shaping ──────────────────────────────────────────────────────
+
+def _church_dict(row: Optional[dict]) -> Optional[dict]:
+    if row is None:
+        return None
+    row["profile_json"] = json.dumps(row["profile_json"])
+    return row
 
 
 # ── Churches ─────────────────────────────────────────────────────────
 
 def church_count() -> int:
-    with _lock, connect() as conn:
-        return conn.execute("SELECT COUNT(*) FROM churches").fetchone()[0]
+    with connect() as conn:
+        return conn.execute("SELECT COUNT(*) AS n FROM churches").fetchone()["n"]
 
 
 def create_church(name: str, profile: dict) -> dict:
     invite_code = secrets.token_urlsafe(9)
-    with _lock, connect() as conn:
-        cur = conn.execute(
-            "INSERT INTO churches (name, invite_code, profile_json, created_at)"
-            " VALUES (?, ?, ?, ?)",
-            (name, invite_code, json.dumps(profile), _now()),
-        )
-        return get_church(cur.lastrowid, conn)
+    with connect() as conn:
+        row = conn.execute(
+            "INSERT INTO churches (name, invite_code, profile_json)"
+            " VALUES (%s, %s, %s) RETURNING *",
+            (name, invite_code, Jsonb(profile)),
+        ).fetchone()
+        return _church_dict(row)
 
 
-def get_church(church_id: int, conn: Optional[sqlite3.Connection] = None) -> Optional[dict]:
+def get_church(church_id: int, conn: Optional[psycopg.Connection] = None) -> Optional[dict]:
     own = conn is None
     if own:
         conn = connect()
     try:
         row = conn.execute(
-            "SELECT * FROM churches WHERE id = ?", (church_id,)).fetchone()
-        return dict(row) if row else None
+            "SELECT * FROM churches WHERE id = %s", (church_id,)).fetchone()
+        return _church_dict(row)
     finally:
         if own:
             conn.close()
@@ -110,23 +134,23 @@ def get_church(church_id: int, conn: Optional[sqlite3.Connection] = None) -> Opt
 def get_church_by_invite(invite_code: str) -> Optional[dict]:
     with connect() as conn:
         row = conn.execute(
-            "SELECT * FROM churches WHERE invite_code = ?",
+            "SELECT * FROM churches WHERE invite_code = %s",
             (invite_code,)).fetchone()
-        return dict(row) if row else None
+        return _church_dict(row)
 
 
 def update_church_profile(church_id: int, profile: dict) -> None:
-    with _lock, connect() as conn:
+    with connect() as conn:
         conn.execute(
-            "UPDATE churches SET profile_json = ? WHERE id = ?",
-            (json.dumps(profile), church_id))
+            "UPDATE churches SET profile_json = %s WHERE id = %s",
+            (Jsonb(profile), church_id))
 
 
 def set_sns_link(church_id: int, username: str, password_enc: str) -> None:
-    with _lock, connect() as conn:
+    with connect() as conn:
         conn.execute(
-            "UPDATE churches SET sns_username = ?, sns_password_enc = ?"
-            " WHERE id = ?",
+            "UPDATE churches SET sns_username = %s, sns_password_enc = %s"
+            " WHERE id = %s",
             (username, password_enc, church_id))
 
 
@@ -134,31 +158,26 @@ def set_sns_link(church_id: int, username: str, password_enc: str) -> None:
 
 def create_user(church_id: int, email: str, password_hash: str,
                 display_name: str, role: str = "member") -> dict:
-    with _lock, connect() as conn:
-        cur = conn.execute(
-            "INSERT INTO users (church_id, email, password_hash,"
-            " display_name, role, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            (church_id, email.strip(), password_hash, display_name,
-             role, _now()),
-        )
+    with connect() as conn:
         row = conn.execute(
-            "SELECT * FROM users WHERE id = ?", (cur.lastrowid,)).fetchone()
-        return dict(row)
+            "INSERT INTO users (church_id, email, password_hash,"
+            " display_name, role) VALUES (%s, %s, %s, %s, %s) RETURNING *",
+            (church_id, email.strip(), password_hash, display_name, role),
+        ).fetchone()
+        return row
 
 
 def get_user_by_email(email: str) -> Optional[dict]:
     with connect() as conn:
-        row = conn.execute(
-            "SELECT * FROM users WHERE email = ?",
+        return conn.execute(
+            "SELECT * FROM users WHERE email = %s",
             (email.strip(),)).fetchone()
-        return dict(row) if row else None
 
 
 def get_user(user_id: int) -> Optional[dict]:
     with connect() as conn:
-        row = conn.execute(
-            "SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-        return dict(row) if row else None
+        return conn.execute(
+            "SELECT * FROM users WHERE id = %s", (user_id,)).fetchone()
 
 
 # ── Past runs (church-scoped) ────────────────────────────────────────
@@ -167,20 +186,20 @@ def save_past_run(church_id: int, form_data: dict, metadata: dict) -> str:
     now = datetime.now()
     run_id = now.strftime("%Y%m%d%H%M%S") + secrets.token_hex(2)
     service_date = form_data.get("date", "")
-    with _lock, connect() as conn:
+    with connect() as conn:
         conn.execute(
-            "DELETE FROM past_runs WHERE church_id = ? AND service_date = ?",
+            "DELETE FROM past_runs WHERE church_id = %s AND service_date = %s",
             (church_id, service_date))
         conn.execute(
             "INSERT INTO past_runs (id, church_id, service_date, timestamp,"
-            " metadata_json, form_data_json) VALUES (?, ?, ?, ?, ?, ?)",
-            (run_id, church_id, service_date, now.isoformat(),
-             json.dumps(metadata), json.dumps(form_data)),
+            " metadata_json, form_data_json) VALUES (%s, %s, %s, %s, %s, %s)",
+            (run_id, church_id, service_date, now,
+             Jsonb(metadata), Jsonb(form_data)),
         )
         conn.execute(
-            "DELETE FROM past_runs WHERE church_id = ? AND id NOT IN ("
-            " SELECT id FROM past_runs WHERE church_id = ?"
-            " ORDER BY timestamp DESC LIMIT ?)",
+            "DELETE FROM past_runs WHERE church_id = %s AND id NOT IN ("
+            " SELECT id FROM past_runs WHERE church_id = %s"
+            " ORDER BY timestamp DESC LIMIT %s)",
             (church_id, church_id, MAX_PAST_RUNS),
         )
     return run_id
@@ -190,14 +209,14 @@ def list_past_runs(church_id: int) -> list:
     with connect() as conn:
         rows = conn.execute(
             "SELECT id, timestamp, service_date, metadata_json FROM past_runs"
-            " WHERE church_id = ? ORDER BY timestamp DESC",
+            " WHERE church_id = %s ORDER BY timestamp DESC",
             (church_id,)).fetchall()
     return [
         {
             "id": r["id"],
-            "timestamp": r["timestamp"],
+            "timestamp": r["timestamp"].isoformat(),
             "date": r["service_date"],
-            "metadata": json.loads(r["metadata_json"]),
+            "metadata": r["metadata_json"],
         }
         for r in rows
     ]
@@ -206,21 +225,21 @@ def list_past_runs(church_id: int) -> list:
 def get_past_run(church_id: int, run_id: str) -> Optional[dict]:
     with connect() as conn:
         row = conn.execute(
-            "SELECT * FROM past_runs WHERE church_id = ? AND id = ?",
+            "SELECT * FROM past_runs WHERE church_id = %s AND id = %s",
             (church_id, run_id)).fetchone()
     if row is None:
         return None
     return {
         "id": row["id"],
-        "timestamp": row["timestamp"],
-        "metadata": json.loads(row["metadata_json"]),
-        "form_data": json.loads(row["form_data_json"]),
+        "timestamp": row["timestamp"].isoformat(),
+        "metadata": row["metadata_json"],
+        "form_data": row["form_data_json"],
     }
 
 
 def delete_past_run(church_id: int, run_id: str) -> bool:
-    with _lock, connect() as conn:
+    with connect() as conn:
         cur = conn.execute(
-            "DELETE FROM past_runs WHERE church_id = ? AND id = ?",
+            "DELETE FROM past_runs WHERE church_id = %s AND id = %s",
             (church_id, run_id))
         return cur.rowcount > 0

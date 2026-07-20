@@ -12,14 +12,21 @@ the Sundays & Seasons terms-of-use question).
 ## Persistence is now REQUIRED
 
 Since the accounts rework, the app stores accounts, church profiles,
-and encrypted S&S links in SQLite (`$BULLETIN_DB`, default
-`~/.bulletin-maker/app.db`). A scale-to-zero container with no volume
-loses everything on restart. Two workable shapes:
+and encrypted S&S links in PostgreSQL (`$DATABASE_URL`, default
+`postgresql://localhost/bulletin_maker`). The schema is applied
+automatically from `migrations/*.sql` on first connection. A container
+with no database behind it loses everything on restart. Point
+`DATABASE_URL` at a managed Postgres:
 
-1. **Cloud Run + a mounted volume** (GCS FUSE volume mount or a
-   Filestore mount) with `BULLETIN_DB` pointed into it, or
-2. any small always-on host (the free-tier VM class) where the disk
-   simply persists.
+1. **A managed Postgres** (Neon, Supabase, Cloud SQL) with `DATABASE_URL`
+   set to its connection string — the connection survives container
+   restarts and scale-to-zero, or
+2. any small always-on host running its own Postgres.
+
+A serverless Postgres such as **Neon** pairs well with a scale-to-zero
+container: both idle to nothing and the data still persists. The database
+needs the `citext` extension (`CREATE EXTENSION IF NOT EXISTS citext;`);
+migrations create everything else.
 
 Set `BULLETIN_SECRET_KEY` explicitly in either case — if the key is
 auto-generated inside an ephemeral container, every restart invalidates
@@ -33,23 +40,24 @@ gcloud run deploy bulletin-maker \
   --region us-central1 \
   --allow-unauthenticated \
   --memory 1Gi \
-  --add-volume name=data,type=cloud-storage,bucket=YOUR_BUCKET \
-  --add-volume-mount volume=data,mount-path=/data \
-  --set-env-vars BULLETIN_HOSTED=1,BULLETIN_DB=/data/app.db,BULLETIN_SECRET_KEY=YOUR_GENERATED_KEY
+  --set-env-vars BULLETIN_HOSTED=1,DATABASE_URL=YOUR_POSTGRES_URL,BULLETIN_SECRET_KEY=YOUR_GENERATED_KEY
 ```
 
 - Memory: 1 GiB — Chromium needs headroom; 512 MiB is too tight.
 - Generate the key once with:
   `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
   and keep it in a secret manager, not the shell history.
-- SQLite over GCS FUSE is fine at one-church scale (single writer,
-  weekly usage); revisit if multiple congregations join.
+- Put the Postgres connection string (`DATABASE_URL`) in a secret manager
+  too — it carries the database password. Neon's pooled connection string
+  works well here at one-church scale.
 
 ## Hugging Face Spaces (free CPU tier, no card)
 
 Docker-type Space with the root Dockerfile; set the app port to 8080
-and add a persistent storage upgrade (free Spaces have ephemeral disks —
-without persistent storage this platform only suits demos).
+and point `DATABASE_URL` at an external managed Postgres (e.g. Neon).
+Free Spaces have ephemeral disks, so a local database would not survive
+restarts — an external `DATABASE_URL` is what makes the platform usable
+beyond a demo.
 
 ## Environment variables
 
@@ -57,7 +65,7 @@ without persistent storage this platform only suits demos).
 |---|---|
 | `PORT` | Listen port (injected by Cloud Run; defaults to 8080) |
 | `BULLETIN_HOSTED` | Set to `1` over HTTPS — Secure cookies + auth rate limiting |
-| `BULLETIN_DB` | SQLite path; point at the persistent volume |
+| `DATABASE_URL` | PostgreSQL connection string; defaults to `postgresql://localhost/bulletin_maker` |
 | `BULLETIN_SECRET_KEY` | Fernet key for the S&S credential vault — must stay stable |
 | `BULLETIN_REGISTRATION_CODE` | When set, new churches can register with this code; unset = closed after the first church |
 | `BULLETIN_PROFILE` | Optional TOML seed profile for the first church (defaults to the bundled Ascension profile) |
