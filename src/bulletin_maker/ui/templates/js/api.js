@@ -130,6 +130,27 @@ export var api = (function() {
             return req("POST", "/api/rites/" + encodeURIComponent(riteId) +
                        "/preview", context);
         },
+        export_rite_url: function(riteId) {
+            return "/api/rites/" + encodeURIComponent(riteId) + "/export";
+        },
+        import_rite: async function(file) {
+            var fd = new FormData();
+            fd.append("file", file, file.name);
+            var resp;
+            try {
+                resp = await fetch("/api/rites/import", { method: "POST", body: fd });
+            } catch (e) {
+                return { success: false, error: "Import failed.", error_type: "network" };
+            }
+            var data = null;
+            try { data = await resp.json(); } catch (e) {}
+            if (!resp.ok) {
+                var detail = (data && data.detail) || {};
+                return { success: false, error: detail.error || "Import failed.",
+                         error_type: detail.error_type || "internal" };
+            }
+            return data;
+        },
 
         // Operator console (service-owner only)
         operator_churches: function() { return req("GET", "/api/operator/churches"); },

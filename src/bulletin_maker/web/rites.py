@@ -157,6 +157,39 @@ def fork_rite(
     return Rite.from_dict(payload)
 
 
+def prepare_import(payload: Dict[str, Any], church_id: int) -> Rite:
+    """Return a new, unsaved church-owned Rite parsed from an imported file.
+
+    Mirrors :func:`fork_rite`'s ownership reset: a fresh ``id``, ``church_id``
+    set to the caller's church, and ``version`` 1, so an import can never
+    overwrite an existing row or claim another church's id. ``base_rite_id``
+    is dropped (the source id may belong to another church, or to no
+    persisted row at all — a bundled library file has no row to link to), so
+    it is always ``None`` on import, same as a library fork. Raises
+    :class:`bulletin_maker.core.rite.RiteSchemaError` if ``payload`` is
+    structurally invalid; the caller runs ``validate_rite`` afterward.
+    """
+    payload = dict(payload)
+    payload["id"] = "rite_" + uuid.uuid4().hex
+    payload["church_id"] = church_id
+    payload["version"] = 1
+    payload["base_rite_id"] = None
+    return Rite.from_dict(payload)
+
+
+def import_name_collides(name: str, occasion: str, church_id: int) -> bool:
+    """Whether ``church_id`` already owns a rite with this ``name``/``occasion``.
+
+    Mirrors the DB's uniqueness rule (``COALESCE(church_id, 0), occasion,
+    name``) so an import can rename before it collides at insert time.
+    """
+    return any(
+        r.name == name and r.occasion == occasion
+        for r in list_rites(church_id)
+        if r.church_id == church_id
+    )
+
+
 def visible_block_ids(rite: Rite, context: Dict[str, Any]) -> List[str]:
     """Block ids kept for a given ``{season, feasts, toggles}`` context.
 

@@ -1618,6 +1618,12 @@ button.text-panel-header:focus-visible {
 
 /* ── Rite editor (LWS-2) ────────────────────────────────────────────── */
 
+.rite-editor-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
 .rite-row {
     display: flex;
     align-items: center;

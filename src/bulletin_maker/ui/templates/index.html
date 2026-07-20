@@ -683,6 +683,10 @@
                     the starter rites themselves are read-only. This edits
                     structure and text only; page layout and fonts are fixed.
                 </p>
+                <div class="rite-editor-toolbar">
+                    <button type="button" class="btn secondary" id="rite-import-btn">Import Rite…</button>
+                    <input type="file" id="rite-import-input" accept="application/json" hidden>
+                </div>
                 <div id="rite-editor-error" class="error-msg" hidden></div>
                 <div id="rite-list-spinner" class="spinner" hidden>
                     <div class="spinner-ring"></div><span>Loading rites...</span>

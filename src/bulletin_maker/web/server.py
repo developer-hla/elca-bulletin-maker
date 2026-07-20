@@ -17,6 +17,7 @@ import io
 import json
 import logging
 import os
+import re
 import secrets
 import shutil
 import tempfile
@@ -824,6 +825,64 @@ def create_app() -> FastAPI:
             for b in rite.blocks
         ]
         return {"success": True, "blocks": blocks}
+
+    def _rite_export_filename(name: str) -> str:
+        slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+        return f"{slug or 'rite'}.json"
+
+    @app.get("/api/rites/{rite_id}/export")
+    def export_rite(rite_id: str, session: Session = Depends(session_dep)):
+        require_user(session)
+        rite = _readable_rite(rite_id, session)
+        body = json.dumps(rite.to_dict(), indent=2).encode("utf-8")
+        filename = _rite_export_filename(rite.name)
+        return Response(
+            content=body,
+            media_type="application/json",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
+    async def _import_upload_bytes(request: Request) -> bytes:
+        """Read the uploaded rite from either a multipart file or a raw body."""
+        content_type = request.headers.get("content-type", "")
+        if content_type.startswith("multipart/form-data"):
+            form = await request.form()
+            upload = form.get("file")
+            if upload is None:
+                raise _validation("No file was uploaded.")
+            return await upload.read()
+        return await request.body()
+
+    @app.post("/api/rites/import")
+    async def import_rite(request: Request,
+                          session: Session = Depends(session_dep)):
+        require_admin(session)
+        raw = await _import_upload_bytes(request)
+        try:
+            payload = json.loads(raw)
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            raise _validation(f"That file isn't valid JSON: {e}")
+        if not isinstance(payload, dict):
+            raise _validation("That file isn't a rite (expected a JSON object).")
+
+        church_id = session.church_id
+        try:
+            rite = rites.prepare_import(payload, church_id)
+        except RiteError as e:
+            raise _validation(f"This file isn't a valid rite: {e}")
+        try:
+            validate_rite(rite, modules=_known_modules(church_id))
+        except RiteValidationError as e:
+            raise _validation("This rite has errors: " + "; ".join(e.errors))
+
+        if rites.import_name_collides(rite.name, rite.occasion, church_id):
+            payload = dict(payload)
+            payload["name"] = rite.name + " (imported)"
+            rite = rites.prepare_import(payload, church_id)
+
+        saved = rites.save_rite(rite)
+        return {"success": True, "rite": saved.to_dict()}
 
     # ── Day content ───────────────────────────────────────────────────
 

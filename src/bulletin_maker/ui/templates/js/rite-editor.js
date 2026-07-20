@@ -59,8 +59,26 @@ function riteRow(rite, isLibrary) {
         actions.appendChild(button("Delete", "btn-link",
             function() { deleteRite(rite); }));
     }
+    // A church may export its own rites AND the read-only starter rites —
+    // a library export is a starting file for a new church-owned copy.
+    actions.appendChild(button("Export", "btn-link",
+        function() { exportRite(rite.id); }));
     row.appendChild(actions);
     return row;
+}
+
+function exportRite(riteId) {
+    window.location.href = api.export_rite_url(riteId);
+}
+
+async function importRiteFile(file) {
+    hideError($("#rite-editor-error"));
+    var result = await api.import_rite(file);
+    if (!result.success) {
+        showError($("#rite-editor-error"), result.error || "Could not import that rite.");
+        return;
+    }
+    await loadRiteList();
 }
 
 function button(label, cls, onClick) {
@@ -539,6 +557,14 @@ export function setupRiteEditor() {
     }
     $("#rite-editor-back-btn").addEventListener("click", function() {
         showRiteEditorPanel(false);
+    });
+    $("#rite-import-btn").addEventListener("click", function() {
+        $("#rite-import-input").click();
+    });
+    $("#rite-import-input").addEventListener("change", function(e) {
+        var file = e.target.files[0];
+        e.target.value = ""; // allow re-selecting the same file next time
+        if (file) importRiteFile(file);
     });
     $("#rite-cancel-btn").addEventListener("click", function() {
         hide($("#rite-edit-card"));
