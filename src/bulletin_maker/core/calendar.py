@@ -54,11 +54,11 @@ fighting the type instead of using it:
   ``renderer.season.LiturgicalSeason`` is a closed, 7-value Western/RCL
   enum. Locking ``LiturgicalDay.season`` to that type would force every
   future calendar to lie in that vocabulary. Instead ``season`` is a
-  :class:`SeasonId` — an open ``(id, label)`` pair a provider defines for
-  itself — so Roman Ordinary Time counted forward, LCMS's Gesima Sundays,
-  Narrative's own season names, or manual's "no season at all" can all be
-  expressed without changing this type. The ``sns`` provider is
-  nonetheless *constrained*, by its own contract, to always set
+  :class:`SeasonId` — an open ``(id, label, color)`` triple a provider
+  defines for itself — so Roman Ordinary Time counted forward, LCMS's
+  Gesima Sundays, Narrative's own season names, or manual's "no season at
+  all" can all be expressed without changing this type. The ``sns``
+  provider is nonetheless *constrained*, by its own contract, to always set
   ``season.id`` to one of today's ``LiturgicalSeason`` values — that's
   what keeps output byte-identical (the hard gate for this workstream).
   :func:`liturgical_season_of` recovers the closed enum from a
@@ -120,7 +120,9 @@ class SeasonId:
 
     ``id`` is the provider's own season name; ``label`` is an optional
     human-readable form when it differs from ``id`` (providers whose id
-    already reads naturally, like "advent", can leave it unset).
+    already reads naturally, like "advent", can leave it unset). ``color``
+    is the paraments color / UI accent for the season, when the provider
+    has one to give (neither provider in this workstream populates it).
 
     Use :meth:`of` to normalize a season value of unknown shape (another
     ``SeasonId``, a ``renderer.season.LiturgicalSeason`` member, or a raw
@@ -130,6 +132,7 @@ class SeasonId:
 
     id: str
     label: Optional[str] = None
+    color: Optional[str] = None
 
     @classmethod
     def of(cls, value: Union["SeasonId", LiturgicalSeason, str]) -> "SeasonId":
@@ -170,20 +173,21 @@ def liturgical_season_of(day: "LiturgicalDay") -> LiturgicalSeason:
 class LiturgicalDay:
     """Provider-neutral answer to "what is this date, liturgically".
 
-    ``color`` and ``cycles`` are carried for forward compatibility with
-    LWS-3b (rcl_local/narrative/lcms_1yr need to report a paraments color
-    and one or more lectionary cycle positions); neither provider in this
-    workstream populates them. ``overlays`` is the per-week-override hook
-    from §2.2 — also unpopulated here.
+    ``cycles`` is carried for forward compatibility with LWS-3b
+    (rcl_local/narrative/lcms_1yr need to report one or more lectionary
+    cycle positions); ``overlays`` is the Season-of-Creation-style
+    date-window hook; ``occasion`` is the wedding/funeral/Ash-Wednesday
+    rite-trigger hook. None of the three is populated by either provider
+    in this workstream.
     """
 
     date: str
     day_name: str
     season: SeasonId
-    color: Optional[str] = None
     cycles: Dict[str, Any] = field(default_factory=dict)
     propers: Dict[str, Any] = field(default_factory=dict)
-    overlays: List[Any] = field(default_factory=list)
+    overlays: List[SeasonId] = field(default_factory=list)
+    occasion: Optional[str] = None
 
 
 class CalendarProvider(ABC):
