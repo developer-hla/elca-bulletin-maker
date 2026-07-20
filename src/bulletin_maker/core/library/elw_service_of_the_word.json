@@ -1,0 +1,287 @@
+{
+  "id": "elw_service_of_the_word",
+  "church_id": null,
+  "name": "ELW Service of the Word (Ascension house form) — DRAFT",
+  "tradition": "elca",
+  "occasion": "sunday",
+  "base_rite_id": null,
+  "version": 1,
+  "meta": {
+    "role_labels": {"leader": "P", "congregation": "C"},
+    "notes": "DRAFT derived from elw_sunday_communion.json (Holy Communion) minus the Meal, pending owner verification against a physical/PDF ELW pew edition. Every block below is REUSED verbatim (same id/text_ref/condition/note) from the Sunday Communion rite in the order given by docs/research/2026-07-liturgy-strategy/09-elca-occasion-services.md's Service of the Word ordo; no new liturgical text was authored here, only structure (which blocks, in what order). Two judgment points the owner must confirm: (1) 'offering' is RETAINED even though the Meal is omitted (the research ordo explicitly keeps the offering in a Service-of-the-Word service); (2) 'lords_prayer' is MOVED from its Communion-rite position (inside the Meal, after the eucharistic prayer) to immediately after 'offering', since there is no Great Thanksgiving to precede it. All Meal-only blocks (offertory, offertory_hymn, offering_prayer, great_thanksgiving, preface, congregation_sings_sanctus, sanctus, eucharistic_prayer_heading, eucharistic_prayer_extended_praise, words_of_institution, memorial_acclamation_intro, memorial_acclamation, eucharistic_prayer_closing, eucharistic_prayer_amen, invitation_to_communion, invitation_seated_rubric, agnus_dei, communion_hymn, post_communion_stand_rubric, post_communion_blessing, nunc_dimittis, prayer_after_communion) are omitted entirely."
+  },
+  "blocks": [
+    {
+      "id": "cover",
+      "type": "literal_text",
+      "note": "Composite cover page rendered from CongregationProfile (church name/address, cover image, service time, date, day name) via m.cover(). Identity/chrome, not liturgical text; profile_ref is a schema extension for profile-driven content. Does not fit the pure literal_text{text} model - see docs/rite-engine.md.",
+      "profile_ref": "cover"
+    },
+    {
+      "id": "welcome_message",
+      "type": "literal_text",
+      "note": "profile.welcome_message paragraph at the top of page 2.",
+      "profile_ref": "welcome_message",
+      "style": "plain"
+    },
+    {
+      "id": "standing_instructions",
+      "type": "literal_text",
+      "note": "profile.standing_instructions (the '* = please stand' note).",
+      "profile_ref": "standing_instructions",
+      "style": "plain"
+    },
+    {
+      "id": "gathering_chimes",
+      "type": "heading",
+      "text": "GATHERING CHIMES: Worship Begins"
+    },
+    {
+      "id": "prelude",
+      "type": "music_item",
+      "title": "PRELUDE",
+      "note": "Heading always shown; a music citation line is rendered when prelude_title is set.",
+      "kind": "prelude"
+    },
+    {
+      "id": "choral_call_to_worship",
+      "type": "music_item",
+      "title": "CHORAL CALL TO WORSHIP",
+      "note": "Data-driven, not a toggle: the whole section is rendered only when choral_title is set.",
+      "kind": "choral"
+    },
+    {
+      "id": "welcome_spoken",
+      "type": "heading",
+      "text": "WELCOME"
+    },
+    {
+      "id": "confession",
+      "type": "proper_slot",
+      "title": "*CONFESSION AND FORGIVENESS",
+      "note": "S&S may supply confession text; falls back to ELW Form A. Gated on the show_confession toggle (false for Christmas Eve).",
+      "condition": {"toggles": {"show_confession": true}},
+      "kind": "confession",
+      "fallback": "elw.confession_form_a"
+    },
+    {
+      "id": "gathering_hymn",
+      "type": "hymn_slot",
+      "title": "*GATHERING HYMN",
+      "note": "render=ref matches the congregation bulletin (title only). Actual render mode is per-document renderer-side: bulletin=title (ref), large print=lyrics, leader guide=notation image. See docs/rite-engine.md.",
+      "slot": "gathering",
+      "render": "ref"
+    },
+    {
+      "id": "greeting",
+      "type": "dialogue",
+      "note": "P/C dialog with no heading. Gated on the greeting toggle (ServiceConfig.show_greeting).",
+      "condition": {"toggles": {"greeting": true}},
+      "text_ref": "elw.greeting"
+    },
+    {
+      "id": "kyrie",
+      "type": "notation",
+      "title": "*KYRIE",
+      "note": "Bulletin/leader-guide render the Setting Two notation image; large print renders the text dialog (text_fallback). Gated on the kyrie toggle (ServiceConfig.include_kyrie).",
+      "condition": {"toggles": {"kyrie": true}},
+      "piece": "kyrie",
+      "text_fallback": "elw.kyrie_dialog"
+    },
+    {
+      "id": "canticle_glory_to_god",
+      "type": "notation",
+      "title": "*CANTICLE OF PRAISE",
+      "note": "Canticle variant 1 of 2. The single ServiceConfig.canticle enum is exposed to the condition system as two derived booleans (canticle_glory_to_god / canticle_this_is_the_feast); when canticle=none neither is true and no canticle block renders. See docs/rite-engine.md for the modeling justification.",
+      "condition": {"toggles": {"canticle_glory_to_god": true}},
+      "piece": "glory_to_god",
+      "text_fallback": "elw.glory_to_god"
+    },
+    {
+      "id": "canticle_this_is_the_feast",
+      "type": "notation",
+      "title": "*CANTICLE OF PRAISE",
+      "note": "Canticle variant 2 of 2 (see canticle_glory_to_god).",
+      "condition": {"toggles": {"canticle_this_is_the_feast": true}},
+      "piece": "this_is_the_feast",
+      "text_fallback": "elw.this_is_the_feast"
+    },
+    {
+      "id": "invitation_to_lent",
+      "type": "literal_text",
+      "title": "Invitation to Lent",
+      "note": "Rendered only in Lent (bulletin: is_lent). Season-gated, not toggle-gated.",
+      "condition": {"seasons": ["lent"]},
+      "text_ref": "elw.invitation_to_lent",
+      "style": "plain"
+    },
+    {
+      "id": "prayer_of_day",
+      "type": "proper_slot",
+      "title": "*PRAYER OF THE DAY",
+      "note": "Role heading 'Pastor'. Content from S&S (prayer_of_the_day_html); no static fallback (renders blank if absent).",
+      "kind": "prayer_of_day"
+    },
+    {
+      "id": "first_reading",
+      "type": "reading_slot",
+      "title": "First Reading",
+      "note": "Role heading 'Scripture Reader'. Heading shows the S&S citation; the response 'The word of the Lord / Thanks be to God' is a renderer-side inline literal.",
+      "slot": "first",
+      "render": "full"
+    },
+    {
+      "id": "psalm",
+      "type": "psalm",
+      "title": "Psalm",
+      "note": "Role heading 'The Congregation reads responsively'. Number from the S&S citation.",
+      "source": "slot",
+      "style": "responsive"
+    },
+    {
+      "id": "second_reading",
+      "type": "reading_slot",
+      "title": "Second Reading",
+      "note": "Role heading 'Scripture Reader'. Response as first_reading.",
+      "slot": "second",
+      "render": "full"
+    },
+    {
+      "id": "gospel_acclamation",
+      "type": "notation",
+      "title": "*GOSPEL ACCLAMATION",
+      "note": "No block-level condition: the ordo always includes it and no ServiceConfig field backs a 'ga' toggle (contrary to a literal reading of the brief - see report). Bulletin renders the seasonal notation image and hides the section if the image is unavailable (renderer-side asset fallback); large print always shows the heading and falls back to the S&S acclamation text. No static text_fallback constant exists (the LP fallback is dynamic S&S text).",
+      "piece": "gospel_acclamation"
+    },
+    {
+      "id": "gospel",
+      "type": "reading_slot",
+      "title": "*GOSPEL",
+      "note": "Role heading none. The dialog 'The holy gospel according to St. N / Glory to You, O Lord' and closing 'This is the gospel of our Lord / Praise to you, O Christ' are renderer-side inline literals.",
+      "slot": "gospel",
+      "render": "full"
+    },
+    {
+      "id": "sermon_seated_rubric",
+      "type": "rubric",
+      "text": "The congregation is seated."
+    },
+    {
+      "id": "sermon",
+      "type": "heading",
+      "text": "SERMON"
+    },
+    {
+      "id": "sermon_hymn",
+      "type": "hymn_slot",
+      "title": "*SERMON HYMN",
+      "note": "render mode per-document, as gathering_hymn.",
+      "slot": "sermon",
+      "render": "ref"
+    },
+    {
+      "id": "baptism",
+      "type": "module_ref",
+      "note": "When include_baptism is true, the Holy Baptism rite REPLACES the creed (template if/else). Hence baptism is gated on baptism=true and both creed variants on baptism=false.",
+      "condition": {"toggles": {"baptism": true}},
+      "module_id": "elw_holy_baptism"
+    },
+    {
+      "id": "creed_nicene",
+      "type": "literal_text",
+      "title": "*NICENE CREED",
+      "note": "Role heading 'Prayer Leader'. Creed variant 1 of 2: the ServiceConfig.creed_type enum is exposed as derived booleans creed_nicene / creed_apostles. Shown only when there is no baptism.",
+      "condition": {"toggles": {"baptism": false, "creed_nicene": true}},
+      "text_ref": "elw.nicene_creed",
+      "style": "unison"
+    },
+    {
+      "id": "creed_apostles",
+      "type": "literal_text",
+      "title": "*APOSTLES CREED",
+      "note": "Creed variant 2 of 2 (see creed_nicene).",
+      "condition": {"toggles": {"baptism": false, "creed_apostles": true}},
+      "text_ref": "elw.apostles_creed",
+      "style": "unison"
+    },
+    {
+      "id": "prayers_of_intercession",
+      "type": "proper_slot",
+      "title": "*PRAYERS OF INTERCESSION",
+      "note": "Role heading 'Prayer Leader'. Rendered as the instruction 'As each petition of the prayers ends:' plus a Leader/Congregation call-and-response; the call/response come from S&S (prayers_html) with elw.default_prayers_call / elw.default_prayers_response as defaults - resolved renderer-side, so no single fallback text_ref.",
+      "kind": "prayers_of_intercession"
+    },
+    {
+      "id": "peace",
+      "type": "dialogue",
+      "title": "*SHARING OF THE PEACE",
+      "note": "Role heading 'Pastor'. Inline template literals (no static_text constant exists; adding one would edit a renderer file). Large print appends a longer greeting instruction - a minor wording difference between the two templates, see report.",
+      "lines": [
+        {"role": "leader", "text": "The peace of Christ be with you always."},
+        {"role": "congregation", "text": "And also with you."},
+        {"role": "instruction", "text": "We greet one another with a sign of Christ’s peace."}
+      ]
+    },
+    {
+      "id": "offering",
+      "type": "dialogue",
+      "title": "OFFERING",
+      "note": "Inline template literal leader text (no static_text constant).",
+      "lines": [
+        {"role": "leader", "text": "We know that all that we are and all that we have come from God. So, in response to God’s goodness, we give with cheerful hearts."}
+      ]
+    },
+    {
+      "id": "lords_prayer",
+      "type": "literal_text",
+      "title": "*LORD’S PRAYER",
+      "note": "Preceded by the inline P: line 'Gathered into one by the Holy Spirit, let us pray as Jesus taught us.' (renderer-side literal).",
+      "text_ref": "elw.lords_prayer",
+      "style": "unison"
+    },
+    {
+      "id": "blessing",
+      "type": "proper_slot",
+      "title": "*BLESSING",
+      "note": "Role heading 'Pastor'. S&S may supply the blessing; falls back to the Aaronic blessing.",
+      "kind": "blessing",
+      "fallback": "elw.aaronic_blessing"
+    },
+    {
+      "id": "announcements",
+      "type": "heading",
+      "text": "ANNOUNCEMENTS",
+      "note": "Placeholder position. Structured announcement blocks (the reserved prayer_list / week_calendar / serving_list / staff_directory / announcement_text types) arrive with their UI in LWS-7."
+    },
+    {
+      "id": "sending_hymn",
+      "type": "hymn_slot",
+      "title": "*SENDING HYMN",
+      "note": "render mode per-document, as gathering_hymn.",
+      "slot": "sending",
+      "render": "ref"
+    },
+    {
+      "id": "dismissal",
+      "type": "proper_slot",
+      "title": "SENDING",
+      "note": "Role heading 'Pastor'. Rendered as a P/C dialog without the P: label. S&S may supply the dismissal; falls back to the standard dismissal (elw.dismissal, a (role,text) list).",
+      "kind": "dismissal",
+      "fallback": "elw.dismissal"
+    },
+    {
+      "id": "postlude",
+      "type": "music_item",
+      "title": "*POSTLUDE",
+      "note": "Music citation line rendered when postlude_title is set.",
+      "kind": "postlude"
+    },
+    {
+      "id": "copyright",
+      "type": "literal_text",
+      "note": "profile.copyright_paragraphs block (bulletin only; large print ends at the postlude). Profile-driven chrome - see cover.",
+      "profile_ref": "copyright_paragraphs",
+      "style": "plain"
+    }
+  ]
+}

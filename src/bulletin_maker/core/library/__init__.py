@@ -22,10 +22,14 @@ from bulletin_maker.core.rite import Rite, RiteModule, validate_rite
 
 LIBRARY_DIR = Path(__file__).resolve().parent
 
-RITE_FILES: Tuple[str, ...] = ("elw_sunday_communion.json",)
+RITE_FILES: Tuple[str, ...] = (
+    "elw_sunday_communion.json",
+    "elw_service_of_the_word.json",
+)
 MODULE_FILES: Tuple[str, ...] = ("elw_holy_baptism.json",)
 
 SUNDAY_COMMUNION_RITE_ID = "elw_sunday_communion"
+SERVICE_OF_THE_WORD_RITE_ID = "elw_service_of_the_word"
 HOLY_BAPTISM_MODULE_ID = "elw_holy_baptism"
 
 
