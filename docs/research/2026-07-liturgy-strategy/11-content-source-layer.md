@@ -153,6 +153,36 @@ bundle-gated to pull-live, keeping the PD fallback for the unentitled. NRSVUE ca
 the same way (S&S serves NRSVUE). This stays behind the CS-1 interface — only the `sns` source impl
 changes; parity/entitlement gates unchanged.
 
+## CS-2 endpoint CAPTURED (July 20 2026) — pull is proven, exact request in hand
+
+The copy/preview action fires `doGenericModalGet("/File/Preview", {atomCode})` (found in the
+genericModal bundle); download is `/File/Download?atomId=X&atomCode=Y`. **Confirmed working:**
+- **`GET /File/Preview?atomCode=<atomCode>`** → the item's text as HTML. Verified live:
+  `lbwApostlesCreed` → the Apostles' Creed, `lbwNiceneCreed` → the Nicene Creed.
+- **Response shape:** `<div class="body"><p><div [style="text-indent: Nem"]><strong>LINE</strong>
+  </div>...</p>...</div>` — indentation via `text-indent` = liturgical stanza indent.
+- **Not-found shape:** HTTP **200** with plain body `"Atom not found with code: <code>"` (~38 bytes,
+  no `.body` div) — the fetcher MUST detect this and treat as None, not as content.
+- **Entitlement = the login** (the church's own S&S session); unentitled churches can't reach it.
+- **Atom-codes** are stable per item (`lbwApostlesCreed`…); collections: ELW=9396, LBW=110, WOV=118,
+  ACS=333320, TFF=116. Discovering the full key→atom-code map for target content is incremental
+  credentialed browsing (orchestrator's job); the mechanism works for any code.
+
+### CS-2 build design (parity-safe — FILLS GAPS, does not flip the parity-locked Sunday ordinary)
+1. **Pull method** (in `sns/` — e.g. `content_service.fetch_preview(atom_code) -> Optional[str]`):
+   GET `/File/Preview?atomCode=`, detect the "Atom not found" body → None, clean the HTML preserving
+   stanza structure, **cache in `sns_cache`** keyed by atom-code (stable text → long TTL).
+2. **Injection, not import** (layering): `ContentContext` gains an optional `sns_fetch:
+   Callable[[str], Optional[str]]`, injected by the web/generate layer from the church's client.
+   `core/content_source.resolve_text` stays web-free; for a slot that declares an `atom_code` AND an
+   entitled context with `sns_fetch`, it pulls (cached) — sitting above the PD fallback.
+3. **Gap-fill only:** do NOT assign atom-codes to the existing bundled Sunday ordinary keys (that
+   would replace our transcription/house text with S&S text and break parity + risk overriding house
+   customizations — a separate owner-ratified decision). Pull serves keys we currently can only
+   placeholder (occasion services, ELW/NRSVUE daily-office canticles, etc.), where an entitled church
+   gets real S&S text instead of a placeholder. Demonstrate end-to-end with a pull-keyed slot + mock.
+4. NRSVUE canticles/psalms arrive the same way (S&S serves NRSVUE); map those keys to their atoms.
+
 ## Phasing
 - **CS-1 (fixes the copyright exposure, no new scraping):** ContentSource interface + registry;
   `public_domain` + `sns`(bundle-gated over today's static_text) + `church_library` sources;
