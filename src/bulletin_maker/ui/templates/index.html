@@ -128,6 +128,7 @@
             <span id="user-display"></span>
             <a href="#" id="new-bulletin-link" class="header-link">New Bulletin</a>
             <a href="#" id="settings-link" class="header-link">Settings</a>
+            <a href="#" id="operator-link" class="header-link" hidden>Operator</a>
             <a href="#" id="help-link" class="header-link">Help</a>
             <a href="#" id="logout-link" class="logout-link">Logout</a>
         </div>
@@ -664,6 +665,67 @@
 
             <div class="wizard-buttons">
                 <button type="button" class="btn" id="settings-back-btn">Back to Bulletin</button>
+            </div>
+        </div>
+
+
+        <!-- Operator console (service owner) — shown instead of the wizard -->
+        <div id="operator-panel" hidden>
+            <section class="card">
+                <h2>Operator Console</h2>
+                <p class="section-hint">Service-owner tools across every church on this server.</p>
+            </section>
+
+            <section class="card">
+                <div class="operator-section-head">
+                    <h3>Churches</h3>
+                    <button class="btn secondary" id="operator-churches-refresh">Refresh</button>
+                </div>
+                <div id="operator-churches-error" class="error-msg" hidden></div>
+                <div class="operator-table-wrap">
+                    <table class="operator-table">
+                        <thead>
+                            <tr><th>Church</th><th>Members</th><th>Plan</th><th>S&amp;S</th><th>This month</th><th>Status</th><th></th></tr>
+                        </thead>
+                        <tbody id="operator-churches-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="operator-section-head">
+                    <h3>Recent Jobs</h3>
+                    <button class="btn secondary" id="operator-jobs-refresh">Refresh</button>
+                </div>
+                <div id="operator-jobs-error" class="error-msg" hidden></div>
+                <div class="operator-table-wrap">
+                    <table class="operator-table">
+                        <thead>
+                            <tr><th>Church</th><th>Status</th><th>When</th><th>Error</th></tr>
+                        </thead>
+                        <tbody id="operator-jobs-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="operator-section-head">
+                    <h3>Content Cache</h3>
+                    <button class="btn secondary" id="operator-cache-refresh">Refresh</button>
+                </div>
+                <p id="operator-cache-stats" class="section-hint"></p>
+            </section>
+
+            <section class="card">
+                <div class="operator-section-head">
+                    <h3>Audit Log</h3>
+                    <button class="btn secondary" id="operator-audit-refresh">Refresh</button>
+                </div>
+                <ul id="operator-audit-list" class="operator-audit-list"></ul>
+            </section>
+
+            <div class="wizard-buttons">
+                <button type="button" class="btn" id="operator-back-btn">Back to Bulletin</button>
             </div>
         </div>
 

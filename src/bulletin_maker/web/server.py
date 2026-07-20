@@ -66,6 +66,7 @@ from bulletin_maker.web import (
     db,
     jobstore,
     members,
+    operator,
     plans,
     security,
 )
@@ -114,6 +115,21 @@ def _validation(message: str, status: int = 422) -> HTTPException:
 def _auth_required() -> HTTPException:
     return HTTPException(status_code=401, detail={
         "error": "Please sign in.", "error_type": "auth", "auth_error": True})
+
+
+def _suspended() -> HTTPException:
+    return HTTPException(status_code=401, detail={
+        "error": "This account is suspended — contact support.",
+        "error_type": "auth", "suspended": True})
+
+
+def _guard_not_suspended(user: dict) -> None:
+    """Refuse a disabled church's members; operators are always exempt."""
+    if user["operator"]:
+        return
+    church = db.get_church(user["church_id"])
+    if church is not None and church["disabled"]:
+        raise _suspended()
 
 
 class LoginRateLimiter:
@@ -205,12 +221,19 @@ def create_app() -> FastAPI:
         if user is None:
             session.sign_out()
             raise _auth_required()
+        _guard_not_suspended(user)
         return user
 
     def require_admin(session: Session) -> dict:
         user = require_user(session)
         if user["role"] != "admin":
             raise _validation("Only a church admin can do that.", status=403)
+        return user
+
+    def require_operator(session: Session) -> dict:
+        user = require_user(session)
+        if not user["operator"]:
+            raise _validation("Operators only.", status=403)
         return user
 
     def church_of(session: Session) -> dict:
@@ -286,6 +309,7 @@ def create_app() -> FastAPI:
                      "role": user["role"]},
             "church": {"name": church["name"]},
             "sns_linked": bool(church["sns_username"]),
+            "operator": bool(user["operator"]),
         }
 
     # ── Instance / registration ───────────────────────────────────────
@@ -329,6 +353,8 @@ def create_app() -> FastAPI:
         if count == 0:
             _import_legacy_runs(church["id"])
         logger.warning("Registered church %r (admin %s)", church_name, email)
+        operator.audit(user["id"], church["id"],
+                       operator.ACTION_CHURCH_REGISTERED, {"name": church_name})
         auth_flows.send_verification(user)
         return _sign_in(user, response)
 
@@ -346,6 +372,8 @@ def create_app() -> FastAPI:
         user = db.create_user(
             church["id"], email, security.hash_password(password),
             display_name, role="member")
+        operator.audit(user["id"], church["id"],
+                       operator.ACTION_MEMBER_JOINED, {"email": email})
         auth_flows.send_verification(user)
         return _sign_in(user, response)
 
@@ -362,6 +390,7 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=401, detail={
                 "error": "Email or password is incorrect.",
                 "error_type": "auth"})
+        _guard_not_suspended(user)
         return _sign_in(user, response)
 
     @app.get("/api/session")
@@ -372,6 +401,7 @@ def create_app() -> FastAPI:
         if user is None:
             session.sign_out()
             return {"success": True, "authenticated": False}
+        _guard_not_suspended(user)
         church = db.get_church(user["church_id"])
         return {
             "success": True,
@@ -381,6 +411,7 @@ def create_app() -> FastAPI:
                      "role": user["role"]},
             "church": {"name": church["name"]},
             "sns_linked": bool(church["sns_username"]),
+            "operator": bool(user["operator"]),
         }
 
     @app.delete("/api/session")
@@ -496,7 +527,7 @@ def create_app() -> FastAPI:
     @app.put("/api/church/sns-link")
     def link_sns(payload: dict, request: Request,
                  session: Session = Depends(session_dep)):
-        require_admin(session)
+        user = require_admin(session)
         _check_rate(request)
         church = church_of(session)
         username = (payload.get("username") or "").strip()
@@ -519,6 +550,7 @@ def create_app() -> FastAPI:
                         security.encrypt_secret(password))
         session.close()  # drop any client using the old credential
         logger.warning("S&S account linked for church %r", church["name"])
+        operator.audit(user["id"], church["id"], operator.ACTION_SNS_LINKED, {})
         return {"success": True, "sns_username": username}
 
     # ── Church members (admin) ────────────────────────────────────────
@@ -906,6 +938,60 @@ def create_app() -> FastAPI:
         if not db.delete_past_run(session.church_id, run_id):
             raise _validation("Run not found.", status=404)
         return {"success": True}
+
+    # ── Operator console (cross-church) ───────────────────────────────
+
+    @app.get("/api/operator/churches")
+    def operator_churches(session: Session = Depends(session_dep)):
+        require_operator(session)
+        return {"success": True, "churches": operator.church_roster()}
+
+    def _set_church_disabled(church_id: int, disabled: bool,
+                             session: Session) -> dict:
+        actor = require_operator(session)
+        if not operator.set_church_disabled(church_id, disabled):
+            raise _validation("Unknown church.", status=404)
+        action = (operator.ACTION_CHURCH_DISABLED if disabled
+                  else operator.ACTION_CHURCH_ENABLED)
+        operator.audit(actor["id"], church_id, action, {})
+        return {"success": True}
+
+    @app.post("/api/operator/churches/{church_id}/disable")
+    def operator_disable_church(church_id: int,
+                                session: Session = Depends(session_dep)):
+        return _set_church_disabled(church_id, True, session)
+
+    @app.post("/api/operator/churches/{church_id}/enable")
+    def operator_enable_church(church_id: int,
+                               session: Session = Depends(session_dep)):
+        return _set_church_disabled(church_id, False, session)
+
+    @app.post("/api/operator/users/{user_id}/reset-password")
+    def operator_reset_password(user_id: int,
+                                session: Session = Depends(session_dep)):
+        actor = require_operator(session)
+        target = db.get_user(user_id)
+        if target is None:
+            raise _validation("Unknown user.", status=404)
+        auth_flows.request_password_reset(target["email"])
+        operator.audit(actor["id"], target["church_id"],
+                       operator.ACTION_PASSWORD_RESET, {"user_id": user_id})
+        return {"success": True}
+
+    @app.get("/api/operator/jobs")
+    def operator_jobs(session: Session = Depends(session_dep)):
+        require_operator(session)
+        return {"success": True, "jobs": operator.latest_jobs()}
+
+    @app.get("/api/operator/cache")
+    def operator_cache(session: Session = Depends(session_dep)):
+        require_operator(session)
+        return {"success": True, "cache": operator.cache_stats()}
+
+    @app.get("/api/operator/audit")
+    def operator_audit(session: Session = Depends(session_dep)):
+        require_operator(session)
+        return {"success": True, "events": operator.latest_audit()}
 
     # ── SPA ───────────────────────────────────────────────────────────
 
