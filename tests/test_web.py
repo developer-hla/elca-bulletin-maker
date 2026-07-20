@@ -57,6 +57,8 @@ def _isolated_storage(tmp_path, monkeypatch):
     monkeypatch.delenv("BULLETIN_SECRET_KEY", raising=False)
     monkeypatch.delenv("BULLETIN_REGISTRATION_CODE", raising=False)
     monkeypatch.delenv("BULLETIN_HOSTED", raising=False)
+    monkeypatch.setenv("ARTIFACT_STORE", "local")
+    monkeypatch.setenv("BULLETIN_ARTIFACT_DIR", str(tmp_path / "artifacts"))
 
 
 @pytest.fixture()
