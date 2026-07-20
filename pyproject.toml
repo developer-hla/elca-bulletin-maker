@@ -30,6 +30,9 @@ dev = [
 s3 = [
     "boto3",
 ]
+sentry = [
+    "sentry-sdk[fastapi]",
+]
 
 [project.scripts]
 bulletin-maker = "bulletin_maker.web.app:main"

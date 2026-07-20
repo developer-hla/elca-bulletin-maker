@@ -66,6 +66,7 @@ from bulletin_maker.web import (
     db,
     jobstore,
     members,
+    observability,
     operator,
     plans,
     security,
@@ -191,6 +192,9 @@ def _validate_account_fields(payload: dict) -> tuple:
 
 
 def create_app() -> FastAPI:
+    observability.setup_logging()
+    observability.init_sentry()
+
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         recovered = jobstore.recover_stale_jobs(RESTART_JOB_MESSAGE)
@@ -201,6 +205,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(title="Bulletin Maker", docs_url=None, redoc_url=None,
                   lifespan=lifespan)
+    app.add_middleware(observability.RequestContextMiddleware)
     store = SessionStore()
     hosted = os.environ.get("BULLETIN_HOSTED") == "1"
     limiter = LoginRateLimiter()
@@ -211,8 +216,17 @@ def create_app() -> FastAPI:
         return JSONResponse(status_code=403, content={"detail": {
             "error": str(exc), "error_type": "plan_limit"}})
 
+    @app.exception_handler(Exception)
+    def _unhandled(request: Request, exc: Exception):
+        return JSONResponse(status_code=500, content={"detail": {
+            "error": "Something went wrong on our end. Please try again.",
+            "error_type": "internal"}})
+
     def session_dep(request: Request) -> Session:
-        return store.resolve(request.cookies.get(SESSION_COOKIE))
+        session = store.resolve(request.cookies.get(SESSION_COOKIE))
+        observability.bind_context(
+            church_id=session.church_id, user_id=session.user_id)
+        return session
 
     def require_user(session: Session) -> dict:
         if session.user_id is None:
@@ -799,6 +813,7 @@ def create_app() -> FastAPI:
 
     def _run_job(session: Session, job_id: str, church_id: int,
                  form_data: dict, profile) -> None:
+        observability.bind_context(job_id=job_id, church_id=church_id)
         job_dir = Path(tempfile.mkdtemp(prefix=f"bulletin-{job_id}-"))
         try:
             day = session.day

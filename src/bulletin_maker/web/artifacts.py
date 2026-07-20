@@ -24,9 +24,10 @@ from __future__ import annotations
 import argparse
 import os
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from bulletin_maker.exceptions import BulletinError
 from bulletin_maker.web import db
@@ -36,6 +37,15 @@ STREAM_CHUNK_BYTES = 64 * 1024
 DEFAULT_LOCAL_DIR = Path.home() / ".bulletin-maker" / "artifacts"
 
 Source = Union[str, Path, bytes]
+
+
+@dataclass(frozen=True)
+class StoredObject:
+    """A single object in a store: its key, byte size, and modified time."""
+
+    key: str
+    size: int
+    modified: datetime
 
 
 # ── Store abstraction ────────────────────────────────────────────────
@@ -58,6 +68,10 @@ class ArtifactStore(ABC):
     @abstractmethod
     def exists(self, object_key: str) -> bool:
         """Whether the object is present."""
+
+    @abstractmethod
+    def list(self, prefix: str) -> List[StoredObject]:
+        """List objects whose key starts with ``prefix``."""
 
 
 def _as_bytes(source: Source) -> bytes:
@@ -91,6 +105,21 @@ class LocalArtifactStore(ArtifactStore):
     def exists(self, object_key: str) -> bool:
         return self._path(object_key).exists()
 
+    def list(self, prefix: str) -> List[StoredObject]:
+        if not self._base.exists():
+            return []
+        objects = []
+        for path in self._base.rglob("*"):
+            if not path.is_file():
+                continue
+            key = path.relative_to(self._base).as_posix()
+            if not key.startswith(prefix):
+                continue
+            stat = path.stat()
+            modified = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
+            objects.append(StoredObject(key, stat.st_size, modified))
+        return objects
+
 
 class S3ArtifactStore(ArtifactStore):
     """S3-compatible object store (AWS S3, Cloudflare R2) via boto3."""
@@ -120,6 +149,15 @@ class S3ArtifactStore(ArtifactStore):
             if error.response.get("Error", {}).get("Code") in ("404", "NoSuchKey"):
                 return False
             raise
+
+    def list(self, prefix: str) -> List[StoredObject]:
+        paginator = self._client.get_paginator("list_objects_v2")
+        objects = []
+        for page in paginator.paginate(Bucket=self._bucket, Prefix=prefix):
+            for entry in page.get("Contents", []):
+                objects.append(StoredObject(
+                    entry["Key"], entry["Size"], entry["LastModified"]))
+        return objects
 
 
 # ── Backend selection ────────────────────────────────────────────────
