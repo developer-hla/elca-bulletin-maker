@@ -5,15 +5,13 @@ The session token lives in a cookie; only its sha256 hash is stored in the
 read from the database, so sessions survive restarts. Runtime state that
 cannot be serialized lives in process memory: the Sundays & Seasons client
 is cached per church (shared across that church's sessions); the fetched
-day, hymn-lyrics cache, and in-flight generation jobs are cached per
-session.
+day and hymn-lyrics cache are cached per session.
 """
 
 from __future__ import annotations
 
 import hashlib
 import secrets
-import shutil
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -89,15 +87,11 @@ class RuntimeState:
     day: Optional[DayContent] = None
     date_str: Optional[str] = None
     hymn_cache: dict = field(default_factory=dict)
-    jobs: dict = field(default_factory=dict)
 
     def clear(self) -> None:
         self.day = None
         self.date_str = None
         self.hymn_cache.clear()
-        for job in self.jobs.values():
-            shutil.rmtree(job.get("dir", ""), ignore_errors=True)
-        self.jobs.clear()
 
 
 class Session:
@@ -143,10 +137,6 @@ class Session:
     @property
     def hymn_cache(self) -> dict:
         return self._runtime.hymn_cache
-
-    @property
-    def jobs(self) -> dict:
-        return self._runtime.jobs
 
     @property
     def client(self) -> Optional[SundaysClient]:

@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+import os
+
 import httpx
 import pytest
 from fastapi.testclient import TestClient
 
 from bulletin_maker.exceptions import BulletinError
-from bulletin_maker.web import auth_flows, db, email, security
+from bulletin_maker.web import db, email, security
 from bulletin_maker.web.server import create_app
 from bulletin_maker.web.sessions import SESSION_COOKIE, hash_token
 
-TEST_DATABASE_URL = "postgresql://localhost/bulletin_maker_test"
+TEST_DATABASE_URL = os.environ.get(
+    "BULLETIN_TEST_DATABASE_URL", "postgresql://localhost/bulletin_maker_test")
 
 _TRUNCATE = (
     "TRUNCATE churches, users, past_runs, sessions, auth_tokens, jobs,"

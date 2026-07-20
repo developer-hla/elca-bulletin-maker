@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 from unittest.mock import MagicMock, patch
 
@@ -13,7 +14,9 @@ from bulletin_maker.sns.models import DayContent, HymnLyrics, Reading
 from bulletin_maker.web import db, security
 from bulletin_maker.web.server import create_app
 
-TEST_DATABASE_URL = "postgresql://localhost/bulletin_maker_test"
+# Overridable so concurrent test runs (parallel worktrees) don't share a DB.
+TEST_DATABASE_URL = os.environ.get(
+    "BULLETIN_TEST_DATABASE_URL", "postgresql://localhost/bulletin_maker_test")
 
 _TRUNCATE = (
     "TRUNCATE churches, users, past_runs, sessions, auth_tokens, jobs,"
@@ -57,6 +60,8 @@ def _isolated_storage(tmp_path, monkeypatch):
     monkeypatch.delenv("BULLETIN_SECRET_KEY", raising=False)
     monkeypatch.delenv("BULLETIN_REGISTRATION_CODE", raising=False)
     monkeypatch.delenv("BULLETIN_HOSTED", raising=False)
+    monkeypatch.setenv("ARTIFACT_STORE", "local")
+    monkeypatch.setenv("BULLETIN_ARTIFACT_DIR", str(tmp_path / "artifacts"))
 
 
 @pytest.fixture()

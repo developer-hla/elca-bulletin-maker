@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 
 
 # ── Reading slot constants ───────────────────────────────────────────
@@ -31,6 +31,13 @@ class Reading:
     citation: str     # e.g. "Genesis 2:15-17; 3:1-7"
     intro: str        # italic intro paragraph
     text_html: str    # raw HTML of the reading text
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Reading":
+        return cls(**data)
 
 
 @dataclass
@@ -91,6 +98,17 @@ class DayContent:
             )
         return warnings
 
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DayContent":
+        fields = dict(data)
+        fields["readings"] = [
+            Reading.from_dict(r) for r in fields.get("readings", [])
+        ]
+        return cls(**fields)
+
 
 @dataclass
 class HymnResult:
@@ -119,3 +137,10 @@ class HymnLyrics:
     refrain: str = ""        # Refrain text (empty if none)
     copyright: str = ""      # Copyright line(s)
     verse_label: str = ""    # e.g. "Verses 1, 3-5" when subset selected
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "HymnLyrics":
+        return cls(**data)

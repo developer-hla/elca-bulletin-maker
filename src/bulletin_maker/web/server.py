@@ -13,19 +13,22 @@ join their church with its invite code.
 
 from __future__ import annotations
 
+import io
 import json
 import logging
 import os
 import secrets
+import shutil
 import tempfile
 import threading
 import time
 import zipfile
+from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from bulletin_maker.core.content_views import (
@@ -41,7 +44,12 @@ from bulletin_maker.core.profile import (
     profile_to_dict,
 )
 from bulletin_maker.core.service_form import build_service_config
-from bulletin_maker.exceptions import AuthError, BulletinError, NetworkError
+from bulletin_maker.exceptions import (
+    AuthError,
+    BulletinError,
+    ContentNotFoundError,
+    NetworkError,
+)
 from bulletin_maker.renderer.paper import PAPER_PRESETS
 from bulletin_maker.renderer.season import (
     detect_season,
@@ -51,11 +59,24 @@ from bulletin_maker.renderer.season import (
 )
 from bulletin_maker.renderer.settings import SETTINGS
 from bulletin_maker.sns.client import SundaysClient
-from bulletin_maker.web import auth_flows, db, security
+from bulletin_maker.sns.content_service import ContentService
+from bulletin_maker.web import (
+    artifacts,
+    auth_flows,
+    db,
+    jobstore,
+    plans,
+    security,
+)
 from bulletin_maker.web.sessions import (
     SESSION_COOKIE, SESSION_TTL_SECONDS, Session, SessionStore)
 
 logger = logging.getLogger(__name__)
+
+RESTART_JOB_MESSAGE = (
+    "The server restarted while this bulletin was generating. "
+    "Please generate again."
+)
 
 SPA_DIR = Path(__file__).resolve().parents[1] / "ui" / "templates"
 
@@ -153,11 +174,25 @@ def _validate_account_fields(payload: dict) -> tuple:
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Bulletin Maker", docs_url=None, redoc_url=None)
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        recovered = jobstore.recover_stale_jobs(RESTART_JOB_MESSAGE)
+        if recovered:
+            logger.warning("Failed %d job(s) left running by a restart",
+                           recovered)
+        yield
+
+    app = FastAPI(title="Bulletin Maker", docs_url=None, redoc_url=None,
+                  lifespan=lifespan)
     store = SessionStore()
     hosted = os.environ.get("BULLETIN_HOSTED") == "1"
     limiter = LoginRateLimiter()
     token_limiter = LoginRateLimiter()
+
+    @app.exception_handler(plans.PlanLimitError)
+    def _plan_limit(request: Request, exc: plans.PlanLimitError):
+        return JSONResponse(status_code=403, content={"detail": {
+            "error": str(exc), "error_type": "plan_limit"}})
 
     def session_dep(request: Request) -> Session:
         return store.resolve(request.cookies.get(SESSION_COOKIE))
@@ -201,18 +236,19 @@ def create_app() -> FastAPI:
             raise _validation(
                 "Too many requests — wait a few minutes.", status=429)
 
-    def sns_client(session: Session) -> SundaysClient:
+    def _sns_unlinked() -> HTTPException:
+        return HTTPException(status_code=409, detail={
+            "error": "No Sundays & Seasons account is linked yet. "
+                     "A church admin can link one under Settings.",
+            "error_type": "validation", "sns_unlinked": True,
+        })
+
+    def _build_sns_client(session: Session) -> SundaysClient:
         """The church's S&S client, logging in lazily with the linked
-        credential. Raises a clear error when no account is linked."""
+        credential. Assumes the church is already known to be linked."""
         if session.client is not None:
             return session.client
         church = church_of(session)
-        if not church["sns_username"] or not church["sns_password_enc"]:
-            raise HTTPException(status_code=409, detail={
-                "error": "No Sundays & Seasons account is linked yet. "
-                         "A church admin can link one under Settings.",
-                "error_type": "validation", "sns_unlinked": True,
-            })
         password = security.decrypt_secret(church["sns_password_enc"])
         client = SundaysClient()
         try:
@@ -222,6 +258,18 @@ def create_app() -> FastAPI:
             raise
         session.client = client
         return client
+
+    def content_service(session: Session) -> ContentService:
+        """Cached content interface for the church. Raises the same
+        no-account-linked error the client used to, before any content read,
+        so the cache can never serve S&S content without a subscription."""
+        church = church_of(session)
+        if not church["sns_username"] or not church["sns_password_enc"]:
+            raise _sns_unlinked()
+        return ContentService(
+            entitled=True,
+            client_provider=lambda: _build_sns_client(session),
+        )
 
     def _sign_in(user: dict, response: Response) -> dict:
         token = store.login(user["id"], user["church_id"])
@@ -290,6 +338,7 @@ def create_app() -> FastAPI:
         church = db.get_church_by_invite(invite_code) if invite_code else None
         if church is None:
             raise _validation("That invite code isn't valid.", status=403)
+        plans.check_limit(church, "join")
         email, password, display_name = _validate_account_fields(payload)
         if db.get_user_by_email(email) is not None:
             raise _validation("That email already has an account.", status=409)
@@ -474,16 +523,17 @@ def create_app() -> FastAPI:
     # ── Day content ───────────────────────────────────────────────────
 
     @app.get("/api/day")
-    def fetch_day(date: str, display: str,
+    def fetch_day(date: str, display: str, refresh: bool = False,
                   session: Session = Depends(session_dep)):
         require_user(session)
         try:
             dt = datetime.strptime(date, "%Y-%m-%d")
         except ValueError as e:
             raise _fail(422, e)
+        service = content_service(session)
         try:
             api_date = f"{dt.year}-{dt.month}-{dt.day}"
-            session.day = sns_client(session).get_day_texts(api_date)
+            session.day = service.get_day_content(api_date, force_refresh=refresh)
             session.date_str = date
         except AuthError as e:
             session.close()
@@ -541,11 +591,13 @@ def create_app() -> FastAPI:
             raise _fail(422, e)
 
     @app.post("/api/passage")
-    def custom_passage(payload: dict, session: Session = Depends(session_dep)):
+    def custom_passage(payload: dict, refresh: bool = False,
+                       session: Session = Depends(session_dep)):
         require_user(session)
+        service = content_service(session)
         citation = payload.get("citation", "")
         try:
-            html = sns_client(session).search_passage(citation)
+            html = service.get_passage(citation, force_refresh=refresh)
         except BulletinError as e:
             raise _fail(502, e)
         return {"success": True, "text_html": html, "citation": citation}
@@ -558,22 +610,35 @@ def create_app() -> FastAPI:
 
     # ── Hymns ─────────────────────────────────────────────────────────
 
+    def _hymn_title_only(service: ContentService, collection: str,
+                         number: str) -> dict:
+        """Fallback for hymns with no downloadable words — needs the title."""
+        try:
+            results = service.search_hymn(number, collection)
+        except BulletinError as e:
+            raise _fail(502, e)
+        if not results:
+            raise HTTPException(status_code=404, detail={
+                "error": f"No results for {collection} {number}",
+                "error_type": "internal",
+            })
+        logger.warning("No lyrics for %s %s — title only", collection, number)
+        return {
+            "success": True,
+            "number": f"{collection} {number}",
+            "title": results[0].title,
+            "verse_count": 0,
+            "has_refrain": False,
+            "lyrics_unavailable": True,
+        }
+
     @app.get("/api/hymns/{collection}/{number}")
     def hymn(collection: str, number: str, date: str = "",
+             refresh: bool = False,
              session: Session = Depends(session_dep)):
         """Search + fetch lyrics in one call (the SPA always does both)."""
         require_user(session)
-        client = sns_client(session)
-        try:
-            results = client.search_hymn(number, collection)
-            if not results:
-                raise HTTPException(status_code=404, detail={
-                    "error": f"No results for {collection} {number}",
-                    "error_type": "internal",
-                })
-            found = results[0]
-        except BulletinError as e:
-            raise _fail(502, e)
+        service = content_service(session)
 
         if date:
             try:
@@ -587,17 +652,12 @@ def create_app() -> FastAPI:
         # Some hymns have no downloadable words — degrade to title-only
         # rather than failing the whole slot.
         try:
-            lyrics = client.fetch_hymn_lyrics(number, use_date, collection)
-        except BulletinError:
-            logger.warning("No lyrics for %s %s — title only", collection, number)
-            return {
-                "success": True,
-                "number": f"{collection} {number}",
-                "title": found.title,
-                "verse_count": 0,
-                "has_refrain": False,
-                "lyrics_unavailable": True,
-            }
+            lyrics = service.get_hymn_lyrics(
+                collection, number, use_date, force_refresh=refresh)
+        except ContentNotFoundError:
+            return _hymn_title_only(service, collection, number)
+        except BulletinError as e:
+            raise _fail(502, e)
 
         session.hymn_cache[f"{collection}_{number}"] = {
             "number": lyrics.number,
@@ -636,8 +696,22 @@ def create_app() -> FastAPI:
 
     # ── Generation jobs ───────────────────────────────────────────────
 
-    def _run_job(session: Session, job: dict, form_data: dict,
-                 profile) -> None:
+    def _store_results(church_id: int, job_id: str, results: dict) -> dict:
+        store = artifacts.get_store()
+        expires_at = artifacts.default_expiry()
+        mapping = {}
+        for doc_key, path in results.items():
+            filename = Path(path).name
+            object_key = f"{church_id}/{job_id}/{doc_key}/{filename}"
+            num_bytes = store.put(object_key, path)
+            artifacts.record_artifact(
+                job_id, doc_key, filename, object_key, num_bytes, expires_at)
+            mapping[doc_key] = filename
+        return mapping
+
+    def _run_job(session: Session, job_id: str, church_id: int,
+                 form_data: dict, profile) -> None:
+        job_dir = Path(tempfile.mkdtemp(prefix=f"bulletin-{job_id}-"))
         try:
             day = session.day
             config = build_service_config(form_data, session.hymn_cache)
@@ -646,91 +720,104 @@ def create_app() -> FastAPI:
             selected = set(form_data.get("selected_docs") or DEFAULT_SELECTION)
 
             def on_progress(key: str, detail: str, pct: int) -> None:
-                job["progress"].append(
-                    {"step": key, "detail": detail, "pct": pct})
+                jobstore.append_progress(
+                    job_id, {"step": key, "detail": detail, "pct": pct})
 
             outcome = generate_documents(
-                day, config, Path(job["dir"]),
+                day, config, job_dir,
                 season=season,
                 client=session.client,
                 selected=selected,
                 on_progress=on_progress,
                 profile=profile,
             )
-            job["results"] = {
-                key: Path(path).name for key, path in outcome.results.items()
-            }
-            job["errors"] = outcome.errors
-            job["status"] = "done" if outcome.success else "failed"
+            results = _store_results(church_id, job_id, outcome.results)
+            status = "done" if outcome.success else "failed"
+            jobstore.finish_job(job_id, status, results, outcome.errors)
         except Exception as e:
             logger.exception("Generation job failed")
-            job["errors"] = {"job": str(e)}
-            job["status"] = "failed"
+            jobstore.finish_job(job_id, "failed", {}, {"job": str(e)})
+        finally:
+            shutil.rmtree(job_dir, ignore_errors=True)
 
     @app.post("/api/generate")
     def generate(form_data: dict, session: Session = Depends(session_dep)):
         _require_day(session)
+        church = church_of(session)
+        plans.check_limit(church, "generate")
         if not form_data.get("date") or not form_data.get("date_display"):
             raise _validation("Missing required fields: date and date_display.")
-        profile = profile_from_dict(
-            json.loads(church_of(session)["profile_json"]))
+        # A cache-hit day fetch never builds an S&S client, but generation
+        # needs a live one (notation images) — build it before the worker.
+        if not church["sns_username"] or not church["sns_password_enc"]:
+            raise _sns_unlinked()
+        _build_sns_client(session)
+        profile = profile_from_dict(json.loads(church["profile_json"]))
         job_id = secrets.token_hex(8)
-        job_dir = tempfile.mkdtemp(prefix=f"bulletin-{job_id}-")
-        job = {
-            "id": job_id,
-            "status": "running",
-            "progress": [],
-            "results": {},
-            "errors": {},
-            "dir": job_dir,
-        }
-        session.jobs[job_id] = job
+        try:
+            artifacts.purge_expired_artifacts()
+        except Exception:
+            logger.exception("Opportunistic artifact purge failed")
+        jobstore.create_job(
+            job_id, session.church_id, session.user_id, form_data)
         worker = threading.Thread(
-            target=_run_job, args=(session, job, form_data, profile),
+            target=_run_job,
+            args=(session, job_id, session.church_id, form_data, profile),
             daemon=True)
         worker.start()
         return {"success": True, "job_id": job_id}
 
-    def _get_job(session: Session, job_id: str) -> dict:
+    def _load_job(session: Session, job_id: str) -> dict:
         require_user(session)
-        job = session.jobs.get(job_id)
+        job = jobstore.get_job(job_id, session.church_id)
         if job is None:
             raise _validation("Unknown job.", status=404)
         return job
 
     @app.get("/api/jobs/{job_id}")
     def job_status(job_id: str, session: Session = Depends(session_dep)):
-        job = _get_job(session, job_id)
+        job = _load_job(session, job_id)
         return {
             "success": True,
             "status": job["status"],
-            "progress": job["progress"],
-            "results": job["results"],
-            "errors": job["errors"],
+            "progress": job["progress_jsonb"],
+            "results": job["results_jsonb"],
+            "errors": job["errors_jsonb"],
         }
 
     @app.get("/api/jobs/{job_id}/files/{key}")
     def job_file(job_id: str, key: str,
                  session: Session = Depends(session_dep)):
-        job = _get_job(session, job_id)
-        filename = job["results"].get(key)
-        if not filename:
+        _load_job(session, job_id)
+        artifact = artifacts.artifact_for_doc(job_id, key)
+        if artifact is None:
             raise _validation(f"No file for document '{key}'.", status=404)
-        path = Path(job["dir"]) / filename
-        return FileResponse(path, filename=filename, media_type="application/pdf")
+        filename = artifact["filename"]
+        return StreamingResponse(
+            artifacts.iter_object(artifact["object_key"]),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'},
+        )
 
     @app.get("/api/jobs/{job_id}/zip")
     def job_zip(job_id: str, session: Session = Depends(session_dep)):
-        job = _get_job(session, job_id)
-        if not job["results"]:
+        _load_job(session, job_id)
+        rows = artifacts.artifacts_for_job(job_id)
+        if not rows:
             raise _validation("No files to download.", status=404)
-        zip_path = Path(job["dir"]) / "bulletins.zip"
-        if not zip_path.exists():
-            with zipfile.ZipFile(zip_path, "w") as zf:
-                for filename in job["results"].values():
-                    zf.write(Path(job["dir"]) / filename, arcname=filename)
-        return FileResponse(zip_path, filename="bulletins.zip",
-                            media_type="application/zip")
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as zf:
+            for row in rows:
+                zf.writestr(row["filename"],
+                            artifacts.read_object(row["object_key"]))
+        buffer.seek(0)
+        return StreamingResponse(
+            iter([buffer.getvalue()]),
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": 'attachment; filename="bulletins.zip"'},
+        )
 
     # ── Past runs (church-scoped) ─────────────────────────────────────
 
