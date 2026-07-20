@@ -126,10 +126,14 @@ on starter rites/editor. Before 6: pricing + Augsburg letter timing. Before 8: L
 
 ## Scope decision — July 20, 2026 (owner)
 
-**LWS-2 and LWS-3b are scoped to ELCA / RCL only for now.** The rite editor and rite model
-stay tradition-agnostic (Rite.tradition field, no hardcoded ELCA assumptions in the editor) so
-other traditions expand in later without rework — but we author NO non-ELCA rites yet
-(LSB/BCP deferred) and transcribe NO non-RCL lectionary data yet (Narrative, LCMS-1yr deferred).
+**CONTENT/DATA is ELCA/RCL-first; ARCHITECTURE is flexible/non-RCL-ready NOW** (owner steer,
+same day — see `08-flexible-calendar-rite-architecture.md`, the governing design). We author NO
+non-ELCA rites yet (LSB/BCP deferred) and transcribe NO non-RCL lectionary data yet (Catholic,
+Narrative, LCMS-1yr deferred) — BUT the calendar `CalendarProvider`/`LiturgicalDay` types and the
+rite model are engineered shape-agnostic from the start (open cycles/propers dicts; season as a
+provider-defined id, not the closed RCL enum; provider resolution method pluggable) so each
+deferred calendar/rite is later a "implement provider + supply data" or "author rite JSON" task
+with zero core rework. Opening the types must not change any ELCA value (parity is still the gate).
 The ELCA slice is to be calendar-complete: RCL propers resolvable in-house (LWS-3b = rcl_local
 with real RCL 3-year data, Vanderbilt-seeded owned tables), so ELCA rites work without S&S doing
 the calendar math. Owner is the liturgical-domain reviewer for the ELCA starter rites.
