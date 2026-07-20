@@ -99,6 +99,22 @@ Two ways to give a licensed church its ELW wording, same legal outcome:
   the Library spike proves retrieval. Both are the same ContentSource interface; only the `sns`
   source's implementation differs. Owner decides whether pull-live is worth the scrape.
 
+### Scripture translation — NRSV / NRSVUE (owner preference, July 20 2026)
+Owner wants NRSV/NRSVUE where possible. It slots into the same entitlement model:
+- **NRSVUE is the ENTITLED scripture translation, delivered via the church's S&S license.** NRSV/
+  NRSVUE is copyrighted (NCC/Friendship Press) with NO self-serve API (see doc 05), so it can only
+  come through S&S (which serves its DayTexts readings + `/Bible` in NRSVUE). **The Sunday READINGS
+  we already pull from S&S are NRSVUE — licensed churches already get NRSVUE scripture today.**
+- **PD fallback for scripture-derived content = KJV / WEB** (WEB has an explicit PD dedication).
+  This is what the daily-office KJV canticles are: the unlicensed-church fallback, not the primary.
+- So for scripture-kind content the resolver's entitled source = NRSVUE-via-S&S, PD source = KJV/WEB.
+  Readings already resolve this way (via `content_service`); pulling NRSVUE for the daily-office
+  canticles/psalms (vs today's bundled KJV) is a **CS-2** enhancement (needs the S&S scripture pull).
+- Possible extra path for non-S&S churches (flag for legal, not relied on): NRSVUE grants free
+  print use up to 500 verses in a church's own non-salable bulletin with attribution — but that is
+  the *church's* reproduction right, not our software's bundling right; only pursue if counsel
+  confirms the tool acts as the church's agent. Default remains NRSVUE-via-S&S / PD fallback.
+
 ### Flexibility payoff
 The layer is source-agnostic and tradition-agnostic: a future provider (another publisher, another
 church's PD corpus, a real API if one ever appears) is just another `ContentSource` in the registry
