@@ -51,8 +51,9 @@ from bulletin_maker.renderer.season import (
 )
 from bulletin_maker.renderer.settings import SETTINGS
 from bulletin_maker.sns.client import SundaysClient
-from bulletin_maker.web import db, security
-from bulletin_maker.web.sessions import SESSION_COOKIE, Session, SessionStore
+from bulletin_maker.web import auth_flows, db, security
+from bulletin_maker.web.sessions import (
+    SESSION_COOKIE, SESSION_TTL_SECONDS, Session, SessionStore)
 
 logger = logging.getLogger(__name__)
 
@@ -156,16 +157,10 @@ def create_app() -> FastAPI:
     store = SessionStore()
     hosted = os.environ.get("BULLETIN_HOSTED") == "1"
     limiter = LoginRateLimiter()
+    token_limiter = LoginRateLimiter()
 
-    def session_dep(request: Request, response: Response) -> Session:
-        sid = request.cookies.get(SESSION_COOKIE)
-        session = store.get_or_create(sid)
-        if session.id != sid:
-            response.set_cookie(
-                SESSION_COOKIE, session.id,
-                httponly=True, samesite="lax", secure=hosted,
-            )
-        return session
+    def session_dep(request: Request) -> Session:
+        return store.resolve(request.cookies.get(SESSION_COOKIE))
 
     def require_user(session: Session) -> dict:
         if session.user_id is None:
@@ -197,6 +192,15 @@ def create_app() -> FastAPI:
             raise _validation(
                 "Too many attempts — wait a few minutes.", status=429)
 
+    def _check_token_rate(request: Request, email_address: str) -> None:
+        if not hosted:
+            return
+        address = request.client.host if request.client else "unknown"
+        key = f"{email_address.strip().lower()}|{address}"
+        if not token_limiter.check(key):
+            raise _validation(
+                "Too many requests — wait a few minutes.", status=429)
+
     def sns_client(session: Session) -> SundaysClient:
         """The church's S&S client, logging in lazily with the linked
         credential. Raises a clear error when no account is linked."""
@@ -219,10 +223,12 @@ def create_app() -> FastAPI:
         session.client = client
         return client
 
-    def _sign_in(session: Session, user: dict) -> dict:
-        session.sign_out()
-        session.user_id = user["id"]
-        session.church_id = user["church_id"]
+    def _sign_in(user: dict, response: Response) -> dict:
+        token = store.login(user["id"], user["church_id"])
+        response.set_cookie(
+            SESSION_COOKIE, token, max_age=SESSION_TTL_SECONDS,
+            httponly=True, samesite="lax", secure=hosted,
+        )
         church = db.get_church(user["church_id"])
         return {
             "success": True,
@@ -246,8 +252,7 @@ def create_app() -> FastAPI:
         }
 
     @app.post("/api/register")
-    def register(payload: dict, request: Request,
-                 session: Session = Depends(session_dep)):
+    def register(payload: dict, request: Request, response: Response):
         _check_rate(request)
         church_name = (payload.get("church_name") or "").strip()
         if not church_name:
@@ -275,11 +280,11 @@ def create_app() -> FastAPI:
         if count == 0:
             _import_legacy_runs(church["id"])
         logger.warning("Registered church %r (admin %s)", church_name, email)
-        return _sign_in(session, user)
+        auth_flows.send_verification(user)
+        return _sign_in(user, response)
 
     @app.post("/api/join")
-    def join(payload: dict, request: Request,
-             session: Session = Depends(session_dep)):
+    def join(payload: dict, request: Request, response: Response):
         _check_rate(request)
         invite_code = (payload.get("invite_code") or "").strip()
         church = db.get_church_by_invite(invite_code) if invite_code else None
@@ -291,13 +296,13 @@ def create_app() -> FastAPI:
         user = db.create_user(
             church["id"], email, security.hash_password(password),
             display_name, role="member")
-        return _sign_in(session, user)
+        auth_flows.send_verification(user)
+        return _sign_in(user, response)
 
     # ── App sessions ──────────────────────────────────────────────────
 
     @app.post("/api/session")
-    def login(payload: dict, request: Request,
-              session: Session = Depends(session_dep)):
+    def login(payload: dict, request: Request, response: Response):
         _check_rate(request)
         email = (payload.get("email") or "").strip()
         password = payload.get("password") or ""
@@ -307,7 +312,7 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=401, detail={
                 "error": "Email or password is incorrect.",
                 "error_type": "auth"})
-        return _sign_in(session, user)
+        return _sign_in(user, response)
 
     @app.get("/api/session")
     def whoami(session: Session = Depends(session_dep)):
@@ -329,9 +334,65 @@ def create_app() -> FastAPI:
         }
 
     @app.delete("/api/session")
-    def logout(session: Session = Depends(session_dep)):
+    def logout(response: Response, session: Session = Depends(session_dep)):
         session.sign_out()
+        response.delete_cookie(SESSION_COOKIE)
         return {"success": True}
+
+    # ── Password reset / magic link / verification ────────────────────
+
+    def _verify_email(token: str) -> dict:
+        if not auth_flows.verify_email(token):
+            raise _validation(
+                "This verification link is invalid or has expired.",
+                status=400)
+        return {"success": True}
+
+    @app.post("/api/auth/forgot")
+    def forgot_password(payload: dict, request: Request):
+        email_address = (payload.get("email") or "").strip()
+        _check_token_rate(request, email_address)
+        auth_flows.request_password_reset(email_address)
+        return {"success": True}
+
+    @app.post("/api/auth/reset")
+    def reset_password(payload: dict):
+        token = payload.get("token") or ""
+        new_password = payload.get("new_password") or ""
+        if len(new_password) < MIN_PASSWORD_LENGTH:
+            raise _validation(
+                f"Password must be at least {MIN_PASSWORD_LENGTH} characters.")
+        user_id = auth_flows.reset_password(token, new_password)
+        if user_id is None:
+            raise _validation(
+                "This reset link is invalid or has expired.", status=400)
+        store.invalidate_user(user_id)
+        return {"success": True}
+
+    @app.post("/api/auth/magic")
+    def magic_link(payload: dict, request: Request):
+        email_address = (payload.get("email") or "").strip()
+        _check_token_rate(request, email_address)
+        auth_flows.request_magic_link(email_address)
+        return {"success": True}
+
+    @app.post("/api/auth/magic/consume")
+    def magic_consume(payload: dict, response: Response):
+        token = payload.get("token") or ""
+        user_id = auth_flows.consume_magic_link(token)
+        user = db.get_user(user_id) if user_id is not None else None
+        if user is None:
+            raise _validation(
+                "This sign-in link is invalid or has expired.", status=400)
+        return _sign_in(user, response)
+
+    @app.get("/api/auth/verify")
+    def verify_email_get(token: str):
+        return _verify_email(token)
+
+    @app.post("/api/auth/verify")
+    def verify_email_post(payload: dict):
+        return _verify_email(payload.get("token") or "")
 
     # ── Church settings ───────────────────────────────────────────────
 
