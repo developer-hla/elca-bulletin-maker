@@ -89,7 +89,7 @@ def rendered(tmp_path_factory):
     out = tmp_path_factory.mktemp("layout")
     day, hymns = _load_fixture()
     config = _make_config(hymns)
-    season = detect_season(day.title)
+    season = detect_season(day.title).value
     fill_seasonal_defaults(config, season)
 
     bulletin_path, creed_page = generate_bulletin(
@@ -201,7 +201,7 @@ class TestPaperPresetSmoke:
 
         day, hymns = _load_fixture()
         config = _make_config(hymns)
-        season = detect_season(day.title)
+        season = detect_season(day.title).value
         fill_seasonal_defaults(config, season)
         profile = dataclasses.replace(load_profile(), paper_size=preset_key)
         preset = get_paper_preset(preset_key)
@@ -225,7 +225,7 @@ class TestPaperPresetSmoke:
 
         day, hymns = _load_fixture()
         config = _make_config(hymns)
-        season = detect_season(day.title)
+        season = detect_season(day.title).value
         fill_seasonal_defaults(config, season)
         profile = dataclasses.replace(load_profile(), paper_size="a4_booklet")
 

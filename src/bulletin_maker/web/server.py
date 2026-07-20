@@ -36,7 +36,6 @@ from bulletin_maker.core import library as rite_library
 from bulletin_maker.core.calendar import (
     CALENDAR_PROVIDER_KEYS,
     get_calendar_provider,
-    liturgical_season_of,
 )
 from bulletin_maker.core.content_views import (
     build_liturgical_text_options,
@@ -912,13 +911,13 @@ def create_app() -> FastAPI:
         profile = profile_from_dict(json.loads(church["profile_json"]))
         provider = get_calendar_provider(profile.calendar_provider)
         liturgical_day = provider.resolve(date, day=day)
-        season = liturgical_season_of(liturgical_day)
-        seasonal = get_seasonal_config(season)
+        season_id = liturgical_day.season.id
+        seasonal = get_seasonal_config(season_id)
         return {
             "success": True,
             "title": day.title,
             "day_name": liturgical_day.day_name,
-            "season": season.value,
+            "season": season_id,
             "readings": [
                 {"label": r.label, "citation": r.citation} for r in day.readings
             ],
@@ -1088,8 +1087,8 @@ def create_app() -> FastAPI:
             config = build_service_config(form_data, session.hymn_cache)
             provider = get_calendar_provider(profile.calendar_provider)
             liturgical_day = provider.resolve(session.date_str, day=day)
-            season = liturgical_season_of(liturgical_day)
-            fill_seasonal_defaults(config, season)
+            season_id = liturgical_day.season.id
+            fill_seasonal_defaults(config, season_id)
             selected = set(form_data.get("selected_docs") or DEFAULT_SELECTION)
 
             def on_progress(key: str, detail: str, pct: int) -> None:
@@ -1110,7 +1109,7 @@ def create_app() -> FastAPI:
 
             outcome = generate_documents(
                 day, config, job_dir,
-                season=season,
+                season=season_id,
                 client=session.client,
                 selected=selected,
                 on_progress=on_progress,

@@ -38,19 +38,19 @@ class TestGetGospelAcclamationImage:
     def test_all_seasons_resolve(self):
         """Every season should map to an existing GA image."""
         for season in LiturgicalSeason:
-            path = get_gospel_acclamation_image(season)
+            path = get_gospel_acclamation_image(season.value)
             assert path.exists(), f"Missing GA for {season}: {path}"
 
     def test_lent_gets_lenten_verse(self):
-        path = get_gospel_acclamation_image(LiturgicalSeason.LENT)
+        path = get_gospel_acclamation_image(LiturgicalSeason.LENT.value)
         assert "lenten_verse" in path.stem
 
     def test_ordinary_gets_alleluia(self):
-        path = get_gospel_acclamation_image(LiturgicalSeason.PENTECOST)
+        path = get_gospel_acclamation_image(LiturgicalSeason.PENTECOST.value)
         assert "alleluia" in path.stem
 
     def test_advent_gets_advent(self):
-        path = get_gospel_acclamation_image(LiturgicalSeason.ADVENT)
+        path = get_gospel_acclamation_image(LiturgicalSeason.ADVENT.value)
         assert "alleluia" in path.stem  # advent uses same melody
 
 

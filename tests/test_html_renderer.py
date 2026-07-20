@@ -210,7 +210,7 @@ class TestBuildCommonContext:
             eucharistic_form="extended", include_memorial_acclamation=True,
             show_confession=True, show_nunc_dimittis=True,
         )
-        ctx = _build_common_context(day, config, LiturgicalSeason.LENT)
+        ctx = _build_common_context(day, config, LiturgicalSeason.LENT.value)
         expected_keys = {
             "church_name", "church_address", "cover_image_uri",
             "date_display", "day_name",
@@ -245,7 +245,7 @@ class TestBuildCommonContext:
             date="2026-2-22", date_display="February 22, 2026",
             creed_type="nicene",
         )
-        ctx = _build_common_context(day, config, LiturgicalSeason.LENT)
+        ctx = _build_common_context(day, config, LiturgicalSeason.LENT.value)
         assert ctx["creed_name"] == "NICENE CREED"
         assert ctx["is_lent"] is True
 
@@ -257,7 +257,7 @@ class TestBuildCommonContext:
             date="2026-2-22", date_display="February 22, 2026",
             creed_type="apostles",
         )
-        ctx = _build_common_context(day, config, LiturgicalSeason.PENTECOST)
+        ctx = _build_common_context(day, config, LiturgicalSeason.PENTECOST.value)
         assert ctx["creed_name"] == "APOSTLES CREED"
         assert ctx["is_lent"] is False
 
@@ -268,7 +268,7 @@ class TestBuildCommonContext:
         config = ServiceConfig(
             date="2026-2-22", date_display="February 22, 2026",
         )
-        ctx = _build_common_context(day, config, LiturgicalSeason.LENT)
+        ctx = _build_common_context(day, config, LiturgicalSeason.LENT.value)
         assert ctx["first_reading"] is not None
         assert ctx["first_reading"]["citation"] == "Genesis 2:15-17"
         assert ctx["gospel"] is not None
@@ -282,7 +282,7 @@ class TestBuildCommonContext:
         config = ServiceConfig(
             date="2026-2-22", date_display="February 22, 2026",
         )
-        ctx = _build_common_context(day, config, LiturgicalSeason.LENT)
+        ctx = _build_common_context(day, config, LiturgicalSeason.LENT.value)
 
         assert ctx["invitation_to_communion_text"] == INVITATION_TO_COMMUNION
 
@@ -442,7 +442,7 @@ class TestBulletinTemplate:
             postlude_composer="Charles-Marie Widor",
             postlude_performer="Organist",
         )
-        ctx = _build_bulletin_context(_make_day(), config, LiturgicalSeason.EASTER)
+        ctx = _build_bulletin_context(_make_day(), config, LiturgicalSeason.EASTER.value)
         html = template.render(**ctx)
 
         assert "<span>PRELUDE</span>" in html
@@ -465,7 +465,7 @@ class TestBulletinTemplate:
             offertory_composer="Marty Haugen",
             offertory_performer="Emery Lewis, soloist",
         )
-        ctx = _build_bulletin_context(_make_day(), config, LiturgicalSeason.EASTER)
+        ctx = _build_bulletin_context(_make_day(), config, LiturgicalSeason.EASTER.value)
         html = template.render(**ctx)
 
         assert "<span>CHORAL ANTHEM</span>" in html
@@ -487,7 +487,7 @@ class TestBulletinTemplate:
             offertory_composer="Marty Haugen",
             offertory_performer="Emery Lewis, soloist",
         )
-        ctx = _build_large_print_context(_make_day(), config, LiturgicalSeason.EASTER)
+        ctx = _build_large_print_context(_make_day(), config, LiturgicalSeason.EASTER.value)
         html = template.render(**ctx)
 
         assert "<span>CHORAL ANTHEM</span>" in html

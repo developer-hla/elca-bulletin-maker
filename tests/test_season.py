@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from bulletin_maker.core.models import ServiceConfig
+from bulletin_maker.exceptions import BulletinError
 from bulletin_maker.renderer.season import (
     LiturgicalSeason,
     PrefaceType,
@@ -55,66 +56,66 @@ class TestGetSeasonalConfig:
     """get_seasonal_config() returns correct liturgical settings per season."""
 
     def test_lent_has_no_canticle(self):
-        config = get_seasonal_config(LiturgicalSeason.LENT)
+        config = get_seasonal_config(LiturgicalSeason.LENT.value)
         assert config.canticle == "none"
 
     def test_lent_uses_nicene_creed(self):
-        config = get_seasonal_config(LiturgicalSeason.LENT)
+        config = get_seasonal_config(LiturgicalSeason.LENT.value)
         assert config.creed_default == "nicene"
 
     def test_pentecost_uses_short_eucharistic(self):
-        config = get_seasonal_config(LiturgicalSeason.PENTECOST)
+        config = get_seasonal_config(LiturgicalSeason.PENTECOST.value)
         assert config.eucharistic_form == "short"
 
     def test_all_eucharistic_forms_are_renderable(self):
         # Templates render only "short" and "extended"; any other value
         # silently falls through to the short form (the old "poetic" bug).
         for season in LiturgicalSeason:
-            config = get_seasonal_config(season)
+            config = get_seasonal_config(season.value)
             assert config.eucharistic_form in ("short", "extended"), (
                 f"{season} defaults to a form templates cannot render"
             )
 
     def test_christmas_has_memorial_acclamation(self):
-        config = get_seasonal_config(LiturgicalSeason.CHRISTMAS)
+        config = get_seasonal_config(LiturgicalSeason.CHRISTMAS.value)
         assert config.has_memorial_acclamation is True
 
     def test_christmas_eve_no_kyrie(self):
-        config = get_seasonal_config(LiturgicalSeason.CHRISTMAS_EVE)
+        config = get_seasonal_config(LiturgicalSeason.CHRISTMAS_EVE.value)
         assert config.has_kyrie is False
 
     def test_christmas_eve_no_confession(self):
-        config = get_seasonal_config(LiturgicalSeason.CHRISTMAS_EVE)
+        config = get_seasonal_config(LiturgicalSeason.CHRISTMAS_EVE.value)
         assert config.show_confession is False
 
     def test_most_seasons_show_confession(self):
         for season in LiturgicalSeason:
             if season == LiturgicalSeason.CHRISTMAS_EVE:
                 continue
-            config = get_seasonal_config(season)
+            config = get_seasonal_config(season.value)
             assert config.show_confession is True
 
     def test_all_seasons_show_nunc_dimittis(self):
         for season in LiturgicalSeason:
-            config = get_seasonal_config(season)
+            config = get_seasonal_config(season.value)
             assert config.show_nunc_dimittis is True
 
     def test_all_seasons_have_config(self):
         for season in LiturgicalSeason:
-            config = get_seasonal_config(season)
+            config = get_seasonal_config(season.value)
             assert config is not None
             assert config.preface  # non-empty string
 
     def test_lent_preface(self):
-        config = get_seasonal_config(LiturgicalSeason.LENT)
+        config = get_seasonal_config(LiturgicalSeason.LENT.value)
         assert config.preface is PrefaceType.LENT
 
     def test_pentecost_preface(self):
-        config = get_seasonal_config(LiturgicalSeason.PENTECOST)
+        config = get_seasonal_config(LiturgicalSeason.PENTECOST.value)
         assert config.preface is PrefaceType.SUNDAYS
 
     def test_christmas_eve_preface(self):
-        config = get_seasonal_config(LiturgicalSeason.CHRISTMAS_EVE)
+        config = get_seasonal_config(LiturgicalSeason.CHRISTMAS_EVE.value)
         assert config.preface is PrefaceType.CHRISTMAS
 
 
@@ -152,7 +153,7 @@ class TestFillSeasonalDefaults:
 
     def test_fills_none_fields(self):
         config = ServiceConfig(date="2026-2-22", date_display="February 22, 2026")
-        fill_seasonal_defaults(config, LiturgicalSeason.LENT)
+        fill_seasonal_defaults(config, LiturgicalSeason.LENT.value)
         assert config.creed_type == "nicene"
         assert config.include_kyrie is False
         assert config.canticle == "none"
@@ -169,7 +170,7 @@ class TestFillSeasonalDefaults:
             date_display="December 24, 2025",
             show_greeting=False,
         )
-        fill_seasonal_defaults(config, LiturgicalSeason.CHRISTMAS_EVE)
+        fill_seasonal_defaults(config, LiturgicalSeason.CHRISTMAS_EVE.value)
         assert config.show_greeting is False
 
     def test_preserves_explicit_values(self):
@@ -183,7 +184,7 @@ class TestFillSeasonalDefaults:
             include_memorial_acclamation=False,
             preface=PrefaceType.SUNDAYS,
         )
-        fill_seasonal_defaults(config, LiturgicalSeason.LENT)
+        fill_seasonal_defaults(config, LiturgicalSeason.LENT.value)
         # All values should be preserved, not overwritten by Lent defaults
         assert config.creed_type == "apostles"
         assert config.include_kyrie is True
@@ -199,7 +200,7 @@ class TestFillSeasonalDefaults:
             creed_type="nicene",  # Explicit
             # All others left as None -> fill from Pentecost defaults
         )
-        fill_seasonal_defaults(config, LiturgicalSeason.PENTECOST)
+        fill_seasonal_defaults(config, LiturgicalSeason.PENTECOST.value)
         assert config.creed_type == "nicene"  # Preserved
         assert config.include_kyrie is True   # From Pentecost
         assert config.canticle == CANTICLE_GLORY_TO_GOD  # From Pentecost
@@ -208,7 +209,7 @@ class TestFillSeasonalDefaults:
     def test_all_seasons_fill(self):
         for season in LiturgicalSeason:
             config = ServiceConfig(date="2026-1-1", date_display="January 1, 2026")
-            fill_seasonal_defaults(config, season)
+            fill_seasonal_defaults(config, season.value)
             assert config.creed_type is not None
             assert config.include_kyrie is not None
             assert config.canticle is not None
@@ -220,7 +221,7 @@ class TestFillSeasonalDefaults:
 
     def test_christmas_eve_no_confession(self):
         config = ServiceConfig(date="2026-12-24", date_display="December 24, 2026")
-        fill_seasonal_defaults(config, LiturgicalSeason.CHRISTMAS_EVE)
+        fill_seasonal_defaults(config, LiturgicalSeason.CHRISTMAS_EVE.value)
         assert config.show_confession is False
 
     def test_show_confession_preserves_explicit(self):
@@ -228,7 +229,7 @@ class TestFillSeasonalDefaults:
             date="2026-12-24", date_display="December 24, 2026",
             show_confession=True,
         )
-        fill_seasonal_defaults(config, LiturgicalSeason.CHRISTMAS_EVE)
+        fill_seasonal_defaults(config, LiturgicalSeason.CHRISTMAS_EVE.value)
         assert config.show_confession is True  # Preserved, not overwritten
 
     def test_show_nunc_dimittis_preserves_explicit(self):
@@ -236,5 +237,39 @@ class TestFillSeasonalDefaults:
             date="2026-2-22", date_display="February 22, 2026",
             show_nunc_dimittis=False,
         )
-        fill_seasonal_defaults(config, LiturgicalSeason.LENT)
+        fill_seasonal_defaults(config, LiturgicalSeason.LENT.value)
         assert config.show_nunc_dimittis is False  # Preserved
+
+
+class TestSeasonIdGeneralization:
+    """RB-1: the seasonal-config path keys off a season-id STRING, so an
+    RCL id resolves to today's values and an unknown id no longer hits a
+    closed-enum wall — it either resolves (if a provider added customs) or
+    fails loud with a clear, actionable error."""
+
+    def test_get_seasonal_config_accepts_each_rcl_id_string(self):
+        # Every RCL/Western id (== the enum value) resolves to today's config.
+        for season in LiturgicalSeason:
+            by_id = get_seasonal_config(season.value)
+            assert by_id.preface  # non-empty
+            assert by_id.eucharistic_form in ("short", "extended")
+
+    def test_fill_seasonal_defaults_accepts_id_string(self):
+        config = ServiceConfig(date="2026-2-22", date_display="February 22, 2026")
+        fill_seasonal_defaults(config, "lent")
+        assert config.creed_type == "nicene"
+        assert config.canticle == "none"
+        assert config.include_kyrie is False
+
+    def test_unknown_season_id_fails_loud(self):
+        # A future provider's season id with no customs entry ("gesima") must
+        # raise a clear error naming the id — not a KeyError, not a silent
+        # misrender, and crucially not a closed-enum ValueError.
+        with pytest.raises(BulletinError) as excinfo:
+            get_seasonal_config("gesima")
+        assert "gesima" in str(excinfo.value)
+
+    def test_unknown_season_id_fails_loud_in_fill(self):
+        config = ServiceConfig(date="2026-2-22", date_display="February 22, 2026")
+        with pytest.raises(BulletinError):
+            fill_seasonal_defaults(config, "gesima")

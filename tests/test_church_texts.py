@@ -370,5 +370,5 @@ class TestRitesEndpoint:
         from bulletin_maker.renderer.season import LiturgicalSeason
 
         config = ServiceConfig(date="2026-7-19", date_display="July 19, 2026")
-        sequence = resolve_bulletin_sequence(config, LiturgicalSeason.PENTECOST)
+        sequence = resolve_bulletin_sequence(config, LiturgicalSeason.PENTECOST.value)
         assert sequence  # non-empty — the default rite resolved and rendered

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from bulletin_maker.sns.client import SundaysClient
 
 from bulletin_maker.exceptions import ContentNotFoundError
-from bulletin_maker.renderer.season import LiturgicalSeason, PrefaceType
+from bulletin_maker.renderer.season import PrefaceType
 from bulletin_maker.renderer.settings import (
     DEFAULT_SETTING_KEY,
     USER_ASSETS_DIR,
@@ -62,15 +62,17 @@ def _ga_atom_segment(setting: LiturgicalSetting, variant: str) -> str:
         return "lentaccl"
     return setting.ga_segment
 
-# Season → Gospel Acclamation variant name
+# Season id → Gospel Acclamation variant name. Lent uses the Lenten verse;
+# every other season (and any unknown id — see get_gospel_acclamation_image)
+# uses the standard alleluia acclamation.
 _GA_SEASON_MAP = {
-    LiturgicalSeason.ADVENT: "alleluia",
-    LiturgicalSeason.CHRISTMAS: "alleluia",
-    LiturgicalSeason.EPIPHANY: "alleluia",
-    LiturgicalSeason.LENT: "lenten_verse",
-    LiturgicalSeason.EASTER: "alleluia",
-    LiturgicalSeason.PENTECOST: "alleluia",
-    LiturgicalSeason.CHRISTMAS_EVE: "alleluia",
+    "advent": "alleluia",
+    "christmas": "alleluia",
+    "epiphany": "alleluia",
+    "lent": "lenten_verse",
+    "easter": "alleluia",
+    "pentecost": "alleluia",
+    "christmas_eve": "alleluia",
 }
 
 _IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".tif", ".tiff")
@@ -184,14 +186,18 @@ def get_setting_image(
 
 
 def get_gospel_acclamation_image(
-    season: LiturgicalSeason,
+    season_id: str,
     *,
     setting: LiturgicalSetting | None = None,
     client: SundaysClient | None = None,
 ) -> Path:
-    """Return the Gospel Acclamation image path for the given season."""
+    """Return the Gospel Acclamation image path for the given season id.
+
+    An unknown season id falls back to the standard alleluia acclamation —
+    the neutral default for any season that isn't Lent.
+    """
     setting = _resolve_setting(setting)
-    variant = _GA_SEASON_MAP.get(season, "alleluia")
+    variant = _GA_SEASON_MAP.get(season_id, "alleluia")
     atom_code = f"{setting.atom_prefix}_{_ga_atom_segment(setting, variant)}_m"
     return _resolve_image(
         _ga_dir(setting), variant, atom_code, client,

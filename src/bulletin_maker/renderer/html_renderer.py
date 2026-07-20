@@ -38,7 +38,6 @@ from bulletin_maker.sns.models import (
     HymnLyrics,
     Reading,
 )
-from bulletin_maker.renderer.season import LiturgicalSeason
 from bulletin_maker.renderer.paper import PaperPreset, get_paper_preset
 from bulletin_maker.renderer.settings import LiturgicalSetting, get_setting
 from bulletin_maker.renderer.image_manager import (
@@ -706,7 +705,7 @@ def resolve_text_defaults(
 # ══════════════════════════════════════════════════════════════════════
 
 def _build_readings_context(
-    day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
+    day: DayContent, config: ServiceConfig, season: str,
     setting: LiturgicalSetting | None = None,
     client: SundaysClient | None = None,
 ) -> dict:
@@ -782,7 +781,7 @@ def _build_eucharistic_context(
 
 
 def _build_common_context(
-    day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
+    day: DayContent, config: ServiceConfig, season: str,
     profile: CongregationProfile | None = None,
     client: SundaysClient | None = None,
     content: ContentContext | None = None,
@@ -822,7 +821,7 @@ def _build_common_context(
         "show_confession": config.show_confession,
         "confession_entries": config.confession_entries,
         "greeting_entries": resolve_text("elw.greeting", content) if config.show_greeting else None,
-        "is_lent": season == LiturgicalSeason.LENT,
+        "is_lent": season == "lent",
         "invitation_to_lent_paragraphs": _split_stanzas(
             resolve_text("elw.invitation_to_lent", content)
         ),
@@ -848,7 +847,7 @@ def _build_common_context(
 
 
 def _build_large_print_context(
-    day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
+    day: DayContent, config: ServiceConfig, season: str,
     *,
     gathering_hymn_image_uri: str = "",
     sermon_hymn_image_uri: str = "",
@@ -1025,7 +1024,7 @@ def _canticle_image_uri_for_config(
 def _build_bulletin_context(
     day: DayContent,
     config: ServiceConfig,
-    season: LiturgicalSeason,
+    season: str,
     *,
     communion_hymn_image_uri: str = "",
     profile: CongregationProfile | None = None,
@@ -1181,7 +1180,7 @@ def generate_large_print(
     config: ServiceConfig,
     output_path: Path,
     *,
-    season: LiturgicalSeason,
+    season: str,
     client: SundaysClient | None = None,
     keep_intermediates: bool = False,
     profile: CongregationProfile | None = None,
@@ -1193,7 +1192,7 @@ def generate_large_print(
         day: S&S content for the Sunday.
         config: User-provided service configuration (already resolved).
         output_path: Where to save the final PDF (suffix forced to .pdf).
-        season: The detected liturgical season.
+        season: The season-identity string (e.g. "lent", "pentecost").
         client: Optional authenticated SundaysClient. When provided, harmony
             notation (with melody fallback) is fetched for the communion hymn
             and replaces its lyrics on its own page. Gathering, sermon, and
@@ -1220,7 +1219,7 @@ def generate_large_print(
 
 
 def _build_leader_guide_context(
-    day: DayContent, config: ServiceConfig, season: LiturgicalSeason,
+    day: DayContent, config: ServiceConfig, season: str,
     *,
     gathering_hymn_image_uri: str = "",
     sermon_hymn_image_uri: str = "",
@@ -1271,7 +1270,7 @@ def generate_leader_guide(
     config: ServiceConfig,
     output_path: Path,
     *,
-    season: LiturgicalSeason,
+    season: str,
     client: SundaysClient | None = None,
     keep_intermediates: bool = False,
     profile: CongregationProfile | None = None,
@@ -1286,7 +1285,7 @@ def generate_leader_guide(
         day: S&S content for the Sunday.
         config: User-provided service configuration (already resolved).
         output_path: Where to save the final PDF (suffix forced to .pdf).
-        season: The detected liturgical season.
+        season: The season-identity string (e.g. "lent", "pentecost").
         client: Optional authenticated SundaysClient. When provided, harmony
             notation (with melody fallback) is fetched for each hymn and
             replaces the lyrics on its own page.
@@ -1404,7 +1403,7 @@ def generate_bulletin(
     config: ServiceConfig,
     output_path: Path,
     *,
-    season: LiturgicalSeason,
+    season: str,
     client: SundaysClient | None = None,
     keep_intermediates: bool = False,
     on_progress: Optional[Callable[[str], None]] = None,
@@ -1420,7 +1419,7 @@ def generate_bulletin(
         day: S&S content for the Sunday.
         config: User-provided service configuration (already resolved).
         output_path: Where to save the final booklet PDF.
-        season: The detected liturgical season.
+        season: The season-identity string (e.g. "lent", "pentecost").
         client: Optional authenticated SundaysClient for fetching the
             communion hymn notation image dynamically.
         keep_intermediates: If True, save debug HTML and sequential PDF.

@@ -118,34 +118,40 @@ class SeasonalConfig:
 _SEASONAL_CUSTOMS_FILE = Path(__file__).resolve().parent / "data" / "seasonal_customs.json"
 
 
-def _load_seasonal_customs(path: Path) -> dict[LiturgicalSeason, SeasonalConfig]:
-    """Parse the bundled seasonal-customs data file into SeasonalConfig objects.
+def _build_seasonal_config(entry: dict) -> SeasonalConfig:
+    return SeasonalConfig(
+        has_kyrie=entry["has_kyrie"],
+        canticle=entry["canticle"],
+        creed_default=entry["creed_default"],
+        eucharistic_form=entry["eucharistic_form"],
+        has_memorial_acclamation=entry["has_memorial_acclamation"],
+        preface=PrefaceType(entry["preface"]),
+        show_confession=entry["show_confession"],
+        show_greeting=entry["show_greeting"],
+        show_nunc_dimittis=entry["show_nunc_dimittis"],
+    )
 
-    Fails fast (BulletinError) if any LiturgicalSeason member has no entry
-    in the data file.
+
+def _load_seasonal_customs(path: Path) -> dict[str, SeasonalConfig]:
+    """Parse the bundled seasonal-customs data file, keyed by season-id string.
+
+    Fails fast (BulletinError) if any RCL/Western season (a LiturgicalSeason
+    value) has no entry. Providers may add entries under their own season ids
+    (e.g. "gesima", "creation"); those load here too and become resolvable
+    without the closed enum ever having to know about them.
     """
     with path.open(encoding="utf-8") as handle:
         raw = json.load(handle)
 
-    customs: dict[LiturgicalSeason, SeasonalConfig] = {}
     for season in LiturgicalSeason:
         if season.value not in raw:
             raise BulletinError(
                 f"Missing seasonal customs for season {season.value!r} in {path}"
             )
-        entry = raw[season.value]
-        customs[season] = SeasonalConfig(
-            has_kyrie=entry["has_kyrie"],
-            canticle=entry["canticle"],
-            creed_default=entry["creed_default"],
-            eucharistic_form=entry["eucharistic_form"],
-            has_memorial_acclamation=entry["has_memorial_acclamation"],
-            preface=PrefaceType(entry["preface"]),
-            show_confession=entry["show_confession"],
-            show_greeting=entry["show_greeting"],
-            show_nunc_dimittis=entry["show_nunc_dimittis"],
-        )
-    return customs
+    return {
+        season_id: _build_seasonal_config(entry)
+        for season_id, entry in raw.items()
+    }
 
 
 _SEASONAL_CUSTOMS = _load_seasonal_customs(_SEASONAL_CUSTOMS_FILE)
@@ -197,18 +203,34 @@ def get_preface_options() -> dict[str, list[dict[str, str]]]:
     return groups
 
 
-def get_seasonal_config(season: LiturgicalSeason) -> SeasonalConfig:
-    """Get the liturgical configuration for a season."""
-    return _SEASONAL_CUSTOMS[season]
+def get_seasonal_config(season_id: str) -> SeasonalConfig:
+    """Get the liturgical configuration for a season id.
+
+    ``season_id`` is a season-identity string ("advent"…"christmas_eve" for
+    RCL/Western; a non-RCL provider may introduce its own). Raises
+    BulletinError for an id with no customs entry — a provider adding a new
+    season must supply its customs; a missing entry is a misconfiguration to
+    surface loudly, not something to paper over with a silent default.
+    """
+    try:
+        return _SEASONAL_CUSTOMS[season_id]
+    except KeyError:
+        raise BulletinError(
+            "No seasonal customs for season id %r (known: %s); a calendar "
+            "provider introducing a new season must add its entry to %s"
+            % (season_id, ", ".join(sorted(_SEASONAL_CUSTOMS)),
+               _SEASONAL_CUSTOMS_FILE.name)
+        ) from None
 
 
-def fill_seasonal_defaults(config: ServiceConfig, season: LiturgicalSeason) -> None:
+def fill_seasonal_defaults(config: ServiceConfig, season_id: str) -> None:
     """Fill any None liturgical-choice fields on config from the season defaults.
 
     Mutates ``config`` in place.  Only touches fields that are None;
     values already set by the user/wizard are left unchanged.
+    ``season_id`` is a season-identity string (see :func:`get_seasonal_config`).
     """
-    seasonal = _SEASONAL_CUSTOMS[season]
+    seasonal = get_seasonal_config(season_id)
 
     if config.creed_type is None:
         config.creed_type = seasonal.creed_default

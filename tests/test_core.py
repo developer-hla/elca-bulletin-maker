@@ -87,7 +87,7 @@ class TestGenerateDocuments:
             m_lg.return_value = tmp_path / "g.pdf"
             outcome = generate_documents(
                 _day(), _config(), tmp_path,
-                season=LiturgicalSeason.PENTECOST, selected=selected,
+                season=LiturgicalSeason.PENTECOST.value, selected=selected,
             )
             return outcome, {
                 "bulletin": m_bull, "prayers": m_pray, "scripture": m_scrip,
@@ -115,7 +115,7 @@ class TestGenerateDocuments:
         with pytest.raises(ValueError):
             generate_documents(
                 _day(), _config(), tmp_path,
-                season=LiturgicalSeason.PENTECOST, selected={"newsletter"},
+                season=LiturgicalSeason.PENTECOST.value, selected={"newsletter"},
             )
 
     def test_one_failure_does_not_stop_others(self, tmp_path):
@@ -128,7 +128,7 @@ class TestGenerateDocuments:
             for m in (m_pray, m_scrip, m_lp, m_lg):
                 m.return_value = tmp_path / "x.pdf"
             outcome = generate_documents(
-                _day(), _config(), tmp_path, season=LiturgicalSeason.PENTECOST,
+                _day(), _config(), tmp_path, season=LiturgicalSeason.PENTECOST.value,
             )
         assert not outcome.success
         assert "chromium died" in outcome.errors["bulletin"]
@@ -140,7 +140,7 @@ class TestGenerateDocuments:
             m_scrip.return_value = tmp_path / "s.pdf"
             generate_documents(
                 _day(), _config(), tmp_path,
-                season=LiturgicalSeason.PENTECOST, selected={"scripture"},
+                season=LiturgicalSeason.PENTECOST.value, selected={"scripture"},
                 on_progress=lambda key, detail, pct: calls.append((key, detail, pct)),
             )
         keys = [c[0] for c in calls]

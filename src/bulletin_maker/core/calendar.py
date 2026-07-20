@@ -61,10 +61,12 @@ fighting the type instead of using it:
   provider is nonetheless *constrained*, by its own contract, to always set
   ``season.id`` to one of today's ``LiturgicalSeason`` values — that's
   what keeps output byte-identical (the hard gate for this workstream).
-  :func:`liturgical_season_of` recovers the closed enum from a
-  ``LiturgicalDay`` for the parts of the app (``get_seasonal_config``,
-  ``fill_seasonal_defaults``, ``generate_documents``) that are out of
-  this workstream's scope to generalize and still expect that enum.
+  The resolution path (``get_seasonal_config``, ``fill_seasonal_defaults``,
+  the rite-condition context, the season-driven renderer atoms) keys off
+  ``season.id`` — the string id — directly, so a provider's new season id
+  flows through with its own customs entry rather than hitting the closed
+  enum. :func:`liturgical_season_of` remains as a convenience seam for any
+  caller that still wants the closed enum recovered from a ``LiturgicalDay``.
 
 Real lectionary data/computed propers (rcl_local, narrative, lcms_1yr) are
 LWS-3b, not this module.
@@ -154,9 +156,8 @@ def liturgical_season_of(day: "LiturgicalDay") -> LiturgicalSeason:
     (its contract requires it), and true for a manual day only if the
     church happened to pass a real LiturgicalSeason as its override.
     Raises BulletinError otherwise: this is the seam back to the closed
-    vocabulary that get_seasonal_config/fill_seasonal_defaults/
-    generate_documents still require, not something every provider's
-    output can be expected to satisfy.
+    vocabulary for any caller that wants the enum, not something every
+    provider's output can be expected to satisfy.
     """
     try:
         return LiturgicalSeason(day.season.id)

@@ -46,7 +46,7 @@ class Variant(NamedTuple):
     name: str
     day: DayContent
     config: ServiceConfig
-    season: LiturgicalSeason
+    season: str
 
 
 def load_fixture() -> tuple[DayContent, dict[str, HymnLyrics]]:
@@ -77,14 +77,14 @@ def _base_config(hymns: dict[str, HymnLyrics]) -> ServiceConfig:
 
 def _regular(day: DayContent, hymns: dict[str, HymnLyrics]) -> Variant:
     config = _base_config(hymns)
-    season = detect_season(day.title)
+    season = detect_season(day.title).value
     fill_seasonal_defaults(config, season)
     return Variant("regular", day, config, season)
 
 
 def _baptism(day: DayContent, hymns: dict[str, HymnLyrics]) -> Variant:
     config = _base_config(hymns)
-    season = detect_season(day.title)
+    season = detect_season(day.title).value
     fill_seasonal_defaults(config, season)
     config.include_baptism = True
     config.baptism_candidate_names = "Jordan Alexis Rivera, Micah Thomas Rivera"
@@ -95,7 +95,7 @@ def _lenten(day: DayContent, hymns: dict[str, HymnLyrics]) -> Variant:
     """Kyrie off, canticle none, extended EP, nicene creed — pure LENT
     seasonal defaults, on the fixture's own readings/hymns."""
     config = _base_config(hymns)
-    season = LiturgicalSeason.LENT
+    season = LiturgicalSeason.LENT.value
     fill_seasonal_defaults(config, season)
     return Variant("lenten", day, config, season)
 
@@ -104,7 +104,7 @@ def _festival(day: DayContent, hymns: dict[str, HymnLyrics]) -> Variant:
     """This Is the Feast, sung memorial acclamation, nicene creed —
     explicit overrides layered on the fixture's native season."""
     config = _base_config(hymns)
-    season = detect_season(day.title)
+    season = detect_season(day.title).value
     fill_seasonal_defaults(config, season)
     config.canticle = CANTICLE_THIS_IS_THE_FEAST
     config.creed_type = "nicene"

@@ -26,7 +26,6 @@ from typing import Any, Dict, List, Tuple
 from bulletin_maker.core.library import SUNDAY_COMMUNION_RITE_ID, load_rite
 from bulletin_maker.core.models import ServiceConfig
 from bulletin_maker.core.rite import Rite, condition_applies
-from bulletin_maker.renderer.season import LiturgicalSeason
 from bulletin_maker.sns.models import (
     CANTICLE_GLORY_TO_GOD,
     CANTICLE_THIS_IS_THE_FEAST,
@@ -98,13 +97,14 @@ def _resolve_rite(config: ServiceConfig) -> Rite:
 
 
 def build_condition_context(
-    config: ServiceConfig, season: LiturgicalSeason,
+    config: ServiceConfig, season_id: str,
 ) -> Dict[str, Any]:
     """Expand a resolved ServiceConfig into the rite condition context.
 
     Returns ``{season, feasts, toggles}`` as consumed by
-    :func:`bulletin_maker.core.rite.condition_applies`.  The three enum fields
-    become derived booleans (see module docstring).
+    :func:`bulletin_maker.core.rite.condition_applies`.  ``season_id`` is the
+    season-identity string a rite ``condition.seasons`` list matches against;
+    the three enum config fields become derived booleans (see module docstring).
     """
     toggles = {
         "show_confession": bool(config.show_confession),
@@ -119,7 +119,7 @@ def build_condition_context(
         "memorial_acclamation": bool(config.include_memorial_acclamation),
         "nunc_dimittis": bool(config.show_nunc_dimittis),
     }
-    return {"season": season.value, "feasts": [], "toggles": toggles}
+    return {"season": season_id, "feasts": [], "toggles": toggles}
 
 
 def _visible_block_ids(rite: Rite, context: Dict[str, Any]) -> List[str]:
@@ -155,20 +155,20 @@ def _group(
 
 
 def resolve_bulletin_sequence(
-    config: ServiceConfig, season: LiturgicalSeason,
+    config: ServiceConfig, season_id: str,
 ) -> List[Dict[str, Any]]:
     """Return the bulletin's render sequence: ordered, condition-filtered blocks.
 
     Each item is ``{"flow": bool, "ids": [block_id, ...]}``; ``flow`` items are
     wrapped in a ``.flow-group`` div by the template.
     """
-    context = build_condition_context(config, season)
+    context = build_condition_context(config, season_id)
     rite = _resolve_rite(config)
     return _group(_visible_block_ids(rite, context), _BULLETIN_FLOW_GROUP_OF)
 
 
 def resolve_large_print_sequence(
-    config: ServiceConfig, season: LiturgicalSeason,
+    config: ServiceConfig, season_id: str,
 ) -> List[Dict[str, Any]]:
     """Return the large-print / leader-guide render sequence.
 
@@ -177,6 +177,6 @@ def resolve_large_print_sequence(
     shares this sequence and switches individual blocks from text to notation
     images via ``*_image_uri`` context values, per-block in the template.
     """
-    context = build_condition_context(config, season)
+    context = build_condition_context(config, season_id)
     rite = _resolve_rite(config)
     return _group(_visible_block_ids(rite, context), _LARGE_PRINT_FLOW_GROUP_OF)

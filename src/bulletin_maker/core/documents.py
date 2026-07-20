@@ -25,7 +25,6 @@ from bulletin_maker.renderer import (
     generate_pulpit_prayers,
     generate_pulpit_scripture,
 )
-from bulletin_maker.renderer.season import LiturgicalSeason
 from bulletin_maker.sns.client import SundaysClient
 from bulletin_maker.sns.models import DayContent
 
@@ -107,7 +106,7 @@ def generate_documents(
     config: ServiceConfig,
     output_dir: Path,
     *,
-    season: LiturgicalSeason,
+    season: str,
     client: SundaysClient | None = None,
     selected: set[str] | None = None,
     keep_intermediates: bool = False,

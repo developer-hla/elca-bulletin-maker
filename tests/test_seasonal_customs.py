@@ -100,7 +100,7 @@ EXPECTED = {
 
 @pytest.mark.parametrize("season", list(LiturgicalSeason))
 def test_get_seasonal_config_matches_historical_values(season):
-    assert get_seasonal_config(season) == EXPECTED[season]
+    assert get_seasonal_config(season.value) == EXPECTED[season]
 
 
 def test_every_liturgical_season_is_covered():
