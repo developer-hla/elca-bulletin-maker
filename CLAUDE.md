@@ -15,7 +15,7 @@
 - `src/bulletin_maker/core/` — Domain layer: ServiceConfig, document registry, generate_documents() workflow, filename rules. UI shells adapt to this package; it never imports them.
 - `src/bulletin_maker/sns/` — Sundays & Seasons API client
 - `src/bulletin_maker/renderer/` — HTML/CSS + Playwright PDF generation
-- `src/bulletin_maker/web/` — FastAPI adapter: accounts (db.py SQLite, security.py scrypt+Fernet vault), sessions, generation jobs, serves the SPA; entry point `bulletin-maker` runs it locally. First run registers a church; S&S credential is linked in Settings and stored encrypted.
+- `src/bulletin_maker/web/` — FastAPI adapter: accounts (db.py PostgreSQL via psycopg3, plain-SQL migrations in `web/migrations/`, security.py scrypt+Fernet vault), sessions, generation jobs, serves the SPA; entry point `bulletin-maker` runs it locally. Dev DBs: `bulletin_maker` + `bulletin_maker_test` (need citext). First run registers a church; S&S credential is linked in Settings and stored encrypted.
 - `src/bulletin_maker/ui/templates/` — wizard SPA assets (fetch-based, no pywebview)
 - `src/bulletin_maker/exceptions.py` — Custom exception hierarchy
 - `scripts/` — Dev utilities (generate_test, test_sns_client, explore_and_download)

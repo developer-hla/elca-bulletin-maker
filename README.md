@@ -62,7 +62,7 @@ python -m pytest tests/ -m layout -v  # layout regression (renders real PDFs)
 
 - `src/bulletin_maker/sns/` — Sundays & Seasons client (auth, content fetching, hymn search/download)
 - `src/bulletin_maker/renderer/` — HTML/CSS + Playwright PDF generation (5 document types)
-- `src/bulletin_maker/web/` — FastAPI server, accounts (SQLite + encrypted S&S vault), entry point
+- `src/bulletin_maker/web/` — FastAPI server, accounts (PostgreSQL + encrypted S&S vault), entry point
 - `src/bulletin_maker/ui/templates/` — wizard SPA (HTML/JS/CSS)
 - `src/bulletin_maker/exceptions.py` — Custom exception hierarchy
 - `tests/` — Pytest test suite with fixtures in `tests/fixtures/`
