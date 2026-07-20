@@ -65,6 +65,22 @@ export var api = (function() {
         whoami: function() { return req("GET", "/api/session"); },
         instance_info: function() { return req("GET", "/api/instance"); },
         logout: function() { return req("DELETE", "/api/session"); },
+        forgot_password: function(email) {
+            return req("POST", "/api/auth/forgot", { email: email });
+        },
+        reset_password: function(token, newPassword) {
+            return req("POST", "/api/auth/reset",
+                       { token: token, new_password: newPassword });
+        },
+        request_magic_link: function(email) {
+            return req("POST", "/api/auth/magic", { email: email });
+        },
+        consume_magic_link: function(token) {
+            return req("POST", "/api/auth/magic/consume", { token: token });
+        },
+        verify_email: function(token) {
+            return req("POST", "/api/auth/verify", { token: token });
+        },
         get_church: function() { return req("GET", "/api/church"); },
         update_church_profile: function(payload) {
             return req("PUT", "/api/church/profile", payload);

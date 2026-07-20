@@ -20,16 +20,30 @@ export function handleAuthError(result) {
 // ── Login ────────────────────────────────────────────────────────────
 
 function _authForms() {
-    return [$("#login-form"), $("#register-form"), $("#join-form")];
+    return [$("#login-form"), $("#register-form"), $("#join-form"),
+            $("#recover-form"), $("#reset-form")];
 }
 
 function showAuthForm(id) {
     _authForms().forEach(function(f) { hide(f); });
-    ["#login-error", "#register-error", "#join-error"].forEach(function(sel) {
+    ["#login-error", "#register-error", "#join-error",
+     "#recover-error", "#reset-error"].forEach(function(sel) {
         hideError($(sel));
     });
+    hide($("#login-info"));
     hide($("#login-spinner"));
     show($(id));
+}
+
+function showLoginWith(message, isError) {
+    showAuthForm("#login-form");
+    if (!message) return;
+    if (isError) {
+        showError($("#login-error"), message);
+    } else {
+        $("#login-info").textContent = message;
+        show($("#login-info"));
+    }
 }
 
 /** Post-auth entry: reveal the app and personalize the header. */
@@ -66,7 +80,58 @@ export async function loadChurchLabels() {
     state.paperLabel = labelFor(result.options.paper_size, profile.paper_size);
 }
 
+// ── Emailed link tokens (#reset= / #magic= / #verify=) ──────────────
+
+var resetToken = null;
+
+function _takeHashToken() {
+    var match = /^#(reset|magic|verify)=([A-Za-z0-9_-]+)$/.exec(
+        window.location.hash);
+    if (!match) return null;
+    // Drop the token from the URL so it doesn't linger in history
+    history.replaceState(null, "", window.location.pathname);
+    return { kind: match[1], token: match[2] };
+}
+
+function _overlayVisible() {
+    return !$("#login-overlay").hidden;
+}
+
+/** Returns true when the token flow already decided what to show. */
+async function _handleHashToken() {
+    var found = _takeHashToken();
+    if (!found) return false;
+    if (found.kind === "magic") {
+        var result = await api.consume_magic_link(found.token);
+        if (result.success) {
+            enterApp(result);
+        } else if (_overlayVisible()) {
+            // Signed-in users can ignore a stale sign-in link
+            showLoginWith(result.error ||
+                "This sign-in link is invalid or has expired.", true);
+        }
+        return true;
+    }
+    if (found.kind === "reset") {
+        // Resetting invalidates every session, so force the auth card
+        resetToken = found.token;
+        hide($("#app"));
+        show($("#login-overlay"));
+        showAuthForm("#reset-form");
+        return true;
+    }
+    var verified = await api.verify_email(found.token);
+    if (_overlayVisible()) {
+        showLoginWith(verified.success
+            ? "Email verified — you can sign in."
+            : (verified.error || "This verification link is invalid or has expired."),
+            !verified.success);
+    }
+    return false;   // verification still falls through to a whoami check
+}
+
 export async function initAuth() {
+    if (await _handleHashToken()) return;
     var who = await api.whoami();
     if (who.success && who.authenticated) {
         enterApp(who);
@@ -93,7 +158,68 @@ async function _submitAuth(action, errorEl, form) {
     }
 }
 
+var recoverMode = "reset";
+
+function _openRecoverForm(mode) {
+    recoverMode = mode;
+    showAuthForm("#recover-form");
+    hide($("#recover-sent"));
+    $("#recover-btn").disabled = false;
+    $("#recover-hint").textContent = mode === "reset"
+        ? "Enter your email and we'll send you a password-reset link."
+        : "Enter your email and we'll send you a one-time sign-in link — no password needed.";
+    $("#recover-btn").textContent = mode === "reset"
+        ? "Send Reset Link" : "Send Sign-In Link";
+    $("#recover-email").value = $("#login-email").value.trim();
+}
+
 export function setupAuth() {
+    // Emailed links opened in an already-loaded tab only change the hash
+    window.addEventListener("hashchange", function() { _handleHashToken(); });
+
+    $("#show-recover-link").addEventListener("click", function(e) {
+        e.preventDefault();
+        _openRecoverForm("reset");
+    });
+    $("#show-magic-link").addEventListener("click", function(e) {
+        e.preventDefault();
+        _openRecoverForm("magic");
+    });
+    $("#recover-form").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        var email = $("#recover-email").value.trim();
+        if (!email) return;
+        hideError($("#recover-error"));
+        $("#recover-btn").disabled = true;
+        var send = recoverMode === "reset"
+            ? api.forgot_password : api.request_magic_link;
+        var result = await send(email);
+        if (result.success) {
+            show($("#recover-sent"));
+        } else {
+            $("#recover-btn").disabled = false;
+            showError($("#recover-error"),
+                      result.error || "Something went wrong — try again.");
+        }
+    });
+    $("#reset-form").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        var password = $("#reset-password").value;
+        if (password.length < 8) return;
+        hideError($("#reset-error"));
+        $("#reset-btn").disabled = true;
+        var result = await api.reset_password(resetToken, password);
+        $("#reset-btn").disabled = false;
+        if (result.success) {
+            resetToken = null;
+            $("#reset-password").value = "";
+            showLoginWith("Password updated — sign in with your new password.");
+        } else {
+            showError($("#reset-error"),
+                      result.error || "This reset link is invalid or has expired.");
+        }
+    });
+
     $("#show-register-link").addEventListener("click", function(e) {
         e.preventDefault();
         showAuthForm("#register-form");

@@ -24,13 +24,42 @@
             <input type="email" id="login-email" autocomplete="username" required>
             <label for="login-password">Password</label>
             <input type="password" id="login-password" autocomplete="current-password" required>
+            <div id="login-info" class="auth-hint" hidden></div>
             <div id="login-error" class="error-msg" hidden></div>
             <button type="submit" id="login-btn" class="btn primary">Sign In</button>
+            <p class="auth-switch">
+                <a href="#" id="show-recover-link">Forgot password?</a>
+                &middot;
+                <a href="#" id="show-magic-link">Email me a sign-in link</a>
+            </p>
             <p class="auth-switch">
                 <a href="#" id="show-register-link">Register your church</a>
                 &middot;
                 <a href="#" id="show-join-link">Join with an invite code</a>
             </p>
+        </form>
+
+        <!-- Recover: request a password-reset or one-time sign-in email -->
+        <form id="recover-form" class="auth-form" hidden>
+            <p class="auth-hint" id="recover-hint"></p>
+            <label for="recover-email">Email</label>
+            <input type="email" id="recover-email" autocomplete="username" required>
+            <div id="recover-sent" class="auth-hint" hidden>
+                If that email has an account, a link is on its way — check your inbox.
+                The link expires in 30 minutes.
+            </div>
+            <div id="recover-error" class="error-msg" hidden></div>
+            <button type="submit" id="recover-btn" class="btn primary"></button>
+            <p class="auth-switch"><a href="#" class="show-login-link">Back to sign in</a></p>
+        </form>
+
+        <!-- Choose a new password (arrived via an emailed reset link) -->
+        <form id="reset-form" class="auth-form" hidden>
+            <label for="reset-password">New password (8+ characters)</label>
+            <input type="password" id="reset-password" autocomplete="new-password" minlength="8" required>
+            <div id="reset-error" class="error-msg" hidden></div>
+            <button type="submit" id="reset-btn" class="btn primary">Set New Password</button>
+            <p class="auth-switch"><a href="#" class="show-login-link">Back to sign in</a></p>
         </form>
 
         <!-- Register church -->
