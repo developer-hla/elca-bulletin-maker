@@ -1,0 +1,86 @@
+{
+  "id": "elw_holy_baptism",
+  "church_id": null,
+  "name": "Holy Baptism (abbreviated Sunday rite)",
+  "version": 1,
+  "meta": {
+    "notes": "ELW abbreviated Holy Baptism, pp. 227-231. Transcribed from the m.baptism_rite() macro in _macros.html; used in both bulletin.html and large_print.html at the creed slot when include_baptism is true. Block order mirrors the macro top to bottom."
+  },
+  "blocks": [
+    {
+      "id": "baptism_heading",
+      "type": "heading",
+      "text": "*HOLY BAPTISM"
+    },
+    {
+      "id": "baptism_presentation",
+      "type": "literal_text",
+      "note": "Rendered as an instruction paragraph (presentation_class) before the sub-headings.",
+      "text_ref": "elw.baptism_presentation",
+      "style": "plain"
+    },
+    {
+      "id": "baptism_renunciation_heading",
+      "type": "heading",
+      "text": "Renunciation"
+    },
+    {
+      "id": "baptism_renunciation",
+      "type": "dialogue",
+      "text_ref": "elw.baptism_renunciation"
+    },
+    {
+      "id": "baptism_profession_heading",
+      "type": "heading",
+      "text": "Profession of Faith"
+    },
+    {
+      "id": "baptism_profession",
+      "type": "dialogue",
+      "text_ref": "elw.baptism_profession"
+    },
+    {
+      "id": "baptism_font_heading",
+      "type": "heading",
+      "text": "Thanksgiving at the Font"
+    },
+    {
+      "id": "baptism_flood_prayer",
+      "type": "literal_text",
+      "note": "Flood prayer; bulletin wraps it in two columns (flood_two_col), large print does not - a renderer-side typographic choice.",
+      "text_ref": "elw.baptism_flood_prayer",
+      "style": "prayer"
+    },
+    {
+      "id": "baptism_the_baptism_heading",
+      "type": "heading",
+      "text": "The Baptism"
+    },
+    {
+      "id": "baptism_formula",
+      "type": "literal_text",
+      "note": "Rendered once per candidate with a leader (P:) label; the {name} placeholder is substituted per baptism_candidate_names at render time (renderer-side).",
+      "text_ref": "elw.baptism_formula",
+      "style": "prayer"
+    },
+    {
+      "id": "baptism_welcome_heading",
+      "type": "heading",
+      "text": "Welcome"
+    },
+    {
+      "id": "baptism_welcome",
+      "type": "literal_text",
+      "note": "Leader (P:) line.",
+      "text_ref": "elw.baptism_welcome",
+      "style": "plain"
+    },
+    {
+      "id": "baptism_welcome_response",
+      "type": "literal_text",
+      "note": "Congregation (C:) response, rendered bold.",
+      "text_ref": "elw.baptism_welcome_response",
+      "style": "unison"
+    }
+  ]
+}
