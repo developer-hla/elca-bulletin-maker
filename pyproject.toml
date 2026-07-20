@@ -46,7 +46,8 @@ packages = ["src/bulletin_maker"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "-m 'not layout'"
+addopts = "-m 'not layout and not parity'"
 markers = [
     "layout: full PDF layout regression (slow, needs Chromium); run with -m layout",
+    "parity: golden-output parity harness (slow, needs Chromium); run with -m parity",
 ]
