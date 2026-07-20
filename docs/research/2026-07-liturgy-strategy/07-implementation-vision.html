@@ -1,0 +1,177 @@
+<title>Liturgy Engine — Implementation Vision</title>
+<style>
+:root {
+  --paper: #FAF7F2; --ink: #242119; --rubric: #A3271F; --stone: #6E675D;
+  --hairline: #E3DCCE; --panel: #F2EDE3; --panel-ink: #3A362E;
+  --table-head: #EFE9DC; --good: #3D6B35; --warn: #8A6D1F;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #1B1915; --ink: #E9E3D7; --rubric: #E08173; --stone: #A79E8F;
+          --hairline: #37332B; --panel: #24211B; --panel-ink: #D8D1C2;
+          --table-head: #282419; --good: #8FBC7F; --warn: #D4B45A; }
+}
+:root[data-theme="dark"] { --paper: #1B1915; --ink: #E9E3D7; --rubric: #E08173; --stone: #A79E8F;
+          --hairline: #37332B; --panel: #24211B; --panel-ink: #D8D1C2;
+          --table-head: #282419; --good: #8FBC7F; --warn: #D4B45A; }
+:root[data-theme="light"] { --paper: #FAF7F2; --ink: #242119; --rubric: #A3271F; --stone: #6E675D;
+          --hairline: #E3DCCE; --panel: #F2EDE3; --panel-ink: #3A362E;
+          --table-head: #EFE9DC; --good: #3D6B35; --warn: #8A6D1F; }
+body { background: var(--paper); color: var(--ink);
+  font-family: Charter, "Bitstream Charter", Georgia, Cambria, serif;
+  line-height: 1.6; margin: 0; font-size: 17px; }
+main { max-width: 76ch; margin: 0 auto; padding: 3.5rem 1.5rem 6rem; }
+h1 { font-size: 2rem; font-weight: 700; margin: 0.4rem 0 0.6rem; line-height: 1.15; text-wrap: balance; }
+h2 { font-size: 1.4rem; margin: 3rem 0 0.8rem; padding-top: 1.5rem; border-top: 1px solid var(--hairline); }
+h3 { font-size: 1.1rem; margin: 1.8rem 0 0.5rem; }
+p { margin: 0.7rem 0; }
+.eyebrow { font-family: system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--rubric); font-weight: 600; }
+.subtitle { color: var(--stone); font-size: 1.05rem; margin-top: 0; }
+.meta { font-family: system-ui, sans-serif; font-size: 0.8rem; color: var(--stone); }
+.verdict { background: var(--panel); color: var(--panel-ink); border-left: 3px solid var(--rubric);
+  padding: 0.9rem 1.15rem; margin: 1.3rem 0; border-radius: 0 4px 4px 0; }
+.verdict strong:first-child { color: var(--rubric); }
+table { border-collapse: collapse; width: 100%; font-family: system-ui, sans-serif;
+  font-size: 0.83rem; line-height: 1.45; font-variant-numeric: tabular-nums; }
+.table-wrap { overflow-x: auto; margin: 1.1rem 0; }
+th { background: var(--table-head); text-align: left; padding: 0.5rem 0.65rem;
+  font-size: 0.73rem; letter-spacing: 0.06em; text-transform: uppercase; }
+td { padding: 0.5rem 0.65rem; border-top: 1px solid var(--hairline); vertical-align: top; }
+ul, ol { padding-left: 1.4rem; }
+li { margin: 0.35rem 0; }
+code, pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+code { font-size: 0.85em; background: var(--panel); padding: 0.08em 0.35em; border-radius: 3px; }
+pre { background: var(--panel); color: var(--panel-ink); padding: 0.9rem 1.1rem; border-radius: 4px;
+  overflow-x: auto; font-size: 0.8rem; line-height: 1.5; }
+.rubric-note { color: var(--rubric); font-style: italic; }
+.tier { font-family: system-ui, sans-serif; font-size: 0.72rem; font-weight: 700;
+  padding: 0.1em 0.5em; border-radius: 3px; background: var(--table-head); white-space: nowrap; }
+</style>
+<main>
+<p class="eyebrow">Implementation vision · Companion to the strategy doc</p>
+<h1>The Liturgy Engine: Product &amp; Engineering Vision, Plan, and Delegation Map</h1>
+<p class="subtitle">How we build rites-as-data under the live product without breaking a single Sunday, then open it outward — phase by phase, brief by brief.</p>
+<p class="meta">July 20, 2026 · Decisions locked with the owner: announcements in the schema from day one (UI later) · calendar-niche churches are the second segment · LWS-0 lands with strict parity plus an owner-ratified re-baseline escape hatch.</p>
+
+<h2>1 · The vision, in one place</h2>
+<p><strong>Product vision.</strong> A church defines its liturgy once — or imports it — as structured data; every week a volunteer turns a date into a family of beautiful print documents in minutes. Customization is structural and textual, never visual. The product's identity is the finish line: typeset, paginated, print-ready worship folders no competitor produces.</p>
+<p><strong>Engineering vision.</strong> One rite engine renders every document from typed blocks. Calendars and content sources are providers behind narrow interfaces. The current ELCA product becomes <em>an instance</em> of the engine — profile + starter rites + the S&amp;S provider — proven by regression before anything new is built on top. Every phase ships behind the same discipline that built the platform: agent briefs with contracts, my independent gates, sequential merges, full-credential verification.</p>
+<div class="verdict"><strong>Prime directive for every brief:</strong> if a change is visible to Ascension's Sunday bulletin without the owner deciding it should be, the change is wrong. The 18-test layout suite plus a new golden-PDF parity harness enforce this mechanically.</div>
+
+<h2>2 · Core architecture</h2>
+
+<h3>2.1 The rite schema (LDF-informed, ours)</h3>
+<pre>Rite {
+  id, church_id (NULL = library), name, tradition, occasion,   -- "sunday", "funeral"…
+  base_rite_id, version, updated_by, updated_at,
+  meta: { role_labels: {leader: "P", congregation: "C"},        -- per-church display
+          notes },
+  blocks: [Block]                                               -- ordered, jsonb
+}
+
+Block — common fields:
+  { id, type, title?, condition?, toggle? }                     -- toggle: "communion"|"baptism"|…
+
+Block types (v1):
+  heading        { text }
+  rubric         { text }
+  dialogue       { lines: [{role: leader|congregation|instruction|none, text}] }
+  literal_text   { text, style: unison|prayer|plain }
+  hymn_slot      { slot: gathering|sermon|communion|sending|custom,
+                   render: ref|lyrics|notation }
+  reading_slot   { slot: first|psalm|second|gospel|custom, render: full|ref }
+  psalm          { source: slot|literal, style: responsive|unison }
+  proper_slot    { kind: prayer_of_day|confession|offering_prayer|preface|
+                         post_communion|blessing|dismissal|…,
+                   fallback: text_ref }                         -- into the church text library
+  notation       { piece: kyrie|sanctus|agnus_dei|…,            -- resolves via church's setting
+                    text_fallback: text_ref }                   -- large-print renders text
+  music_item     { kind: prelude|offertory|postlude|choral }
+  module_ref     { module_id }                                  -- occasion modules
+
+Reserved now, built later (owner decision):
+  prayer_list, week_calendar, serving_list, staff_directory, announcement_text
+
+Condition (Venite-inspired):
+  { seasons?: [advent…], feasts?: [...], toggles?: {communion: true}, invert?: bool }</pre>
+<p>Semantic roles render per the church's <code>role_labels</code>; rubric/instruction is a distinct type; the existing <code>(DialogRole, text)</code> data converts 1:1. Documents differ by <em>renderer style</em>, not by rite: the bulletin renders <code>notation</code> blocks as images, large-print renders their <code>text_fallback</code> — exactly today's behavior, now expressed once.</p>
+
+<h3>2.2 Calendar providers</h3>
+<pre>CalendarProvider.resolve(date, church) -> LiturgicalDay {
+  date, day_name, season, color,
+  cycles: {rcl: "C", narrative: 4, lcms_1yr: true…},   -- multiple simultaneously
+  propers: {first: cite, psalm: cite, second: cite, gospel: cite, preface_kind…},
+  overlays: [season_of_creation?]
+}</pre>
+<p>Providers: <code>sns</code> (today's behavior, unchanged), <code>rcl_local</code> (owned tables seeded from Vanderbilt data), <code>narrative</code> and <code>lcms_1yr</code> (hand-transcribed owned tables), <code>manual</code> (sermon-series mode: the church types day name + citations; the engine treats them as resolved propers). Per-week override always wins. Seasonal <em>house customs</em> (Lent drops the Kyrie) move out of code into per-church rules keyed by season — evaluated as block Conditions.</p>
+
+<h3>2.3 Content sources</h3>
+<pre>ContentSource: get_passage(cite, translation) · get_proper_text(kind, day)
+               · get_hymn(collection, number) · capabilities() · entitled(church)</pre>
+<p>Registry per church: <code>sns</code> (existing client wrapped), <code>public_domain</code> (ELLC texts, WEB/KJV, archived Open Hymnal tunes), <code>net_bible</code> / <code>esv</code> (APIs), <code>church_library</code> (their own saved texts), <code>manual</code> (paste). Resolution per slot: church preference order → entitlement-checked → cached. The S&amp;S entitlement rule generalizes: <em>no source serves a church that isn't entitled to it.</em></p>
+
+<h3>2.4 Storage (migrations 008+)</h3>
+<pre>rites            (id, church_id NULL=library, occasion, name, version, blocks jsonb, meta jsonb, …)
+rite_modules     (occasion modules, same shape)
+church_texts     (id, church_id, kind, name, body jsonb)        -- the persistent text library
+seasonal_rules   (church_id, season, rules jsonb)               -- house customs, ex-season.py
+lectionaries     (scheme, cycle_key, date_key, day_name, propers jsonb)  -- owned tables
+service_prefs    (existing form_data grows: rite_id, toggles)   -- past_runs unchanged</pre>
+
+<h3>2.5 What never changes</h3>
+<p>The renderer owns typography, the auto-tighten pagination system, booklet imposition, and the five-document family. The weekly wizard flow (date → fetch → hymns → generate) is untouched through every phase. No block ever exposes fonts, margins, or layout.</p>
+
+<h2>3 · The plan — workstreams, contracts, gates</h2>
+<p>Sequence reflects the locked decisions: calendars rise (second segment = calendar-niche churches); LCMS drops to last; announcements UI is late but its block types exist from LWS-0.</p>
+
+<div class="table-wrap"><table>
+<tr><th>WS</th><th>Deliverable</th><th>Size</th><th>Depends on</th><th>Hard acceptance gate</th></tr>
+<tr><td><strong>LWS-0a</strong></td><td>Parity harness: golden PDFs for N fixture Sundays (regular, baptism, Lent, festival), pixel/text-diff tooling, CI-runnable</td><td>S</td><td>—</td><td>Harness detects a 1-line template change; green on current main</td></tr>
+<tr><td><strong>LWS-0b</strong></td><td>Rite schema + storage + loader; the current ELW ordo transcribed to a library rite (data, not behavior)</td><td>M</td><td>0a</td><td>Schema round-trips; transcription reviewed line-by-line against both templates; no renderer change yet</td></tr>
+<tr><td><strong>LWS-0c</strong></td><td>Renderer block dispatch; <code>bulletin.html</code> derived from rite data</td><td>L</td><td>0b</td><td>Layout suite + parity harness pass unchanged (escape hatch: owner ratifies diffs on real PDFs)</td></tr>
+<tr><td><strong>LWS-0d</strong></td><td><code>large_print</code>/<code>leader_guide</code>/pulpit docs from the same rite; duplicate ordo deleted; seasonal customs → <code>seasonal_rules</code></td><td>M–L</td><td>0c</td><td>Same gates per document; <code>season.py</code> house-customs table gone from code</td></tr>
+<tr><td><strong>LWS-1</strong></td><td>Church text library (persistent custom texts, preset catalog N&gt;1); settings 6–10; rite picker + per-service toggles in the wizard</td><td>M</td><td>0d</td><td>Custom text saved once, reused next week; setting switch = dropdown; full-credential browser gate</td></tr>
+<tr><td><strong>LWS-2</strong></td><td>Rite editor (structured blocks: reorder/toggle/edit — zero layout controls); starter library (~10 rites); occasion modules; per-block preview</td><td>M–L</td><td>1</td><td>Editor round-trip fidelity; a non-author church adopts a starter rite and generates; headless UI gate</td></tr>
+<tr><td><strong>LWS-3</strong></td><td>Calendar providers: <code>rcl_local</code> (Vanderbilt-seeded owned tables), <code>manual</code> mode, Narrative + LCMS 1-year transcriptions, Season-of-Creation overlay, per-week override</td><td>M</td><td>0d (parallel w/ 2)</td><td>rcl_local matches S&amp;S day names/citations for 3 full years of fixtures; a no-S&amp;S church generates via manual mode end-to-end</td></tr>
+<tr><td><strong>LWS-4</strong></td><td>Content-source registry; PD library (ELLC + WEB/KJV + Open Hymnal ingest); NET/ESV adapters; per-slot source preference</td><td>M–L</td><td>3</td><td>Zero-subscription church generates a complete bulletin from PD + manual sources only</td></tr>
+<tr><td><strong>LWS-5</strong></td><td>Import wizard: upload .docx/.pdf → LLM segmentation → drafted rite with confidence flags → human-confirmed adoption</td><td>M</td><td>2, 4</td><td>≥8 of the 11 corpus bulletins produce a usable draft; never silently adopts</td></tr>
+<tr><td><strong>LWS-6</strong></td><td>Calendar-niche beachhead: onboarding for Narrative/1-yr/sermon-series churches; licensing helper (per-hymn tags, footers, OneLicense/CCLI usage-report export)</td><td>S–M</td><td>3, 4</td><td>A Narrative-Lectionary church onboards without S&amp;S and prints; report export matches generation history</td></tr>
+<tr><td><strong>LWS-7</strong></td><td>Announcements blocks UI (prayer list, calendar, serving roster, freeform) — per the owner's fork decision</td><td>M</td><td>2</td><td>Structured lists only; no freeform layout; corpus-shaped fixtures render within page budgets</td></tr>
+<tr><td><strong>LWS-8</strong></td><td>LCMS segment: LSB starter rites, ESV default, hymn file-upload path; credential-linked LSB probe gated on ToS read</td><td>M</td><td>4 (+ ToS)</td><td>LSB Divine Service rite renders in house style; entitlement enforced</td></tr>
+</table></div>
+
+<h3>Dependency shape</h3>
+<pre>0a → 0b → 0c → 0d → 1 → 2 → 5
+                     ↘  3 → 4 → 5, 6, 8
+                          2 → 7</pre>
+<p>After 0d merges, two tracks run in parallel (product track 1→2, data track 3→4) exactly like the platform build's fan-out.</p>
+
+<h2>4 · Delegation map</h2>
+<div class="table-wrap"><table>
+<tr><th>Work</th><th>Executor</th><th>Why</th></tr>
+<tr><td>Vision, briefs, review, merges, full-credential gates, parity ratification</td><td><span class="tier">Orchestrator (me)</span></td><td>Single accountable reviewer; the pattern that shipped WS-1..10</td></tr>
+<tr><td>LWS-0b/0c/0d engine + renderer refactor; LWS-2 editor; LWS-5 import pipeline; LWS-4 registry</td><td><span class="tier">Opus agents</span></td><td>Highest-risk engineering; worktree isolation; one brief per unit above</td></tr>
+<tr><td>LWS-0a harness; LWS-1; LWS-3 provider code; LWS-6; scripture adapters; docs</td><td><span class="tier">Sonnet agents</span></td><td>Well-contracted, pattern-following work</td></tr>
+<tr><td>Ordo transcription review fixtures; lectionary table transcription (Narrative, LCMS 1-yr); PD text entry (ELLC set); Open Hymnal ingest; starter-rite data authoring (drafted by Sonnet, verified against sources)</td><td><span class="tier">Sonnet/Haiku + verification</span></td><td>Menial-but-exacting data work — always double-entry or source-diff verified; liturgical data errors are Sunday-morning-visible</td></tr>
+</table></div>
+<p><strong>Standing guardrails</strong> (inherited from the platform build, plus new ones): agents never touch <code>.env</code>, never push, never change pinned layout numbers except via the escape-hatch process; per-agent test databases; worktree pinning verified as each agent's first action; briefs carry exact contracts and the report-back format; <strong>new:</strong> any brief touching renderer/templates must run the parity harness and attach its output verbatim; liturgical data transcriptions require a second-pass verification against the source document before merge.</p>
+
+<h2>5 · Verification strategy</h2>
+<ul>
+<li><strong>Parity harness (LWS-0a) is built first</strong> — golden PDFs across four fixture Sundays chosen to exercise conditions (ordinary, baptism, Lent, festival). Text-layer diff + page-count + pixel-sample. This is the safety net the whole refactor walks on.</li>
+<li><strong>Existing suites stay authoritative</strong>: 570+ fast tests, 18 layout tests, headless browser gates with real S&amp;S credentials (mine to run, agents barred).</li>
+<li><strong>New suites per phase</strong>: schema round-trip + condition evaluation (0b); provider conformance tests shared by all calendar/content providers (3, 4); editor round-trip (2); import corpus regression against the 11 public bulletins (5).</li>
+<li><strong>The escape hatch, formally</strong>: parity gaps that survive a bounded effort produce a before/after PDF pair delivered to the owner; re-baseline happens only on their eyeball approval, recorded in the commit message.</li>
+</ul>
+
+<h2>6 · What I need from you at each gate</h2>
+<ul>
+<li><strong>Now:</strong> approve this plan → I write the LWS-0a and LWS-0b briefs and start the machinery.</li>
+<li><strong>End of LWS-0c/0d:</strong> eyeball parity PDFs if the escape hatch triggers.</li>
+<li><strong>During LWS-2:</strong> a taste pass on the starter rites and the editor's feel — you are the resident liturgical domain expert.</li>
+<li><strong>Before LWS-6 marketing/onboarding:</strong> pricing posture within the $30–75/mo band; the Augsburg letter timing.</li>
+<li><strong>Before LWS-8:</strong> the LSB ToS read (pending consolidated report) and go/no-go on credential-linked probing.</li>
+</ul>
+
+<p class="meta">Companion documents: strategy (docs/research/2026-07-liturgy-strategy/00-strategy.html) · research reports 01–06 · this plan is 07-implementation-vision.html in the same directory.</p>
+</main>
