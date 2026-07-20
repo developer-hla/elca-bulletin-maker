@@ -126,7 +126,7 @@ def _visible_block_ids(rite: Rite, context: Dict[str, Any]) -> List[str]:
     return [
         block.id
         for block in rite.blocks
-        if condition_applies(block.condition, context)
+        if block.enabled and condition_applies(block.condition, context)
     ]
 
 

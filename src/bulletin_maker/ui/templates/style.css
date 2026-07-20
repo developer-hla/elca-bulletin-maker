@@ -1615,3 +1615,153 @@ button.text-panel-header:focus-visible {
 .op-audit-action {
     font-weight: 600;
 }
+
+/* ── Rite editor (LWS-2) ────────────────────────────────────────────── */
+
+.rite-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.rite-row-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.rite-row-name {
+    font-weight: 600;
+}
+
+.rite-row-meta {
+    font-size: 13px;
+    color: var(--text-light);
+}
+
+.rite-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rite-block-row {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card-bg);
+}
+
+.rite-block-row.disabled {
+    opacity: 0.55;
+}
+
+.rite-block-order {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.rite-block-order button {
+    padding: 0 6px;
+    line-height: 1.4;
+}
+
+.rite-block-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.rite-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.rite-block-type {
+    font-size: 12px;
+    color: var(--text-light);
+    font-family: monospace;
+}
+
+.rite-block-enable {
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.rite-block-text {
+    width: 100%;
+    margin-top: 6px;
+}
+
+.rite-dialogue-editor {
+    margin-top: 6px;
+}
+
+.rite-dialogue-line {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-bottom: 4px;
+}
+
+.rite-dialogue-role {
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text-light);
+    min-width: 90px;
+    padding-top: 6px;
+}
+
+.rite-dialogue-line textarea {
+    flex: 1;
+}
+
+.rite-condition-editor {
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.rite-condition-editor summary {
+    cursor: pointer;
+    color: var(--primary);
+}
+
+.rite-condition-label {
+    font-weight: 600;
+    margin: 8px 0 4px;
+}
+
+.rite-condition-season,
+.rite-preview-toggle {
+    display: inline-block;
+    margin-right: 12px;
+    white-space: nowrap;
+}
+
+.rite-toggle-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.rite-preview-list {
+    margin-top: 10px;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.rite-preview-item {
+    padding: 2px 0;
+}
+
+.rite-preview-item.hidden-block {
+    color: var(--text-light);
+}

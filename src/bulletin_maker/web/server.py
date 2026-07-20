@@ -41,6 +41,12 @@ from bulletin_maker.core.content_views import (
     build_liturgical_text_options,
     build_reading_preview,
 )
+from bulletin_maker.core.rite import (
+    Rite,
+    RiteError,
+    RiteValidationError,
+    validate_rite,
+)
 from bulletin_maker.core.documents import DEFAULT_SELECTION, generate_documents
 from bulletin_maker.core.naming import build_date_suffix
 from bulletin_maker.core.profile import (
@@ -702,6 +708,122 @@ def create_app() -> FastAPI:
         bundled = [r for r in rite_library.load_rites() if r.id not in stored_ids]
         return {"success": True,
                 "rites": [_rite_summary(r) for r in bundled + stored]}
+
+    def _known_modules(church_id: int) -> dict:
+        modules = dict(rite_library.load_modules())
+        for module in rites.list_modules(church_id):
+            modules[module.id] = module
+        return modules
+
+    def _bundled_rite(rite_id: str):
+        for rite in rite_library.load_rites():
+            if rite.id == rite_id:
+                return rite
+        return None
+
+    def _readable_rite(rite_id: str, session: Session):
+        """A rite the caller may view: their own church's, or a library rite.
+
+        Raises 404 if unknown, 403 if it belongs to another church.
+        """
+        rite = rites.get_rite(rite_id) or _bundled_rite(rite_id)
+        if rite is None:
+            raise _validation("That rite doesn't exist.", status=404)
+        if rite.church_id is not None and rite.church_id != session.church_id:
+            raise _validation("That rite isn't in your church.", status=403)
+        return rite
+
+    def _parse_rite_body(payload: dict, church_id: int) -> Rite:
+        """Build a validated, church-owned Rite from a full editor payload."""
+        payload = dict(payload)
+        payload["church_id"] = church_id  # never trust the client's ownership
+        try:
+            rite = Rite.from_dict(payload)
+        except RiteError as e:
+            raise _validation("This rite has invalid structure: %s" % e)
+        try:
+            validate_rite(rite, modules=_known_modules(church_id))
+        except RiteValidationError as e:
+            raise _validation("This rite has errors: " + "; ".join(e.errors))
+        return rite
+
+    @app.post("/api/rites")
+    def create_rite(payload: dict, session: Session = Depends(session_dep)):
+        require_admin(session)
+        from_rite_id = payload.get("from_rite_id")
+        if from_rite_id:
+            source = _readable_rite(from_rite_id, session)
+            # base_rite_id must reference a persisted rite; bundled library
+            # rites live only in JSON, so a library fork records no base link.
+            base = from_rite_id if rites.get_rite(from_rite_id) else None
+            forked = rites.fork_rite(source, session.church_id,
+                                     name=payload.get("name"), base_rite_id=base)
+            saved = rites.save_rite(forked)
+            return {"success": True, "rite": saved.to_dict()}
+        rite = _parse_rite_body(payload, session.church_id)
+        saved = rites.save_rite(rite)
+        return {"success": True, "rite": saved.to_dict()}
+
+    @app.get("/api/rites/{rite_id}")
+    def get_rite(rite_id: str, session: Session = Depends(session_dep)):
+        require_user(session)
+        rite = _readable_rite(rite_id, session)
+        return {"success": True, "rite": rite.to_dict()}
+
+    @app.put("/api/rites/{rite_id}")
+    def update_rite(rite_id: str, payload: dict,
+                    session: Session = Depends(session_dep)):
+        require_admin(session)
+        existing = rites.get_rite(rite_id)
+        if existing is None and _bundled_rite(rite_id) is not None:
+            raise _validation(
+                "Library rites are read-only — fork a copy to edit it.",
+                status=403)
+        if existing is None:
+            raise _validation("That rite doesn't exist in your church.",
+                              status=404)
+        if existing.church_id is None or existing.church_id != session.church_id:
+            raise _validation(
+                "Library rites are read-only — fork a copy to edit it."
+                if existing.church_id is None
+                else "That rite isn't in your church.",
+                status=403 if existing.church_id is None else 404)
+        payload = dict(payload)
+        payload["id"] = rite_id
+        rite = _parse_rite_body(payload, session.church_id)
+        saved = rites.save_rite(rite)
+        return {"success": True, "rite": saved.to_dict()}
+
+    @app.delete("/api/rites/{rite_id}")
+    def delete_rite(rite_id: str, session: Session = Depends(session_dep)):
+        require_admin(session)
+        existing = rites.get_rite(rite_id)
+        if existing is None or existing.church_id != session.church_id:
+            raise _validation("That rite isn't in your church.", status=404)
+        if rites.rite_run_count(rite_id) > 0:
+            raise _validation(
+                "This rite is used by a saved past run — it can't be deleted.",
+                status=409)
+        rites.delete_rite(rite_id)
+        return {"success": True}
+
+    @app.post("/api/rites/{rite_id}/preview")
+    def preview_rite(rite_id: str, payload: dict,
+                     session: Session = Depends(session_dep)):
+        require_user(session)
+        rite = _readable_rite(rite_id, session)
+        context = {
+            "season": payload.get("season"),
+            "feasts": payload.get("feasts") or [],
+            "toggles": payload.get("toggles") or {},
+        }
+        visible = set(rites.visible_block_ids(rite, context))
+        blocks = [
+            {"id": b.id, "type": b.type, "title": b.title,
+             "visible": b.id in visible}
+            for b in rite.blocks
+        ]
+        return {"success": True, "blocks": blocks}
 
     # ── Day content ───────────────────────────────────────────────────
 

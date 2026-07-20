@@ -114,6 +114,22 @@ export var api = (function() {
             return req("DELETE", "/api/church/texts/" + encodeURIComponent(textId));
         },
         get_rites: function() { return req("GET", "/api/rites"); },
+        get_rite: function(riteId) {
+            return req("GET", "/api/rites/" + encodeURIComponent(riteId));
+        },
+        fork_rite: function(fromRiteId) {
+            return req("POST", "/api/rites", { from_rite_id: fromRiteId });
+        },
+        save_rite: function(riteId, rite) {
+            return req("PUT", "/api/rites/" + encodeURIComponent(riteId), rite);
+        },
+        delete_rite: function(riteId) {
+            return req("DELETE", "/api/rites/" + encodeURIComponent(riteId));
+        },
+        preview_rite: function(riteId, context) {
+            return req("POST", "/api/rites/" + encodeURIComponent(riteId) +
+                       "/preview", context);
+        },
 
         // Operator console (service-owner only)
         operator_churches: function() { return req("GET", "/api/operator/churches"); },

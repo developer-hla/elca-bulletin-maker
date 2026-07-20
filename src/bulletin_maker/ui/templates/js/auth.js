@@ -57,6 +57,7 @@ function enterApp(auth) {
     document.title = "Bulletin Maker — " + ((auth.church && auth.church.name) || "");
     state.isAdmin = user.role === "admin";
     state.snsLinked = !!auth.sns_linked;
+    $("#rites-link").hidden = !state.isAdmin;
     $("#operator-link").hidden = !auth.operator;
     loadChurchLabels();
     loadRiteOptions();

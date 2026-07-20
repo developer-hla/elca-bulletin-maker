@@ -128,6 +128,7 @@
             <span id="user-display"></span>
             <a href="#" id="new-bulletin-link" class="header-link">New Bulletin</a>
             <a href="#" id="settings-link" class="header-link">Settings</a>
+            <a href="#" id="rites-link" class="header-link" hidden>Rites</a>
             <a href="#" id="operator-link" class="header-link" hidden>Operator</a>
             <a href="#" id="help-link" class="header-link">Help</a>
             <a href="#" id="logout-link" class="logout-link">Logout</a>
@@ -668,6 +669,77 @@
 
             <div class="wizard-buttons">
                 <button type="button" class="btn" id="settings-back-btn">Back to Bulletin</button>
+            </div>
+        </div>
+
+
+        <!-- Rite editor (structured only) — admin, shown instead of the wizard -->
+        <div id="rite-editor-panel" hidden>
+            <section class="card">
+                <h2>Service Rites</h2>
+                <p class="section-hint">
+                    Reorder, turn on or off, and edit the wording of the parts of a
+                    service. Fork a starter rite to make your own editable copy —
+                    the starter rites themselves are read-only. This edits
+                    structure and text only; page layout and fonts are fixed.
+                </p>
+                <div id="rite-editor-error" class="error-msg" hidden></div>
+                <div id="rite-list-spinner" class="spinner" hidden>
+                    <div class="spinner-ring"></div><span>Loading rites...</span>
+                </div>
+                <div id="rite-list"></div>
+            </section>
+
+            <section class="card" id="rite-edit-card" hidden>
+                <h2 id="rite-edit-title">Edit Rite</h2>
+                <div class="form-row">
+                    <div class="field">
+                        <label for="rite-name-input">Rite Name</label>
+                        <input type="text" id="rite-name-input" maxlength="120">
+                    </div>
+                    <div class="field">
+                        <label for="rite-role-leader">Leader label</label>
+                        <input type="text" id="rite-role-leader" maxlength="24">
+                    </div>
+                    <div class="field">
+                        <label for="rite-role-congregation">Congregation label</label>
+                        <input type="text" id="rite-role-congregation" maxlength="24">
+                    </div>
+                </div>
+
+                <h3>Blocks</h3>
+                <p class="section-hint">
+                    Drag order with the arrows. Disabled blocks never print.
+                </p>
+                <div id="rite-blocks"></div>
+
+                <div id="rite-save-error" class="error-msg" hidden></div>
+                <div id="rite-saved" class="success-msg" hidden>Rite saved.</div>
+                <div class="wizard-buttons">
+                    <button type="button" class="btn primary" id="rite-save-btn">Save Rite</button>
+                    <button type="button" class="btn" id="rite-cancel-btn">Close editor</button>
+                </div>
+            </section>
+
+            <section class="card" id="rite-preview-card" hidden>
+                <h2>Preview</h2>
+                <p class="section-hint">
+                    Choose a season and toggles to see which blocks would print
+                    for that service. This does not change the rite.
+                </p>
+                <div class="form-row">
+                    <div class="field">
+                        <label for="rite-preview-season">Season</label>
+                        <select id="rite-preview-season"></select>
+                    </div>
+                </div>
+                <div id="rite-preview-toggles" class="rite-preview-toggles"></div>
+                <button type="button" class="btn" id="rite-preview-btn">Refresh preview</button>
+                <div id="rite-preview-list" class="rite-preview-list"></div>
+            </section>
+
+            <div class="wizard-buttons">
+                <button type="button" class="btn" id="rite-editor-back-btn">Back to Bulletin</button>
             </div>
         </div>
 

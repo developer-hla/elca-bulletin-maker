@@ -207,7 +207,7 @@ RESERVED_BLOCK_TYPES: FrozenSet[str] = frozenset(
 )
 
 _COMMON_BLOCK_KEYS: FrozenSet[str] = frozenset(
-    {"id", "type", "title", "condition", "toggle", "note"}
+    {"id", "type", "title", "condition", "toggle", "note", "enabled"}
 )
 
 
@@ -432,6 +432,7 @@ class Block:
     condition: Optional[Condition] = None
     toggle: Optional[str] = None
     note: Optional[str] = None
+    enabled: bool = True
     data: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -452,6 +453,10 @@ class Block:
             out["title"] = self.title
         if self.toggle is not None:
             out["toggle"] = self.toggle
+        # Emitted only when disabled so an enabled block (the default, and
+        # every library block) serializes byte-identically to before.
+        if not self.enabled:
+            out["enabled"] = False
         if self.condition is not None and not self.condition.is_empty():
             out["condition"] = self.condition.to_dict()
         if self.note is not None:
@@ -491,6 +496,11 @@ class Block:
         note = data.get("note")
         if note is not None and not isinstance(note, str):
             raise RiteSchemaError("block %r 'note' must be a string" % data["id"])
+        enabled = data.get("enabled", True)
+        if not isinstance(enabled, bool):
+            raise RiteSchemaError(
+                "block %r 'enabled' must be a boolean" % data["id"]
+            )
         return cls(
             id=data["id"],
             type=block_type,
@@ -498,6 +508,7 @@ class Block:
             condition=condition,
             toggle=toggle,
             note=note,
+            enabled=enabled,
             data=payload,
         )
 
