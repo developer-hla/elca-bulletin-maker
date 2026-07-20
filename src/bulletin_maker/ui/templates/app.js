@@ -232,8 +232,18 @@ var api = (function() {
         try {
             resp = await fetch(url, opts);
         } catch (e) {
-            return { success: false, error_type: "network",
-                     error: "Cannot reach the Bulletin Maker server. Is it still running?" };
+            if (method !== "GET") {
+                return { success: false, error_type: "network",
+                         error: "Cannot reach the Bulletin Maker server. Is it still running?" };
+            }
+            // Reads are safe to retry once — absorbs transient hiccups
+            await new Promise(function(r) { setTimeout(r, 400); });
+            try {
+                resp = await fetch(url, opts);
+            } catch (e2) {
+                return { success: false, error_type: "network",
+                         error: "Cannot reach the Bulletin Maker server. Is it still running?" };
+            }
         }
         var data = null;
         try { data = await resp.json(); } catch (e) {}

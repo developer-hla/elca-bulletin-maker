@@ -26,8 +26,12 @@ Or with pip: `pip install git+https://github.com/developer-hla/elca-bulletin-mak
 bulletin-maker
 ```
 
-The wizard opens in your browser. Sign in with your own Sundays & Seasons
-credentials; the first run downloads the PDF renderer (Chromium) automatically.
+The wizard opens in your browser; the first run downloads the PDF
+renderer (Chromium) automatically. On a fresh install you register your
+church (one time) and, under Settings, link the church's Sundays &
+Seasons account — after that, volunteers sign in with their own simple
+accounts (created with the church's invite code) and never handle the
+S&S password.
 
 ## Update
 
@@ -37,16 +41,12 @@ uv tool upgrade bulletin-maker
 
 ## Another congregation?
 
-Copy the identity profile and edit the eight fields (name, address, service
-time, welcome text, license footer) plus the two options (liturgical setting,
-paper size):
-
-```bash
-cp src/bulletin_maker/profiles/ascension.toml ~/.bulletin-maker/profile.toml
-```
-
-Everything else — the five documents, their layout, and the liturgy — is
-fixed house style by design.
+Everything a church customizes lives in Settings inside the app: name,
+address, service time, welcome text, license footer, plus the two
+bounded options (ELW liturgical setting and paper size). Everything
+else — the five documents, their layout, and the liturgy — is fixed
+house style by design. To host one instance for several churches, see
+`docs/hosted-deploy.md` and `docs/hosted-hardening.md`.
 
 ## Development
 
@@ -62,7 +62,7 @@ python -m pytest tests/ -m layout -v  # layout regression (renders real PDFs)
 
 - `src/bulletin_maker/sns/` — Sundays & Seasons client (auth, content fetching, hymn search/download)
 - `src/bulletin_maker/renderer/` — HTML/CSS + Playwright PDF generation (5 document types)
-- `src/bulletin_maker/web/` — FastAPI server + entry point
+- `src/bulletin_maker/web/` — FastAPI server, accounts (SQLite + encrypted S&S vault), entry point
 - `src/bulletin_maker/ui/templates/` — wizard SPA (HTML/JS/CSS)
 - `src/bulletin_maker/exceptions.py` — Custom exception hierarchy
 - `tests/` — Pytest test suite with fixtures in `tests/fixtures/`
