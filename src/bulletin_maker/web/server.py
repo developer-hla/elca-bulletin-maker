@@ -65,6 +65,7 @@ from bulletin_maker.web import (
     auth_flows,
     db,
     jobstore,
+    members,
     plans,
     security,
 )
@@ -519,6 +520,61 @@ def create_app() -> FastAPI:
         session.close()  # drop any client using the old credential
         logger.warning("S&S account linked for church %r", church["name"])
         return {"success": True, "sns_username": username}
+
+    # ── Church members (admin) ────────────────────────────────────────
+
+    @app.get("/api/church/members")
+    def list_members(session: Session = Depends(session_dep)):
+        user = require_admin(session)
+        roster = members.list_members(session.church_id)
+        for row in roster:
+            row["is_you"] = row["id"] == user["id"]
+        return {"success": True, "members": roster}
+
+    @app.delete("/api/church/members/{user_id}")
+    def remove_member(user_id: int, session: Session = Depends(session_dep)):
+        admin = require_admin(session)
+        target = members.get_member(session.church_id, user_id)
+        if target is None:
+            raise _validation("That member isn't in your church.", status=404)
+        if target["role"] == "admin" and members.admin_count(
+                session.church_id) <= 1:
+            raise _validation("You can't remove the last admin.")
+        if user_id == admin["id"]:
+            raise _validation("You can't remove yourself.")
+        members.delete_member(session.church_id, user_id)
+        store.invalidate_user(user_id)
+        logger.warning("Removed member %d from church %d",
+                       user_id, session.church_id)
+        return {"success": True}
+
+    @app.post("/api/church/invite/send")
+    def send_invite(payload: dict, request: Request,
+                    session: Session = Depends(session_dep)):
+        require_admin(session)
+        to_email = (payload.get("email") or "").strip()
+        if "@" not in to_email or len(to_email) < 5:
+            raise _validation("Enter a valid email address.")
+        _check_token_rate(request, to_email)
+        church = church_of(session)
+        members.send_invite(church, to_email)
+        return {"success": True}
+
+    @app.post("/api/church/invite/regenerate")
+    def regenerate_invite(session: Session = Depends(session_dep)):
+        require_admin(session)
+        invite_code = members.regenerate_invite(session.church_id)
+        return {"success": True, "invite_code": invite_code}
+
+    @app.get("/api/church/usage")
+    def church_usage(session: Session = Depends(session_dep)):
+        require_admin(session)
+        return {
+            "success": True,
+            "generates_this_month": members.generates_this_month(
+                session.church_id),
+            "member_count": members.member_count(session.church_id),
+        }
 
     # ── Day content ───────────────────────────────────────────────────
 

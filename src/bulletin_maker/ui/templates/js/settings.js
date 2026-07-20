@@ -56,6 +56,7 @@ async function openSettings() {
 
     $("#sns-card").hidden = !editable;
     $("#invite-card").hidden = !editable;
+    $("#members-card").hidden = !editable;
     if (editable) {
         var status = $("#sns-status");
         if (result.sns_linked) {
@@ -68,13 +69,88 @@ async function openSettings() {
         $("#sns-username").value = result.sns_username || "";
         $("#sns-password").value = "";
         $("#invite-code").textContent = result.invite_code || "";
+        $("#invite-email").value = "";
+        loadMembers();
     }
 
     hide($("#settings-saved"));
     hideError($("#settings-error"));
     hide($("#sns-saved"));
     hideError($("#sns-error"));
+    hide($("#invite-sent"));
+    hideError($("#invite-error"));
     showSettingsPanel(true);
+}
+
+function _memberRow(member) {
+    var li = document.createElement("li");
+    li.className = "member-row";
+
+    var info = document.createElement("div");
+    info.className = "member-info";
+    var name = document.createElement("span");
+    name.className = "member-name";
+    name.textContent = (member.display_name || member.email)
+        + (member.is_you ? " (you)" : "");
+    var meta = document.createElement("span");
+    meta.className = "member-meta";
+    meta.textContent = member.email + " · "
+        + (member.role === "admin" ? "Admin" : "Member");
+    info.appendChild(name);
+    info.appendChild(meta);
+    li.appendChild(info);
+
+    if (!member.is_you) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn-link";
+        btn.textContent = "Remove";
+        btn.addEventListener("click", function() { _removeMember(member); });
+        li.appendChild(btn);
+    }
+    return li;
+}
+
+async function _removeMember(member) {
+    var who = member.display_name || member.email;
+    if (!window.confirm(
+            "Remove " + who + " from your church? They will be signed out."))
+        return;
+    hideError($("#members-error"));
+    var result = await api.remove_member(member.id);
+    if (!result.success) {
+        showError($("#members-error"),
+                  result.error || "Could not remove that member.");
+        return;
+    }
+    loadMembers();
+}
+
+async function loadMembers() {
+    hideError($("#members-error"));
+    var result = await api.get_members();
+    if (!result.success) {
+        showError($("#members-error"),
+                  result.error || "Could not load members.");
+        return;
+    }
+    var list = $("#member-list");
+    list.innerHTML = "";
+    result.members.forEach(function(member) {
+        list.appendChild(_memberRow(member));
+    });
+    loadUsage();
+}
+
+async function loadUsage() {
+    var result = await api.get_usage();
+    if (!result.success) return;
+    var bulletins = result.generates_this_month;
+    var members = result.member_count;
+    $("#members-usage").textContent =
+        bulletins + (bulletins === 1 ? " bulletin" : " bulletins")
+        + " generated this month · "
+        + members + (members === 1 ? " member" : " members");
 }
 
 function _linesToList(value) {
@@ -139,5 +215,43 @@ export function setupSettings() {
         status.textContent = "Linked (" + result.sns_username + ")";
         status.className = "sns-status-linked";
         $("#sns-password").value = "";
+    });
+
+    $("#invite-send-btn").addEventListener("click", async function() {
+        hide($("#invite-sent"));
+        hideError($("#invite-error"));
+        var email = $("#invite-email").value.trim();
+        if (!email) {
+            showError($("#invite-error"), "Enter an email address.");
+            return;
+        }
+        showBtnSpinner(this);
+        var result = await api.send_invite(email);
+        hideBtnSpinner(this, "Email Invite");
+        if (!result.success) {
+            showError($("#invite-error"),
+                      result.error || "Could not send the invite.");
+            return;
+        }
+        $("#invite-email").value = "";
+        show($("#invite-sent"));
+    });
+
+    $("#invite-regen-btn").addEventListener("click", async function() {
+        if (!window.confirm(
+                "Generate a new invite code? The old code stops working "
+                + "immediately."))
+            return;
+        hide($("#invite-sent"));
+        hideError($("#invite-error"));
+        showBtnSpinner(this);
+        var result = await api.regenerate_invite();
+        hideBtnSpinner(this, "Regenerate Code");
+        if (!result.success) {
+            showError($("#invite-error"),
+                      result.error || "Could not regenerate the code.");
+            return;
+        }
+        $("#invite-code").textContent = result.invite_code;
     });
 }

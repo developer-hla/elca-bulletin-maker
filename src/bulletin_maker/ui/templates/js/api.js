@@ -89,6 +89,17 @@ export var api = (function() {
             return req("PUT", "/api/church/sns-link",
                        { username: username, password: password });
         },
+        get_members: function() { return req("GET", "/api/church/members"); },
+        remove_member: function(userId) {
+            return req("DELETE", "/api/church/members/" + encodeURIComponent(userId));
+        },
+        send_invite: function(email) {
+            return req("POST", "/api/church/invite/send", { email: email });
+        },
+        regenerate_invite: function() {
+            return req("POST", "/api/church/invite/regenerate");
+        },
+        get_usage: function() { return req("GET", "/api/church/usage"); },
         get_preface_options: function() { return req("GET", "/api/prefaces"); },
 
         fetch_day_content: async function(dateStr, dateDisplay) {

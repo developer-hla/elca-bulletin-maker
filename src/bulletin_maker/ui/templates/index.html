@@ -646,6 +646,20 @@
                     on the sign-in screen to get their own account.
                 </p>
                 <span class="invite-code-box" id="invite-code"></span>
+                <div class="member-invite-row">
+                    <input type="email" id="invite-email" placeholder="volunteer@example.org" autocomplete="off">
+                    <button type="button" class="btn" id="invite-send-btn">Email Invite</button>
+                    <button type="button" class="btn" id="invite-regen-btn">Regenerate Code</button>
+                </div>
+                <div id="invite-error" class="error-msg" hidden></div>
+                <div id="invite-sent" class="success-msg" hidden>Invite sent.</div>
+            </section>
+
+            <section class="card" id="members-card" hidden>
+                <h2>Members</h2>
+                <p class="section-hint" id="members-usage"></p>
+                <div id="members-error" class="error-msg" hidden></div>
+                <ul class="member-list" id="member-list"></ul>
             </section>
 
             <div class="wizard-buttons">
