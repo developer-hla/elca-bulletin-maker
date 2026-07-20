@@ -6,6 +6,7 @@ import { getNextSunday, setupNewBulletin, setupHelp, setupWizardNav, setupWizard
 import { setupA11y } from "./a11y.js";
 import { setupAuth, setupLogout, initAuth } from "./auth.js";
 import { setupSettings } from "./settings.js";
+import { setupRiteEditor } from "./rite-editor.js";
 import { setupOperator } from "./operator.js";
 import { setupDateFetch, setupResetDefaults } from "./readings.js";
 import { setupHymnFetch, setupFetchAllHymns } from "./hymns.js";
@@ -29,6 +30,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     setupAuth();
     setupSettings();
+    setupRiteEditor();
     setupOperator();
     setupLogout();
     setupNewBulletin();

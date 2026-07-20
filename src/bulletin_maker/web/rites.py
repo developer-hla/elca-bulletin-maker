@@ -16,11 +16,12 @@ rites (church_id NULL), library first — the intended visibility rule.
 
 from __future__ import annotations
 
-from typing import List, Optional
+import uuid
+from typing import Any, Dict, List, Optional
 
 from psycopg.types.json import Jsonb
 
-from bulletin_maker.core.rite import Rite, RiteModule
+from bulletin_maker.core.rite import Rite, RiteModule, condition_applies
 from bulletin_maker.web import db
 
 
@@ -127,6 +128,57 @@ def delete_rite(rite_id: str) -> bool:
     with db.connect() as conn:
         cur = conn.execute("DELETE FROM rites WHERE id = %s", (rite_id,))
         return cur.rowcount > 0
+
+
+# ── Editor helpers (LWS-2) ────────────────────────────────────────────
+
+
+def fork_rite(
+    source: Rite,
+    church_id: int,
+    name: Optional[str] = None,
+    base_rite_id: Optional[str] = None,
+) -> Rite:
+    """Return a new, unsaved church-owned copy of ``source``.
+
+    A fresh ``id``, ``church_id`` set to the caller's church, ``version`` 1,
+    and a "Copy of …" name.  Blocks and metadata are carried over verbatim via
+    a ``from_dict``/``to_dict`` round trip, so the copy is structurally
+    identical and independently editable.  ``base_rite_id`` records provenance;
+    it must reference a *persisted* rite (the bundled library rites live only in
+    JSON, so a library fork passes ``None``) to satisfy the table's foreign key.
+    """
+    payload = source.to_dict()
+    payload["id"] = "rite_" + uuid.uuid4().hex
+    payload["church_id"] = church_id
+    payload["version"] = 1
+    payload["base_rite_id"] = base_rite_id
+    payload["name"] = name or ("Copy of " + source.name)
+    return Rite.from_dict(payload)
+
+
+def visible_block_ids(rite: Rite, context: Dict[str, Any]) -> List[str]:
+    """Block ids kept for a given ``{season, feasts, toggles}`` context.
+
+    Mirrors the renderer's filter (``rite_resolver``): a block is visible when
+    it is enabled and its condition applies.  Used by the editor preview.
+    """
+    return [
+        block.id
+        for block in rite.blocks
+        if block.enabled and condition_applies(block.condition, context)
+    ]
+
+
+def rite_run_count(rite_id: str) -> int:
+    """How many stored past runs reference ``rite_id`` (delete guard)."""
+    with db.connect() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS n FROM past_runs"
+            " WHERE form_data_json ->> 'rite_id' = %s",
+            (rite_id,),
+        ).fetchone()
+    return row["n"]
 
 
 # ── Modules ───────────────────────────────────────────────────────────
