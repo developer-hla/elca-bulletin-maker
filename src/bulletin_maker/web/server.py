@@ -44,7 +44,12 @@ from bulletin_maker.core.profile import (
     profile_to_dict,
 )
 from bulletin_maker.core.service_form import build_service_config
-from bulletin_maker.exceptions import AuthError, BulletinError, NetworkError
+from bulletin_maker.exceptions import (
+    AuthError,
+    BulletinError,
+    ContentNotFoundError,
+    NetworkError,
+)
 from bulletin_maker.renderer.paper import PAPER_PRESETS
 from bulletin_maker.renderer.season import (
     detect_season,
@@ -54,6 +59,7 @@ from bulletin_maker.renderer.season import (
 )
 from bulletin_maker.renderer.settings import SETTINGS
 from bulletin_maker.sns.client import SundaysClient
+from bulletin_maker.sns.content_service import ContentService
 from bulletin_maker.web import artifacts, db, jobstore, plans, security
 from bulletin_maker.web.sessions import SESSION_COOKIE, Session, SessionStore
 
@@ -219,18 +225,19 @@ def create_app() -> FastAPI:
             raise _validation(
                 "Too many attempts — wait a few minutes.", status=429)
 
-    def sns_client(session: Session) -> SundaysClient:
+    def _sns_unlinked() -> HTTPException:
+        return HTTPException(status_code=409, detail={
+            "error": "No Sundays & Seasons account is linked yet. "
+                     "A church admin can link one under Settings.",
+            "error_type": "validation", "sns_unlinked": True,
+        })
+
+    def _build_sns_client(session: Session) -> SundaysClient:
         """The church's S&S client, logging in lazily with the linked
-        credential. Raises a clear error when no account is linked."""
+        credential. Assumes the church is already known to be linked."""
         if session.client is not None:
             return session.client
         church = church_of(session)
-        if not church["sns_username"] or not church["sns_password_enc"]:
-            raise HTTPException(status_code=409, detail={
-                "error": "No Sundays & Seasons account is linked yet. "
-                         "A church admin can link one under Settings.",
-                "error_type": "validation", "sns_unlinked": True,
-            })
         password = security.decrypt_secret(church["sns_password_enc"])
         client = SundaysClient()
         try:
@@ -240,6 +247,18 @@ def create_app() -> FastAPI:
             raise
         session.client = client
         return client
+
+    def content_service(session: Session) -> ContentService:
+        """Cached content interface for the church. Raises the same
+        no-account-linked error the client used to, before any content read,
+        so the cache can never serve S&S content without a subscription."""
+        church = church_of(session)
+        if not church["sns_username"] or not church["sns_password_enc"]:
+            raise _sns_unlinked()
+        return ContentService(
+            entitled=True,
+            client_provider=lambda: _build_sns_client(session),
+        )
 
     def _sign_in(session: Session, user: dict) -> dict:
         session.sign_out()
@@ -436,16 +455,17 @@ def create_app() -> FastAPI:
     # ── Day content ───────────────────────────────────────────────────
 
     @app.get("/api/day")
-    def fetch_day(date: str, display: str,
+    def fetch_day(date: str, display: str, refresh: bool = False,
                   session: Session = Depends(session_dep)):
         require_user(session)
         try:
             dt = datetime.strptime(date, "%Y-%m-%d")
         except ValueError as e:
             raise _fail(422, e)
+        service = content_service(session)
         try:
             api_date = f"{dt.year}-{dt.month}-{dt.day}"
-            session.day = sns_client(session).get_day_texts(api_date)
+            session.day = service.get_day_content(api_date, force_refresh=refresh)
             session.date_str = date
         except AuthError as e:
             session.close()
@@ -503,11 +523,13 @@ def create_app() -> FastAPI:
             raise _fail(422, e)
 
     @app.post("/api/passage")
-    def custom_passage(payload: dict, session: Session = Depends(session_dep)):
+    def custom_passage(payload: dict, refresh: bool = False,
+                       session: Session = Depends(session_dep)):
         require_user(session)
+        service = content_service(session)
         citation = payload.get("citation", "")
         try:
-            html = sns_client(session).search_passage(citation)
+            html = service.get_passage(citation, force_refresh=refresh)
         except BulletinError as e:
             raise _fail(502, e)
         return {"success": True, "text_html": html, "citation": citation}
@@ -520,22 +542,35 @@ def create_app() -> FastAPI:
 
     # ── Hymns ─────────────────────────────────────────────────────────
 
+    def _hymn_title_only(service: ContentService, collection: str,
+                         number: str) -> dict:
+        """Fallback for hymns with no downloadable words — needs the title."""
+        try:
+            results = service.search_hymn(number, collection)
+        except BulletinError as e:
+            raise _fail(502, e)
+        if not results:
+            raise HTTPException(status_code=404, detail={
+                "error": f"No results for {collection} {number}",
+                "error_type": "internal",
+            })
+        logger.warning("No lyrics for %s %s — title only", collection, number)
+        return {
+            "success": True,
+            "number": f"{collection} {number}",
+            "title": results[0].title,
+            "verse_count": 0,
+            "has_refrain": False,
+            "lyrics_unavailable": True,
+        }
+
     @app.get("/api/hymns/{collection}/{number}")
     def hymn(collection: str, number: str, date: str = "",
+             refresh: bool = False,
              session: Session = Depends(session_dep)):
         """Search + fetch lyrics in one call (the SPA always does both)."""
         require_user(session)
-        client = sns_client(session)
-        try:
-            results = client.search_hymn(number, collection)
-            if not results:
-                raise HTTPException(status_code=404, detail={
-                    "error": f"No results for {collection} {number}",
-                    "error_type": "internal",
-                })
-            found = results[0]
-        except BulletinError as e:
-            raise _fail(502, e)
+        service = content_service(session)
 
         if date:
             try:
@@ -549,17 +584,12 @@ def create_app() -> FastAPI:
         # Some hymns have no downloadable words — degrade to title-only
         # rather than failing the whole slot.
         try:
-            lyrics = client.fetch_hymn_lyrics(number, use_date, collection)
-        except BulletinError:
-            logger.warning("No lyrics for %s %s — title only", collection, number)
-            return {
-                "success": True,
-                "number": f"{collection} {number}",
-                "title": found.title,
-                "verse_count": 0,
-                "has_refrain": False,
-                "lyrics_unavailable": True,
-            }
+            lyrics = service.get_hymn_lyrics(
+                collection, number, use_date, force_refresh=refresh)
+        except ContentNotFoundError:
+            return _hymn_title_only(service, collection, number)
+        except BulletinError as e:
+            raise _fail(502, e)
 
         session.hymn_cache[f"{collection}_{number}"] = {
             "number": lyrics.number,
@@ -645,11 +675,16 @@ def create_app() -> FastAPI:
     @app.post("/api/generate")
     def generate(form_data: dict, session: Session = Depends(session_dep)):
         _require_day(session)
-        plans.check_limit(church_of(session), "generate")
+        church = church_of(session)
+        plans.check_limit(church, "generate")
         if not form_data.get("date") or not form_data.get("date_display"):
             raise _validation("Missing required fields: date and date_display.")
-        profile = profile_from_dict(
-            json.loads(church_of(session)["profile_json"]))
+        # A cache-hit day fetch never builds an S&S client, but generation
+        # needs a live one (notation images) — build it before the worker.
+        if not church["sns_username"] or not church["sns_password_enc"]:
+            raise _sns_unlinked()
+        _build_sns_client(session)
+        profile = profile_from_dict(json.loads(church["profile_json"]))
         job_id = secrets.token_hex(8)
         try:
             artifacts.purge_expired_artifacts()
