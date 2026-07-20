@@ -1,0 +1,146 @@
+{
+  "id": "elw_night_prayer",
+  "church_id": null,
+  "name": "ELW Night Prayer (Compline) — DRAFT",
+  "tradition": "elca",
+  "occasion": "daily_office",
+  "base_rite_id": null,
+  "version": 1,
+  "meta": {
+    "role_labels": {"leader": "P", "congregation": "C"},
+    "notes": "DRAFT of the ELW Night Prayer (Compline) ordo, pending owner verification against a physical/PDF ELW pew edition. Structure follows the Daily Office ordo in docs/research/2026-07-liturgy-strategy/09-elca-occasion-services.md: Opening -> Confession -> Psalmody (Ps 91/134) -> short Reading -> responsory ('Into thy hands') -> Nunc Dimittis -> Prayers/collect -> Blessing. TEXT PROVENANCE per docs/research/2026-07-liturgy-strategy/10-pd-text-sourcing.md: bundles the traditional PUBLIC-DOMAIN default text (traditional Compline opening/blessing 'The Lord Almighty grant us a quiet night and a perfect end', 1662 BCP General Confession, traditional 'Into thy hands' responsory from Ps 31:5, KJV Nunc Dimittis, ancient threefold Kyrie, traditional 'Our Father'). IMPORTANT (doc 10 flag #3): the 1662 General Confession is a WORKING PD SUBSTITUTE for ELW's Compline confession, NOT verbatim ELW. ELW's contemporary wording (ELW's confession, ELW's responsory, the ELLC Nunc Dimittis 'Now, Lord, you let your servant go in peace', the collect, and ELW's exact blessing 'quiet night and peace at the last') is COPYRIGHTED and NOT bundled: left as [VAR]/[LIC] slots resolved via entitlement. Element status: opening=[PD], confession=[PD 1662, substitute], psalmody=[VAR], reading=[VAR], responsory=[PD], Nunc Dimittis=[PD KJV], Kyrie=[PD], Lord's Prayer=[PD], collect=[VAR/LIC], blessing=[PD]."
+  },
+  "blocks": [
+    {
+      "id": "cover",
+      "type": "literal_text",
+      "note": "Composite cover page from CongregationProfile. Identity/chrome, not liturgical text.",
+      "profile_ref": "cover"
+    },
+    {
+      "id": "welcome_message",
+      "type": "literal_text",
+      "note": "profile.welcome_message paragraph.",
+      "profile_ref": "welcome_message",
+      "style": "plain"
+    },
+    {
+      "id": "standing_instructions",
+      "type": "literal_text",
+      "note": "profile.standing_instructions ('* = please stand').",
+      "profile_ref": "standing_instructions",
+      "style": "plain"
+    },
+    {
+      "id": "office_heading",
+      "type": "heading",
+      "text": "NIGHT PRAYER"
+    },
+    {
+      "id": "opening",
+      "type": "literal_text",
+      "title": "*OPENING",
+      "note": "[PD] Traditional Compline opening versicle 'The Lord Almighty grant us a quiet night and a perfect end' (medieval origin; PD in English use). ELW's contemporary 'quiet night and peace at the last' wording is [LIC], resolved via entitlement.",
+      "text_ref": "pd.compline_open",
+      "style": "unison"
+    },
+    {
+      "id": "confession_heading",
+      "type": "heading",
+      "text": "CONFESSION"
+    },
+    {
+      "id": "confession",
+      "type": "literal_text",
+      "note": "[PD] the 1662 BCP General Confession, bundled as the PUBLIC-DOMAIN SUBSTITUTE for ELW's Compline confession (doc 10 flag #3: a working substitute, NOT verbatim ELW). ELW's own confession wording is [LIC], resolved via entitlement.",
+      "text_ref": "pd.general_confession_bcp",
+      "style": "prayer"
+    },
+    {
+      "id": "psalmody_heading",
+      "type": "heading",
+      "text": "PSALMODY"
+    },
+    {
+      "id": "psalm",
+      "type": "psalm",
+      "title": "Psalm",
+      "note": "[VAR] The traditional Compline psalms are Psalm 91 and/or Psalm 134; the day's appointment may vary. Text/number from the day's appointment (S&S / lectionary).",
+      "source": "slot",
+      "style": "responsive"
+    },
+    {
+      "id": "reading",
+      "type": "reading_slot",
+      "title": "READING",
+      "note": "[VAR] A short appointed lesson. The response is a renderer-side inline literal.",
+      "slot": "first",
+      "render": "full"
+    },
+    {
+      "id": "responsory",
+      "type": "dialogue",
+      "title": "RESPONSORY",
+      "note": "[PD] the traditional Compline responsory 'Into thy hands, O Lord, I commend my spirit' (Ps 31:5 / Luke 23:46), public domain.",
+      "text_ref": "pd.into_thy_hands"
+    },
+    {
+      "id": "nunc_dimittis_heading",
+      "type": "heading",
+      "text": "*THE NUNC DIMITTIS (Song of Simeon)"
+    },
+    {
+      "id": "nunc_dimittis",
+      "type": "literal_text",
+      "note": "[PD] Nunc Dimittis, Luke 2:29-32, King James Version (public domain). The bundled traditional-language default; ELW's ELLC contemporary canticle is [LIC], resolved via entitlement.",
+      "text_ref": "pd.nunc_dimittis_kjv",
+      "style": "unison"
+    },
+    {
+      "id": "prayers_heading",
+      "type": "heading",
+      "text": "PRAYERS"
+    },
+    {
+      "id": "kyrie",
+      "type": "dialogue",
+      "title": "KYRIE",
+      "note": "[PD] the ancient threefold Kyrie (public domain), inline so no ELW Kyrie wording is bundled.",
+      "lines": [
+        {"role": "congregation", "text": "Lord, have mercy."},
+        {"role": "congregation", "text": "Christ, have mercy."},
+        {"role": "congregation", "text": "Lord, have mercy."}
+      ]
+    },
+    {
+      "id": "lords_prayer",
+      "type": "literal_text",
+      "title": "*LORD'S PRAYER",
+      "note": "[PD] Reuses elw.lords_prayer, whose constant is the traditional 'Our Father, who art in heaven' wording (public domain).",
+      "text_ref": "elw.lords_prayer",
+      "style": "unison"
+    },
+    {
+      "id": "collect",
+      "type": "proper_slot",
+      "title": "COLLECT",
+      "note": "[VAR/LIC] The appointed Compline collect(s) (S&S / ELW propers); resolves via entitlement. No PD fallback bundled.",
+      "kind": "prayer_of_day"
+    },
+    {
+      "id": "blessing",
+      "type": "proper_slot",
+      "title": "*BLESSING",
+      "note": "[PD] Concluding blessing; falls back to the traditional Compline versicle 'The Lord Almighty grant us a quiet night and a perfect end' (pd.compline_open). ELW's own blessing wording is [LIC] and, when entitled, resolves over this PD default.",
+      "kind": "blessing",
+      "fallback": "pd.compline_open"
+    },
+    {
+      "id": "copyright",
+      "type": "literal_text",
+      "note": "profile.copyright_paragraphs (bulletin only). Profile-driven chrome.",
+      "profile_ref": "copyright_paragraphs",
+      "style": "plain"
+    }
+  ]
+}

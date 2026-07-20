@@ -1,0 +1,163 @@
+{
+  "id": "elw_evening_prayer",
+  "church_id": null,
+  "name": "ELW Evening Prayer (Vespers) — DRAFT",
+  "tradition": "elca",
+  "occasion": "daily_office",
+  "base_rite_id": null,
+  "version": 1,
+  "meta": {
+    "role_labels": {"leader": "P", "congregation": "C"},
+    "notes": "DRAFT of the ELW Evening Prayer (Vespers) ordo, pending owner verification against a physical/PDF ELW pew edition. Structure follows the Daily Office ordo in docs/research/2026-07-liturgy-strategy/09-elca-occasion-services.md: Service of Light + Phos Hilaron -> Psalmody (Ps 141) -> Reading + responsory -> Magnificat -> Prayers -> Blessing. TEXT PROVENANCE per docs/research/2026-07-liturgy-strategy/10-pd-text-sourcing.md: bundles the traditional PUBLIC-DOMAIN default text (Robert Bridges' 1899 Phos Hilaron 'O gladsome light', 1662 BCP versicle/Gloria Patri, KJV Magnificat, ancient threefold Kyrie, traditional 'Our Father'). ELW's contemporary wording (ELW's Service-of-Light dialogue 'The light shines...', the ELW/ICEL Phos Hilaron 'O gracious Light', the ELLC Magnificat 'My soul proclaims', ELW's responsory, the Collect) is COPYRIGHTED and NOT bundled: left as [VAR]/[LIC] slots resolved via the church's Augsburg/S&S license. Element status: Service of Light dialogue=[LIC] (rubric, no PD default), Phos Hilaron=[PD Bridges 1899], opening versicle=[PD], Gloria Patri=[PD], psalmody=[VAR], reading=[VAR], responsory=[LIC] (rubric), Magnificat=[PD KJV], Kyrie=[PD ancient], Lord's Prayer=[PD traditional], collect=[VAR/LIC], blessing=[VAR/LIC]."
+  },
+  "blocks": [
+    {
+      "id": "cover",
+      "type": "literal_text",
+      "note": "Composite cover page from CongregationProfile. Identity/chrome, not liturgical text.",
+      "profile_ref": "cover"
+    },
+    {
+      "id": "welcome_message",
+      "type": "literal_text",
+      "note": "profile.welcome_message paragraph.",
+      "profile_ref": "welcome_message",
+      "style": "plain"
+    },
+    {
+      "id": "standing_instructions",
+      "type": "literal_text",
+      "note": "profile.standing_instructions ('* = please stand').",
+      "profile_ref": "standing_instructions",
+      "style": "plain"
+    },
+    {
+      "id": "office_heading",
+      "type": "heading",
+      "text": "EVENING PRAYER"
+    },
+    {
+      "id": "service_of_light_heading",
+      "type": "heading",
+      "text": "SERVICE OF LIGHT"
+    },
+    {
+      "id": "service_of_light_rubric",
+      "type": "rubric",
+      "note": "[LIC] The evening candle/lamp is lit. ELW's Service-of-Light dialogue ('Jesus Christ is the light of the world...' / 'The light shines in the darkness...') is copyrighted and resolves via the church's Augsburg/S&S license; only a neutral action rubric is bundled here.",
+      "text": "The evening lamp or candle is lighted as the assembly gathers."
+    },
+    {
+      "id": "phos_hilaron_heading",
+      "type": "heading",
+      "text": "*PHOS HILARON (O Gladsome Light)"
+    },
+    {
+      "id": "phos_hilaron",
+      "type": "literal_text",
+      "note": "[PD] Phos Hilaron in Robert Bridges' 1899 English translation (public domain). The bundled traditional default; ELW's contemporary 'O gracious Light' (ICEL/ELW) is [LIC], resolved via entitlement.",
+      "text_ref": "pd.phos_hilaron_bridges",
+      "style": "unison"
+    },
+    {
+      "id": "opening_versicle_speed",
+      "type": "dialogue",
+      "title": "*OPENING VERSICLE",
+      "note": "[PD] 1662/1928 BCP evening opening versicle (Ps 70:1).",
+      "text_ref": "pd.versicle_make_speed"
+    },
+    {
+      "id": "gloria_patri",
+      "type": "literal_text",
+      "title": "*GLORIA PATRI",
+      "note": "[PD] traditional doxology, 1662 BCP form. In Lent the following 'Alleluia' is omitted (seasonal-customs layer).",
+      "text_ref": "pd.gloria_patri",
+      "style": "unison"
+    },
+    {
+      "id": "psalmody_heading",
+      "type": "heading",
+      "text": "PSALMODY"
+    },
+    {
+      "id": "psalm",
+      "type": "psalm",
+      "title": "Psalm 141",
+      "note": "[VAR] The traditional evening psalm is Psalm 141 ('Let my prayer rise before you as incense'); the day's appointed psalm(s) may vary. Text/number from the day's appointment (S&S / lectionary).",
+      "source": "slot",
+      "style": "responsive"
+    },
+    {
+      "id": "reading",
+      "type": "reading_slot",
+      "title": "READING",
+      "note": "[VAR] Appointed lesson for the day. The response is a renderer-side inline literal.",
+      "slot": "first",
+      "render": "full"
+    },
+    {
+      "id": "responsory",
+      "type": "rubric",
+      "title": "RESPONSORY",
+      "note": "[LIC] A responsory follows the reading. ELW's specific wording is copyrighted and resolves via entitlement; no PD default is authored here. Shown as a rubric so no ELW wording is bundled.",
+      "text": "A responsory follows the reading."
+    },
+    {
+      "id": "magnificat_heading",
+      "type": "heading",
+      "text": "*THE MAGNIFICAT (Song of Mary)"
+    },
+    {
+      "id": "magnificat",
+      "type": "literal_text",
+      "note": "[PD] Magnificat, Luke 1:46-55, King James Version (public domain). The bundled traditional-language default; ELW's ELLC contemporary canticle is [LIC], resolved via entitlement.",
+      "text_ref": "pd.magnificat_kjv",
+      "style": "unison"
+    },
+    {
+      "id": "prayers_heading",
+      "type": "heading",
+      "text": "PRAYERS"
+    },
+    {
+      "id": "kyrie",
+      "type": "dialogue",
+      "title": "KYRIE",
+      "note": "[PD] the ancient threefold Kyrie (public domain), inline so no ELW Kyrie wording is bundled.",
+      "lines": [
+        {"role": "congregation", "text": "Lord, have mercy."},
+        {"role": "congregation", "text": "Christ, have mercy."},
+        {"role": "congregation", "text": "Lord, have mercy."}
+      ]
+    },
+    {
+      "id": "lords_prayer",
+      "type": "literal_text",
+      "title": "*LORD'S PRAYER",
+      "note": "[PD] Reuses elw.lords_prayer, whose constant is the traditional 'Our Father, who art in heaven' wording (public domain).",
+      "text_ref": "elw.lords_prayer",
+      "style": "unison"
+    },
+    {
+      "id": "collect",
+      "type": "proper_slot",
+      "title": "COLLECT OF THE DAY",
+      "note": "[VAR/LIC] The appointed collect (S&S / ELW propers); resolves via entitlement. No PD fallback bundled.",
+      "kind": "prayer_of_day"
+    },
+    {
+      "id": "blessing",
+      "type": "proper_slot",
+      "title": "*BLESSING",
+      "note": "[VAR/LIC] Concluding blessing/benedicamus; resolves via entitlement. No PD fallback bundled.",
+      "kind": "blessing"
+    },
+    {
+      "id": "copyright",
+      "type": "literal_text",
+      "note": "profile.copyright_paragraphs (bulletin only). Profile-driven chrome.",
+      "profile_ref": "copyright_paragraphs",
+      "style": "plain"
+    }
+  ]
+}
