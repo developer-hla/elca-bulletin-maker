@@ -121,6 +121,38 @@ church's PD corpus, a real API if one ever appears) is just another `ContentSour
 with its own `entitled()`/`capabilities()`. No core change. This is the content half of the
 "flexible system" priority (the calendar half is the CalendarProvider seam from LWS-3a).
 
+## CS-2 spike results (July 20 2026 — Library reverse-engineering)
+
+**Verdict: pull-live from S&S is FEASIBLE.** The ordinary/occasion liturgy text is all present in
+the Library, entitlement-gated, on our existing authenticated session.
+
+- **The Library is a resource TREE**, navigated by `GET /Library/_Children?parentAtomId={N}` (each
+  node's `data-ajax-url`). No free-text search needed for our purpose — it's browsable.
+- **Organized by source-book collection** (top-level atomIds): ELW=9396, LBW=110, WOV=118,
+  ACS=333320, TFF=116, LLC=111 (Spanish), plus resource collections (lectionary/psalm, S&S
+  resources, other, children's bulletins). So S&S covers ELW + several ELCA-family books + Spanish.
+- **The content we need is there as nodes**: under a collection — Holy Communion, Holy Baptism,
+  Daily Prayer, Life Passages (Marriage/Burial), Lent & the Three Days, and explicit leaves like
+  "Service of the Word", "Marriage Service Elements", "Burial of the Dead", "Apostles' Creed",
+  "Nicene Creed", "Occasional Services for the Assembly", "Pastoral Care".
+- **Each content leaf carries a stable `data-atom-code`** (e.g. `lbwApostlesCreed`) and offers
+  **"Download this item" + "Copy to clipboard"** — i.e. S&S itself provides a text export of each
+  item. That is the pull hook.
+- **Not yet pinned:** the exact content-fetch request behind the copy/download action. Guessed URL
+  patterns 404'd; `/Home/Download` exists but 500'd on my params (wrong shape, not absent). The
+  clean way to nail it is a **Playwright session that clicks the copy/download action and captures
+  the actual XHR** (method + path + params) — a bounded implementation step, not a research
+  unknown. That capture is the first task of building CS-2's pull.
+- **Politeness:** the tree + per-item fetch is more requests than DayTexts; cache aggressively in
+  `sns_cache` (the ordinary/occasion text is stable — fetch once per church per item, reuse).
+
+**Implication:** the owner's pull-from-S&S instinct is sound and buildable. CS-2 = (1) capture the
+copy/download endpoint via Playwright, (2) add an `sns` ContentSource method to fetch an item by
+atom-code (cached, entitlement-gated), (3) flip the relevant `sns` source resolution from
+bundle-gated to pull-live, keeping the PD fallback for the unentitled. NRSVUE canticles/psalms come
+the same way (S&S serves NRSVUE). This stays behind the CS-1 interface — only the `sns` source impl
+changes; parity/entitlement gates unchanged.
+
 ## Phasing
 - **CS-1 (fixes the copyright exposure, no new scraping):** ContentSource interface + registry;
   `public_domain` + `sns`(bundle-gated over today's static_text) + `church_library` sources;
