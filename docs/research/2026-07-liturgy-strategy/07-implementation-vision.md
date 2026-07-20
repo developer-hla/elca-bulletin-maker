@@ -123,3 +123,16 @@ PDF pair → owner eyeball → deliberate re-baseline recorded in the commit.
 
 Now: approve → LWS-0a/0b briefs. End 0c/0d: ratify parity PDFs if needed. During 2: taste pass
 on starter rites/editor. Before 6: pricing + Augsburg letter timing. Before 8: LSB ToS go/no-go.
+
+## Scope decision — July 20, 2026 (owner)
+
+**LWS-2 and LWS-3b are scoped to ELCA / RCL only for now.** The rite editor and rite model
+stay tradition-agnostic (Rite.tradition field, no hardcoded ELCA assumptions in the editor) so
+other traditions expand in later without rework — but we author NO non-ELCA rites yet
+(LSB/BCP deferred) and transcribe NO non-RCL lectionary data yet (Narrative, LCMS-1yr deferred).
+The ELCA slice is to be calendar-complete: RCL propers resolvable in-house (LWS-3b = rcl_local
+with real RCL 3-year data, Vanderbilt-seeded owned tables), so ELCA rites work without S&S doing
+the calendar math. Owner is the liturgical-domain reviewer for the ELCA starter rites.
+Engineering guardrail: agents must NOT fabricate liturgical text — new ELCA rites are derived
+from the existing reviewed ordo (e.g. Service of the Word = Holy Communion minus the meal) or
+built from public-domain/sourced text with owner taste review; net-new composed liturgy waits.
