@@ -25,7 +25,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from bulletin_maker.core.content_views import (
@@ -51,7 +51,7 @@ from bulletin_maker.renderer.season import (
 )
 from bulletin_maker.renderer.settings import SETTINGS
 from bulletin_maker.sns.client import SundaysClient
-from bulletin_maker.web import db, security
+from bulletin_maker.web import db, plans, security
 from bulletin_maker.web.sessions import SESSION_COOKIE, Session, SessionStore
 
 logger = logging.getLogger(__name__)
@@ -156,6 +156,11 @@ def create_app() -> FastAPI:
     store = SessionStore()
     hosted = os.environ.get("BULLETIN_HOSTED") == "1"
     limiter = LoginRateLimiter()
+
+    @app.exception_handler(plans.PlanLimitError)
+    def _plan_limit(request: Request, exc: plans.PlanLimitError):
+        return JSONResponse(status_code=403, content={"detail": {
+            "error": str(exc), "error_type": "plan_limit"}})
 
     def session_dep(request: Request, response: Response) -> Session:
         sid = request.cookies.get(SESSION_COOKIE)
@@ -285,6 +290,7 @@ def create_app() -> FastAPI:
         church = db.get_church_by_invite(invite_code) if invite_code else None
         if church is None:
             raise _validation("That invite code isn't valid.", status=403)
+        plans.check_limit(church, "join")
         email, password, display_name = _validate_account_fields(payload)
         if db.get_user_by_email(email) is not None:
             raise _validation("That email already has an account.", status=409)
@@ -609,6 +615,7 @@ def create_app() -> FastAPI:
     @app.post("/api/generate")
     def generate(form_data: dict, session: Session = Depends(session_dep)):
         _require_day(session)
+        plans.check_limit(church_of(session), "generate")
         if not form_data.get("date") or not form_data.get("date_display"):
             raise _validation("Missing required fields: date and date_display.")
         profile = profile_from_dict(
