@@ -6,8 +6,16 @@ This is the resolution target for a block's ``text_ref`` / ``fallback`` /
 so the text has a single source of truth.
 
 Key conventions:
-  ``elw.*``   — texts from the ELW ordo / Setting Two.
+  ``elw.*``   — ELW ordo / Setting Two wording (copyrighted; lawfully
+                distributed only to a licensed deployment — see LWS-4).
   ``house.*`` — Ascension house texts that override the S&S/ELW default.
+  ``pd.*``    — genuinely public-domain texts (1662/1928 BCP, KJV, pre-1929
+                hymn translations); bundle-able and distributable
+                UNCONDITIONALLY.  Imported from ``renderer/pd_text.py``, which
+                is kept separate from the ELW-copyrighted ``static_text.py`` so
+                a future entitlement layer can gate the latter while always
+                shipping the PD fallback.  See
+                ``docs/research/2026-07-liturgy-strategy/10-pd-text-sourcing.md``.
 
 A value is whatever shape the underlying constant is: a plain string
 (creeds, Sanctus, ...), a list of ``(DialogRole, text)`` tuples (greeting,
@@ -24,6 +32,19 @@ from __future__ import annotations
 
 from typing import Any, Dict, FrozenSet
 
+from bulletin_maker.renderer.pd_text import (
+    PD_BENEDICTUS_KJV,
+    PD_COMPLINE_OPEN,
+    PD_GENERAL_CONFESSION_BCP,
+    PD_GLORIA_PATRI,
+    PD_INTO_THY_HANDS,
+    PD_MAGNIFICAT_KJV,
+    PD_NUNC_DIMITTIS_KJV,
+    PD_PHOS_HILARON_BRIDGES,
+    PD_TE_DEUM_BCP1662,
+    PD_VERSICLE_MAKE_SPEED,
+    PD_VERSICLE_OPEN_LIPS,
+)
 from bulletin_maker.renderer.static_text import (
     AARONIC_BLESSING,
     AGNUS_DEI,
@@ -102,6 +123,18 @@ TEXT_CATALOG: Dict[str, Any] = {
     "elw.baptism_formula": BAPTISM_FORMULA,
     "elw.baptism_welcome": BAPTISM_WELCOME,
     "elw.baptism_welcome_response": BAPTISM_WELCOME_RESPONSE,
+    # ── Daily Office (public domain — bundle-able unconditionally) ──
+    "pd.benedictus_kjv": PD_BENEDICTUS_KJV,
+    "pd.magnificat_kjv": PD_MAGNIFICAT_KJV,
+    "pd.nunc_dimittis_kjv": PD_NUNC_DIMITTIS_KJV,
+    "pd.te_deum_bcp1662": PD_TE_DEUM_BCP1662,
+    "pd.phos_hilaron_bridges": PD_PHOS_HILARON_BRIDGES,
+    "pd.versicle_open_lips": PD_VERSICLE_OPEN_LIPS,
+    "pd.versicle_make_speed": PD_VERSICLE_MAKE_SPEED,
+    "pd.gloria_patri": PD_GLORIA_PATRI,
+    "pd.general_confession_bcp": PD_GENERAL_CONFESSION_BCP,
+    "pd.compline_open": PD_COMPLINE_OPEN,
+    "pd.into_thy_hands": PD_INTO_THY_HANDS,
 }
 
 
