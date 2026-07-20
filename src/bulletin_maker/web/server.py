@@ -102,6 +102,7 @@ MIN_PASSWORD_LENGTH = 8
 
 CALENDAR_PROVIDER_LABELS = {
     "sns": "Sundays & Seasons",
+    "rcl": "Revised Common Lectionary (computed)",
     "manual": "Manual (sermon series / no lectionary)",
 }
 

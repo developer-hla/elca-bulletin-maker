@@ -263,9 +263,19 @@ class ManualCalendarProvider(CalendarProvider):
         )
 
 
+# Imported after the base types above are defined (rcl_calendar imports them
+# from this module) so registration doesn't create an import cycle. The rcl
+# provider computes the RCL temporal day from a date (LWS-3b); it is opt-in
+# via church.calendar_provider and never on the default ("sns") path.
+from bulletin_maker.core.rcl_calendar import RclCalendarProvider  # noqa: E402
+
 _PROVIDERS: Dict[str, CalendarProvider] = {
     provider.key: provider
-    for provider in (SnsCalendarProvider(), ManualCalendarProvider())
+    for provider in (
+        SnsCalendarProvider(),
+        ManualCalendarProvider(),
+        RclCalendarProvider(),
+    )
 }
 
 CALENDAR_PROVIDER_KEYS: FrozenSet[str] = frozenset(_PROVIDERS)

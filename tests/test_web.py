@@ -286,7 +286,7 @@ class TestChurchProfile:
         assert {o["key"] for o in options["paper_size"]} == {
             "legal_booklet", "letter_booklet", "a4_booklet"}
         assert {o["key"] for o in options["calendar_provider"]} == {
-            "sns", "manual"}
+            "sns", "rcl", "manual"}
 
     def test_invalid_calendar_provider_rejected(self, client):
         _register(client)

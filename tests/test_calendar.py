@@ -162,7 +162,7 @@ class TestGetCalendarProvider:
             get_calendar_provider("rcl_local")
 
     def test_known_keys(self):
-        assert CALENDAR_PROVIDER_KEYS == {"sns", "manual"}
+        assert CALENDAR_PROVIDER_KEYS == {"sns", "rcl", "manual"}
 
 
 class TestLiturgicalSeasonOf:
