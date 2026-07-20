@@ -115,6 +115,7 @@ def generate_documents(
     profile: CongregationProfile | None = None,
     entitled: bool = True,
     church_texts: dict | None = None,
+    sns_fetch: Callable[[str], Optional[str]] | None = None,
 ) -> GenerationResult:
     """Generate the selected documents into output_dir.
 
@@ -128,6 +129,9 @@ def generate_documents(
             wording exactly as before; False falls back to public-domain text
             or a placeholder and never serves the copyrighted ELW text.
         church_texts: The church's saved text overrides keyed by catalog key.
+        sns_fetch: Optional atom-code -> text pull (CS-2), injected by the web
+            layer as a closure over the church's content_service. None on the
+            offline / parity path, so nothing pulls and output is unchanged.
 
     Returns:
         GenerationResult with per-document paths and isolated errors.
@@ -135,7 +139,11 @@ def generate_documents(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    content = ContentContext(entitled=entitled, church_texts=church_texts or {})
+    content = ContentContext(
+        entitled=entitled,
+        church_texts=church_texts or {},
+        sns_fetch=sns_fetch,
+    )
 
     selected = set(selected) if selected is not None else set(DEFAULT_SELECTION)
     unknown = selected - set(_SPECS_BY_KEY)

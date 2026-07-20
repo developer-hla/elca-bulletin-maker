@@ -321,6 +321,25 @@ class SundaysClient:
             f"No passage found for citation: {citation!r}"
         )
 
+    # -- Library Item Preview -----------------------------------------------
+
+    def fetch_preview(self, atom_code: str) -> str:
+        """Fetch a Library item's text as HTML via GET /File/Preview.
+
+        Returns the raw response body. A missing atom-code yields HTTP 200 with
+        a plain "Atom not found with code: ..." body (no ``.body`` div); the
+        caller (content_service) detects that and treats it as absent.
+        """
+        if not atom_code or not atom_code.strip():
+            raise ValueError("atom_code must not be empty.")
+
+        self._ensure_logged_in()
+
+        resp = self._request(
+            "GET", f"{BASE}/File/Preview", params={"atomCode": atom_code}
+        )
+        return resp.text
+
     # -- Music Search -------------------------------------------------------
 
     def _get_music_form_fields(self) -> dict:

@@ -25,7 +25,10 @@ from typing import Callable, Optional
 
 from psycopg.types.json import Jsonb
 
+import re
+
 from bulletin_maker.exceptions import BulletinError
+from bulletin_maker.renderer.text_utils import clean_sns_html
 from bulletin_maker.sns.client import SundaysClient
 from bulletin_maker.sns.models import DayContent, HymnLyrics, HymnResult
 from bulletin_maker.web import db
@@ -35,6 +38,23 @@ logger = logging.getLogger(__name__)
 DAY_KEY = "day"
 PASSAGE_KEY = "passage"
 HYMN_KEY = "hymn"
+LIBRARY_KEY = "library"
+
+# S&S returns this plain body (HTTP 200, no ``.body`` div) for an unknown
+# atom-code — it must be treated as absent, never as content.
+ATOM_NOT_FOUND_MARKER = "Atom not found with code:"
+
+
+def _clean_library_html(html: str) -> str:
+    """Clean a /File/Preview body to newline-delimited text.
+
+    The preview wraps each liturgical line in its own ``<div>`` (indentation
+    via ``text-indent``). Converting those div boundaries to newlines lets the
+    shared :func:`clean_sns_html` strip tags/entities while preserving the
+    line/stanza structure, exactly as day-content texts are handled.
+    """
+    line_delimited = re.sub(r"</div>", "\n", html)
+    return clean_sns_html(line_delimited)
 
 
 class SubscriptionRequiredError(BulletinError):
@@ -133,3 +153,24 @@ class ContentService:
     def search_hymn(self, number: str, collection: str) -> list[HymnResult]:
         self._require_entitlement()
         return self._client_provider().search_hymn(number, collection)
+
+    def get_library_item(
+        self, atom_code: str, force_refresh: bool = False
+    ) -> Optional[str]:
+        """Fetch a Library item's text by atom-code (cached, entitlement-gated).
+
+        Pulls ``/File/Preview?atomCode=`` once per church per item — the
+        ordinary/occasion text is stable, so the cached value is reused. Returns
+        None when S&S reports the atom-code is unknown; the caller falls back.
+        """
+        self._require_entitlement()
+        cache_key = f"{LIBRARY_KEY}:{atom_code}"
+        cached = None if force_refresh else cache_get(cache_key)
+        if cached is not None:
+            return cached["text"]
+        html = self._client_provider().fetch_preview(atom_code)
+        if ATOM_NOT_FOUND_MARKER in html:
+            return None
+        text = _clean_library_html(html)
+        cache_put(cache_key, {"text": text})
+        return text

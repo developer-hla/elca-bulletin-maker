@@ -1044,6 +1044,11 @@ def create_app() -> FastAPI:
             church = church_of(session)
             entitled = bool(church["sns_username"])
 
+            # CS-2 pull hook: a closure over the church's content_service so
+            # gap-fill keys resolve live from the church's S&S Library. Only an
+            # entitled church has a client; the default path passes None.
+            sns_fetch = content_service(session).get_library_item if entitled else None
+
             outcome = generate_documents(
                 day, config, job_dir,
                 season=season,
@@ -1052,6 +1057,7 @@ def create_app() -> FastAPI:
                 on_progress=on_progress,
                 profile=profile,
                 entitled=entitled,
+                sns_fetch=sns_fetch,
             )
             results = _store_results(church_id, job_id, outcome.results)
             status = "done" if outcome.success else "failed"
