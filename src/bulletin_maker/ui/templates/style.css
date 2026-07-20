@@ -1453,3 +1453,83 @@ button.text-panel-header:focus-visible {
         padding-right: 10px;
     }
 }
+
+/* ── Operator console ──────────────────────────────────── */
+
+.operator-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.operator-section-head h3 {
+    margin: 0;
+}
+
+.operator-table-wrap {
+    overflow-x: auto;
+}
+
+.operator-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.operator-table th,
+.operator-table td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+}
+
+.operator-table th {
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.operator-table .op-error {
+    color: var(--danger);
+    max-width: 320px;
+}
+
+.op-badge,
+.op-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.op-active { background: var(--success-bg); color: var(--success); }
+.op-disabled { background: var(--danger-bg); color: var(--danger); }
+
+.op-status-done { background: var(--success-bg); color: var(--success); }
+.op-status-failed { background: var(--danger-bg); color: var(--danger); }
+.op-status-running,
+.op-status-queued { background: var(--gold-light); color: var(--gold); }
+
+.operator-audit-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+}
+
+.operator-audit-list li {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.op-audit-when {
+    color: var(--text-light);
+    margin-right: 6px;
+}
+
+.op-audit-action {
+    font-weight: 600;
+}

@@ -6,6 +6,7 @@ import { getNextSunday, setupNewBulletin, setupHelp, setupWizardNav, setupWizard
 import { setupA11y } from "./a11y.js";
 import { setupAuth, setupLogout, initAuth } from "./auth.js";
 import { setupSettings } from "./settings.js";
+import { setupOperator } from "./operator.js";
 import { setupDateFetch, setupResetDefaults } from "./readings.js";
 import { setupHymnFetch, setupFetchAllHymns } from "./hymns.js";
 import { setupFilePickers, setupGenerate } from "./generate.js";
@@ -28,6 +29,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     setupAuth();
     setupSettings();
+    setupOperator();
     setupLogout();
     setupNewBulletin();
     setupHelp();

@@ -91,6 +91,17 @@ export var api = (function() {
         },
         get_preface_options: function() { return req("GET", "/api/prefaces"); },
 
+        // Operator console (service-owner only)
+        operator_churches: function() { return req("GET", "/api/operator/churches"); },
+        operator_set_disabled: function(churchId, disabled) {
+            var verb = disabled ? "disable" : "enable";
+            return req("POST", "/api/operator/churches/" +
+                       encodeURIComponent(churchId) + "/" + verb);
+        },
+        operator_jobs: function() { return req("GET", "/api/operator/jobs"); },
+        operator_cache: function() { return req("GET", "/api/operator/cache"); },
+        operator_audit: function() { return req("GET", "/api/operator/audit"); },
+
         fetch_day_content: async function(dateStr, dateDisplay) {
             var result = await req("GET", "/api/day?date=" + encodeURIComponent(dateStr) +
                                    "&display=" + encodeURIComponent(dateDisplay));
