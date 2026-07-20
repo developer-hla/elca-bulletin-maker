@@ -8,85 +8,84 @@
 {% import "_macros.html" as m %}
 
 {# ════════════════════════════════════════════════════════════════════
-   COVER PAGE
+   RITE-DRIVEN DRIVER
+   The service order (which blocks appear, in what sequence) comes from the
+   library rite `elw_sunday_communion`, resolved and condition-filtered in
+   renderer/rite_resolver.py into `bulletin_sequence`. This template owns only
+   the per-block markup (dispatched by block id below) and the `.flow-group`
+   pagination wrappers. See docs/rite-engine.md and LWS-0c.
    ════════════════════════════════════════════════════════════════════ #}
+{% for item in bulletin_sequence %}
+{% if item.flow %}<div class="flow-group">{% endif %}
+{% for bid in item.ids %}
+
+{% if bid == "cover" %}
 {{ m.cover(church_name, church_address, cover_image_uri, service_time,
            date_display, day_name) }}
 
-
-{# ════════════════════════════════════════════════════════════════════
-   PAGE 2 — OPENING
-   ════════════════════════════════════════════════════════════════════ #}
+{% elif bid == "welcome_message" %}
 <p class="welcome-text">{{ welcome_message }}</p>
+
+{% elif bid == "standing_instructions" %}
 <p class="standing-instructions">{{ standing_instructions | nl2br }}</p>
 
-<div class="flow-group">
+{% elif bid == "gathering_chimes" %}
 <div class="section-heading"><span>GATHERING CHIMES: Worship Begins</span></div>
 <div class="spacer"></div>
 
+{% elif bid == "prelude" %}
 <div class="section-heading"><span>PRELUDE</span></div>
 {% if prelude_title %}
 {{ m.music_line(prelude_title, prelude_composer, prelude_performer) }}
 {% endif %}
 <div class="spacer"></div>
 
+{% elif bid == "choral_call_to_worship" %}
 {% if choral_title %}
 <div class="section-heading"><span>CHORAL CALL TO WORSHIP</span></div>
 {{ m.music_line(choral_title, choral_composer) }}
 {% endif %}
 
+{% elif bid == "welcome_spoken" %}
 <div class="section-heading"><span>WELCOME</span></div>
 <div class="spacer"></div>
-</div>
 
-
-{# ── Confession and Forgiveness ── #}
-{% if show_confession %}
+{% elif bid == "confession" %}
 <div class="section-heading"><span>*CONFESSION AND FORGIVENESS</span></div>
 {{ m.dialog_lines(confession_entries, instruction_class="instruction mb-2") }}
-{% endif %}
 
-
-{# ── Gathering Hymn (title only) ── #}
+{% elif bid == "gathering_hymn" %}
 {% if gathering_hymn_title %}
 <div class="section-heading"><span>*GATHERING HYMN: {{ gathering_hymn_title }}</span></div>
 <div class="spacer"></div>
 {% endif %}
 
-
-{# ── Greeting + Kyrie (kept together so the Greeting isn't orphaned) ── #}
-<div class="flow-group">
+{% elif bid == "greeting" %}
 {% if greeting_entries %}
 {{ m.dialog_lines(greeting_entries) }}
 {% endif %}
 
+{% elif bid == "kyrie" %}
 {% if kyrie_image_uri %}
 <div class="section-heading"><span>*KYRIE</span></div>
 <div class="notation-image kyrie-notation"><img src="{{ kyrie_image_uri }}" alt="Kyrie"></div>
 {% endif %}
-</div>
 
-
-{# ── Canticle of Praise (notation image) ── #}
+{% elif bid == "canticle_glory_to_god" or bid == "canticle_this_is_the_feast" %}
 {% if canticle_image_uri %}
 <div class="section-heading"><span>*CANTICLE OF PRAISE</span></div>
 <div class="notation-image"><img src="{{ canticle_image_uri }}" alt="Canticle of Praise"></div>
 {% endif %}
 
-
-{# ── Invitation to Lent (Lent only) ── #}
-{% if is_lent %}
+{% elif bid == "invitation_to_lent" %}
 <div class="section-heading"><span>Invitation to Lent</span></div>
 <div class="two-col">
 {% for para in invitation_to_lent_paragraphs %}
 <p>{{ para }}</p>
 {% endfor %}
 </div>
-{% endif %}
 
-
-{# ── Prayer of the Day ── #}
-<div class="flow-group">
+{% elif bid == "prayer_of_day" %}
 <div class="section-heading red-heading">
     <span>*PRAYER OF THE DAY</span>
     <span class="heading-role">Pastor</span>
@@ -94,14 +93,8 @@
 {% if prayer_of_day_html %}
 <div>{{ prayer_of_day_html | terminal_amen_html | safe }}</div>
 {% endif %}
-</div>
 
-
-{# ════════════════════════════════════════════════════════════════════
-   LITURGY OF THE WORD
-   ════════════════════════════════════════════════════════════════════ #}
-
-{# ── First Reading ── #}
+{% elif bid == "first_reading" %}
 {% if first_reading %}
 <div class="section-heading">
     <span>First Reading: {{ first_reading.citation }}</span>
@@ -114,8 +107,7 @@
 <p class="reading-response">The word of the Lord.<br><strong>Thanks be to God.</strong></p>
 {% endif %}
 
-
-{# ── Psalm ── #}
+{% elif bid == "psalm" %}
 {% if psalm_data %}
 <div class="section-heading">
     <span>Psalm {{ psalm_data.number }}</span>
@@ -129,8 +121,7 @@
 </div>
 {% endif %}
 
-
-{# ── Second Reading ── #}
+{% elif bid == "second_reading" %}
 {% if second_reading %}
 <div class="section-heading">
     <span>Second Reading: {{ second_reading.citation }}</span>
@@ -143,8 +134,7 @@
 <p class="reading-response">The word of the Lord.<br><strong>Thanks be to God.</strong></p>
 {% endif %}
 
-
-{# ── Gospel Acclamation (notation image) ── #}
+{% elif bid == "gospel_acclamation" %}
 {% if ga_image_uri %}
 <div class="section-heading red-heading">
     <span>*GOSPEL ACCLAMATION</span>
@@ -153,8 +143,7 @@
 <div class="notation-image"><img src="{{ ga_image_uri }}" alt="Gospel Acclamation"></div>
 {% endif %}
 
-
-{# ── Gospel ── #}
+{% elif bid == "gospel" %}
 {% if gospel %}
 <div class="section-heading red-heading">
     <span>*GOSPEL: {{ gospel.citation }}</span>
@@ -171,26 +160,20 @@
 <p class="mt-8">This is the gospel of our Lord. <strong>Praise to you, O Christ.</strong></p>
 {% endif %}
 
-
-{# ── Sermon + Sermon Hymn ── #}
-<div class="flow-group">
+{% elif bid == "sermon_seated_rubric" %}
 <p class="instruction-center mt-4">The congregation is seated.</p>
+
+{% elif bid == "sermon" %}
 <div class="section-heading"><span>SERMON</span></div>
 <div class="spacer"></div>
 
+{% elif bid == "sermon_hymn" %}
 {% if sermon_hymn_title %}
 <div class="section-heading"><span>*SERMON HYMN: {{ sermon_hymn_title }}</span></div>
 <div class="spacer"></div>
 {% endif %}
-</div>
 
-
-{# ════════════════════════════════════════════════════════════════════
-   CREED + PRAYERS + PEACE
-   ════════════════════════════════════════════════════════════════════ #}
-
-{# ── Creed / Baptism ── #}
-{% if include_baptism | default(false) %}
+{% elif bid == "baptism" %}
 {{ m.baptism_rite(
     {"baptism_presentation": baptism_presentation,
      "baptism_renunciation": baptism_renunciation,
@@ -204,8 +187,7 @@
     presentation_class="instruction mb-2",
     flood_two_col=true) }}
 
-{% else %}
-<div class="flow-group">
+{% elif bid == "creed_nicene" or bid == "creed_apostles" %}
 <div class="section-heading red-heading">
     <span>*{{ creed_name }}</span>
     <span class="heading-role">Prayer Leader</span>
@@ -213,12 +195,8 @@
 <div class="two-col">
 {{ m.creed_stanzas(creed_stanzas) }}
 </div>
-</div>
-{% endif %}
 
-
-{# ── Prayers of Intercession ── #}
-<div class="flow-group">
+{% elif bid == "prayers_of_intercession" %}
 <div class="section-heading">
     <span>*PRAYERS OF INTERCESSION</span>
     <span class="heading-role">Prayer Leader</span>
@@ -228,11 +206,8 @@
     <span class="role-label" style="font-style: italic;">Leader: {{ prayers_call }}</span>
     <br><strong>CONGREGATION: {{ prayers_response | terminal_amen(false) }}</strong>
 </p>
-</div>
 
-
-{# ── Sharing of the Peace ── #}
-<div class="flow-group">
+{% elif bid == "peace" %}
 <div class="section-heading">
     <span>*SHARING OF THE PEACE</span>
     <span class="heading-role">Pastor</span>
@@ -240,28 +215,23 @@
 <p><span class="role-label">P: </span>The peace of Christ be with you always.</p>
 <p><strong>C: And also with you.</strong></p>
 <p class="instruction">We greet one another with a sign of Christ&rsquo;s peace.</p>
-</div>
 
-
-{# ════════════════════════════════════════════════════════════════════
-   OFFERING
-   ════════════════════════════════════════════════════════════════════ #}
-<div class="flow-group">
+{% elif bid == "offering" %}
 <div class="section-heading"><span>OFFERING</span></div>
 <p style="color: #C00000; font-size: 10pt;">
     P: We know that all that we are and all that we have come from God.
     <br>So, in response to God&rsquo;s goodness, we give with cheerful hearts.
 </p>
 
+{% elif bid == "offertory" %}
 <div class="section-heading"><span>{% if offertory_type == "choral_anthem" %}CHORAL ANTHEM{% else %}OFFERTORY{% endif %}</span></div>
 {% if offertory_title %}
 {{ m.music_line(offertory_title, offertory_composer, offertory_performer) }}
 {% else %}
 <div class="spacer"></div>
 {% endif %}
-</div>
 
-{# ── Offertory Hymn (notation or text fallback) ── #}
+{% elif bid == "offertory_hymn" %}
 {% if offertory_image_uri %}
 <div class="section-heading"><span>*HYMN</span></div>
 <div class="notation-image"><img src="{{ offertory_image_uri }}" alt="Offertory Hymn"></div>
@@ -274,8 +244,7 @@
 </div>
 {% endif %}
 
-{# ── Offering Prayer ── #}
-<div class="flow-group">
+{% elif bid == "offering_prayer" %}
 <div class="section-heading red-heading">
     <span>*OFFERING PRAYER</span>
     <span class="heading-role">Communion Assistant</span>
@@ -285,14 +254,8 @@
 {% else %}
 <p>Leader: Let us pray&hellip;<br><strong>CONGREGATION: Amen</strong></p>
 {% endif %}
-</div>
 
-
-{# ════════════════════════════════════════════════════════════════════
-   MEAL — GREAT THANKSGIVING + COMMUNION
-   ════════════════════════════════════════════════════════════════════ #}
-
-{# ── Great Thanksgiving (notation image) ── #}
+{% elif bid == "great_thanksgiving" %}
 {% if great_thanksgiving_image_uri %}
 <div class="section-heading red-heading">
     <span>*GREAT THANKSGIVING</span>
@@ -301,24 +264,24 @@
 <div class="notation-image"><img src="{{ great_thanksgiving_image_uri }}" alt="Great Thanksgiving"></div>
 {% endif %}
 
-{# ── Preface ── #}
-<div class="flow-group">
+{% elif bid == "preface" %}
 <p class="mt-4">
     <span class="role-label">Pastor (sung/spoken): </span>
     {{ great_thanksgiving_preface }}
 </p>
+
+{% elif bid == "congregation_sings_sanctus" %}
 <p class="instruction">The Congregation SINGS:</p>
 
-{# ── Sanctus (notation image) ── #}
+{% elif bid == "sanctus" %}
 {% if sanctus_image_uri %}
 <div class="notation-image"><img src="{{ sanctus_image_uri }}" alt="Holy, Holy, Holy"></div>
 {% endif %}
-</div>
 
-
-{# ── Eucharistic Prayer ── #}
+{% elif bid == "eucharistic_prayer_heading" %}
 <div class="section-heading red-heading"><span>*EUCHARISTIC PRAYER</span></div>
-{% if eucharistic_form == "extended" %}
+
+{% elif bid == "eucharistic_prayer_extended_praise" %}
 <p class="ep-text"><span class="role-label">P: </span>{{ eucharistic_prayer_first_line }}</p>
 <div class="two-col">
 {% for line in eucharistic_prayer_lines %}
@@ -326,17 +289,23 @@
 {% endfor %}
 </div>
 <div class="ep-break"></div>
+
+{% elif bid == "words_of_institution" %}
 {% for para in words_of_institution_paragraphs %}
 <p class="ep-text">{{ para }}</p>
 {% endfor %}
-{% if has_memorial_acclamation %}
+
+{% elif bid == "memorial_acclamation_intro" %}
 <p class="ep-text">With this bread and cup we remember our Lord&rsquo;s passover from death to life as we proclaim the mystery of faith:</p>
+
+{% elif bid == "memorial_acclamation" %}
 {% if memorial_acclamation_mode == "sung" and memorial_acclamation_image_uri %}
 <div class="notation-image"><img src="{{ memorial_acclamation_image_uri }}" alt="Memorial Acclamation"></div>
 {% else %}
 <p><strong>{{ memorial_acclamation | nl2br }}</strong></p>
 {% endif %}
-{% endif %}
+
+{% elif bid == "eucharistic_prayer_closing" %}
 <div class="ep-break"></div>
 <div class="two-col">
 {% for stanza in eucharistic_prayer_closing_stanzas %}
@@ -346,18 +315,13 @@
 {% endif %}
 {% endfor %}
 </div>
+
+{% elif bid == "eucharistic_prayer_amen" %}
 {% if amen_image_uri %}
 <div class="notation-image"><img src="{{ amen_image_uri }}" alt="Amen"></div>
 {% endif %}
-{% else %}
-{# Short form #}
-{% for para in words_of_institution_paragraphs %}
-<p class="ep-text">{{ para }}</p>
-{% endfor %}
-{% endif %}
 
-
-{# ── Lord's Prayer ── #}
+{% elif bid == "lords_prayer" %}
 <div class="section-heading"><span>*LORD&rsquo;S PRAYER</span></div>
 <p><span class="role-label">P: </span>Gathered into one by the Holy Spirit, let us pray as Jesus taught us.</p>
 <div class="two-col">
@@ -366,23 +330,20 @@
 {% endfor %}
 </div>
 
-
-{# ── Invitation to Communion ── #}
-<div class="flow-group">
+{% elif bid == "invitation_to_communion" %}
 <div class="section-heading"><span>*INVITATION TO COMMUNION</span></div>
 <p><span class="role-label">P: </span>{{ invitation_to_communion_text | terminal_amen }}</p>
+
+{% elif bid == "invitation_seated_rubric" %}
 <p class="instruction-center">The Congregation is SEATED</p>
-</div>
 
-
-{# ── Agnus Dei (notation image) ── #}
+{% elif bid == "agnus_dei" %}
 {% if agnus_dei_image_uri %}
 <div class="section-heading"><span>AGNUS DEI</span></div>
 <div class="notation-image"><img src="{{ agnus_dei_image_uri }}" alt="Agnus Dei"></div>
 {% endif %}
 
-
-{# ── Communion Hymn (notation image or title) ── #}
+{% elif bid == "communion_hymn" %}
 {% if communion_hymn_image_uri %}
 <div class="section-heading"><span>COMMUNION HYMN: {{ communion_hymn_title }}</span></div>
 <div class="notation-image"><img src="{{ communion_hymn_image_uri }}" alt="Communion Hymn"></div>
@@ -391,31 +352,23 @@
 <div class="spacer"></div>
 {% endif %}
 
-
-{# ════════════════════════════════════════════════════════════════════
-   CLOSING RITE
-   ════════════════════════════════════════════════════════════════════ #}
-
-{# ── Post-Communion ── #}
-<div class="flow-group">
+{% elif bid == "post_communion_stand_rubric" %}
 <p class="instruction-center mt-6">*After all have communed, the Congregation STANDS.</p>
+
+{% elif bid == "post_communion_blessing" %}
 <p class="mt-4">
     <span class="role-label">Pastor: </span>
     <span style="color: #C00000;">The body and blood of our Lord Jesus Christ
     strengthen you and keep you in his grace.</span>
 </p>
 <p><strong>Congregation: Amen.</strong></p>
-</div>
 
-
-{# ── Nunc Dimittis (notation image) ── #}
+{% elif bid == "nunc_dimittis" %}
 {% if show_nunc_dimittis and nunc_dimittis_image_uri %}
 <div class="notation-image"><img src="{{ nunc_dimittis_image_uri }}" alt="Nunc Dimittis"></div>
 {% endif %}
 
-
-{# ── Prayer After Communion ── #}
-<div class="flow-group">
+{% elif bid == "prayer_after_communion" %}
 <div class="section-heading red-heading">
     <span>*PRAYER AFTER COMMUNION</span>
     <span class="heading-role">Communion Assistant</span>
@@ -426,7 +379,7 @@
 <div class="spacer"></div>
 {% endif %}
 
-{# ── Blessing ── #}
+{% elif bid == "blessing" %}
 <div class="section-heading red-heading">
     <span>*BLESSING</span>
     <span class="heading-role">Pastor</span>
@@ -434,34 +387,42 @@
 {% for line in blessing_lines %}
 <p class="blessing-line">{{ line | terminal_amen }}</p>
 {% endfor %}
-</div>
 
-
-{# ── Announcements + Sending + Postlude + Copyright ── #}
-<div class="flow-group">
+{% elif bid == "announcements" %}
 <div class="section-heading"><span>ANNOUNCEMENTS</span></div>
 <div class="spacer"></div>
+
+{% elif bid == "sending_hymn" %}
 {% if sending_hymn_title %}
 <div class="section-heading"><span>*SENDING HYMN: {{ sending_hymn_title }}</span></div>
 <div class="spacer"></div>
 {% endif %}
+
+{% elif bid == "dismissal" %}
 <div class="section-heading">
     <span>SENDING</span>
     <span class="heading-role">Pastor</span>
 </div>
 {{ m.dialog_lines(dismissal_entries, p_label=false) }}
 
+{% elif bid == "postlude" %}
 <div class="section-heading"><span>*POSTLUDE</span></div>
 {% if postlude_title %}
 {{ m.music_line(postlude_title, postlude_composer, postlude_performer) }}
 {% endif %}
 
+{% elif bid == "copyright" %}
 <div class="copyright-block">
 {% for para in copyright_paragraphs %}
     <p>{{ para }}</p>
 {% endfor %}
 </div>
-</div>
+
+{% endif %}
+
+{% endfor %}
+{% if item.flow %}</div>{% endif %}
+{% endfor %}
 
 </body>
 </html>

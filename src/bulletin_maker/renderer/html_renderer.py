@@ -66,6 +66,7 @@ from bulletin_maker.renderer.pdf_engine import (
     render_to_pdf,
     render_with_shrink,
 )
+from bulletin_maker.renderer.rite_resolver import resolve_bulletin_sequence
 from bulletin_maker.renderer.prayers_parser import (
     parse_prayers_call,
     parse_prayers_html,
@@ -1044,6 +1045,10 @@ def _build_bulletin_context(
 
     ctx.update({
         "css": (TEMPLATE_DIR / "bulletin.css").read_text(),
+
+        # Rite-driven render sequence: the bulletin iterates these ordered,
+        # condition-filtered blocks instead of a hardcoded template sequence.
+        "bulletin_sequence": resolve_bulletin_sequence(config, season),
 
         # Bulletin uses short preface (truncated with ending cue)
         "great_thanksgiving_preface": GREAT_THANKSGIVING_PREFACE_SHORT,

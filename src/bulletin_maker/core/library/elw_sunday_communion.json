@@ -303,16 +303,16 @@
     {
       "id": "memorial_acclamation_intro",
       "type": "literal_text",
-      "note": "Inline template literal introducing the acclamation. Extended form only, and only when the memorial_acclamation toggle is on (ServiceConfig.include_memorial_acclamation).",
-      "condition": {"toggles": {"memorial_acclamation": true}},
+      "note": "Inline template literal introducing the acclamation. Extended form only, and only when the memorial_acclamation toggle is on (ServiceConfig.include_memorial_acclamation); the template gates this inside the extended eucharistic prayer branch, so the condition requires both eucharistic_extended and memorial_acclamation.",
+      "condition": {"toggles": {"eucharistic_extended": true, "memorial_acclamation": true}},
       "text": "With this bread and cup we remember our Lord’s passover from death to life as we proclaim the mystery of faith:",
       "style": "prayer"
     },
     {
       "id": "memorial_acclamation",
       "type": "notation",
-      "note": "Single notation block. memorial_acclamation_mode selects image (sung) vs bold text (spoken) within the bulletin; large print always renders text. That mode is a renderer-side variant of the same notation, not a structural fork - see report.",
-      "condition": {"toggles": {"memorial_acclamation": true}},
+      "note": "Single notation block. memorial_acclamation_mode selects image (sung) vs bold text (spoken) within the bulletin; large print always renders text. That mode is a renderer-side variant of the same notation, not a structural fork - see report. The template gates this inside the extended eucharistic prayer branch, so the condition requires both eucharistic_extended and memorial_acclamation.",
+      "condition": {"toggles": {"eucharistic_extended": true, "memorial_acclamation": true}},
       "piece": "memorial_acclamation",
       "text_fallback": "elw.memorial_acclamation"
     },

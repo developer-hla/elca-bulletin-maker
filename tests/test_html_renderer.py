@@ -51,6 +51,16 @@ from bulletin_maker.renderer.season import LiturgicalSeason
 from bulletin_maker.renderer.text_utils import DialogRole
 
 
+def _bulletin_seq(*block_ids: str) -> list:
+    """Minimal rite-driven render sequence for bulletin.html template tests.
+
+    The refactored bulletin.html iterates `bulletin_sequence`; tests that render
+    the template with a hand-built context supply just the block ids they check.
+    (large_print.html ignores this key, so parametrized tests can pass it too.)
+    """
+    return [{"flow": False, "ids": list(block_ids)}]
+
+
 def _canticle_config(canticle: str | None) -> ServiceConfig:
     """Minimal ServiceConfig for canticle helper tests."""
     return ServiceConfig(
@@ -282,6 +292,7 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template("bulletin.html")
         return template.render(
+            bulletin_sequence=_bulletin_seq("memorial_acclamation"),
             css="",
             church_address="",
             eucharistic_form="extended",
@@ -323,6 +334,7 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template("bulletin.html")
         html = template.render(
+            bulletin_sequence=_bulletin_seq("choral_call_to_worship"),
             css="",
             church_address="",
             choral_title="Create in Me a Clean Heart",
@@ -356,6 +368,7 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template(template_name)
         html = template.render(
+            bulletin_sequence=_bulletin_seq("psalm"),
             css="",
             church_address="",
             psalm_data={
@@ -388,6 +401,9 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template(template_name)
         html = template.render(
+            bulletin_sequence=_bulletin_seq(
+                "prelude", "choral_call_to_worship", "welcome_spoken",
+            ),
             css="",
             church_address="",
             prelude_title="Prelude on AZMON",
@@ -476,6 +492,7 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template("bulletin.html")
         html = template.render(
+            bulletin_sequence=_bulletin_seq("confession"),
             css="",
             church_address="",
             show_confession=True,
@@ -495,6 +512,7 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template("bulletin.html")
         html = template.render(
+            bulletin_sequence=_bulletin_seq("blessing"),
             css="",
             church_address="",
             show_confession=False,
@@ -510,6 +528,10 @@ class TestBulletinTemplate:
         env = setup_jinja_env()
         template = env.get_template("bulletin.html")
         html = template.render(
+            bulletin_sequence=_bulletin_seq(
+                "prayer_of_day", "peace", "offering_prayer", "lords_prayer",
+                "invitation_to_communion", "prayer_after_communion",
+            ),
             css="",
             church_address="",
             show_confession=False,
