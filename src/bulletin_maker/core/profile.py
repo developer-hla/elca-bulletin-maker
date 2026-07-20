@@ -2,8 +2,8 @@
 
 The profile holds everything another congregation must change to adopt
 the tool (name, address, service time, welcome text, license footer)
-plus the two bounded options (liturgical setting, paper size). All
-other content is fixed house style by design.
+plus the bounded options (liturgical setting, paper size, calendar
+provider). All other content is fixed house style by design.
 
 Resolution order: explicit path → $BULLETIN_PROFILE →
 ~/.bulletin-maker/profile.toml → the bundled Ascension default.
@@ -37,6 +37,7 @@ class CongregationProfile:
     copyright_paragraphs: tuple = ()
     liturgical_setting: str = "setting_two"
     paper_size: str = "legal_booklet"
+    calendar_provider: str = "sns"
     cover_image: str = ""
     source_path: str = field(default="", compare=False)
 
@@ -57,7 +58,7 @@ def _require(table: dict, section: str, key: str):
 PROFILE_FIELDS = (
     "church_name", "address_lines", "service_time", "welcome_message",
     "standing_instructions", "copyright_paragraphs", "liturgical_setting",
-    "paper_size", "cover_image",
+    "paper_size", "calendar_provider", "cover_image",
 )
 
 
@@ -72,6 +73,7 @@ def profile_from_dict(data: dict, source: str = "account") -> CongregationProfil
         copyright_paragraphs=tuple(data.get("copyright_paragraphs", ())),
         liturgical_setting=data.get("liturgical_setting", "setting_two"),
         paper_size=data.get("paper_size", "legal_booklet"),
+        calendar_provider=data.get("calendar_provider", "sns"),
         cover_image=data.get("cover_image", ""),
         source_path=source,
     )
@@ -87,6 +89,7 @@ def profile_to_dict(profile: CongregationProfile) -> dict:
         "copyright_paragraphs": list(profile.copyright_paragraphs),
         "liturgical_setting": profile.liturgical_setting,
         "paper_size": profile.paper_size,
+        "calendar_provider": profile.calendar_provider,
         "cover_image": profile.cover_image,
     }
 
@@ -123,6 +126,7 @@ def load_profile(path: Path | str | None = None) -> CongregationProfile:
         copyright_paragraphs=tuple(data.get("texts", {}).get("copyright_paragraphs", ())),
         liturgical_setting=options.get("liturgical_setting", "setting_two"),
         paper_size=options.get("paper_size", "legal_booklet"),
+        calendar_provider=options.get("calendar_provider", "sns"),
         cover_image=options.get("cover_image", ""),
         source_path=str(path),
     )

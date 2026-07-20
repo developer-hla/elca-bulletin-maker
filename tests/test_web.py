@@ -285,6 +285,38 @@ class TestChurchProfile:
         assert "setting_one" in keys and "setting_five" in keys
         assert {o["key"] for o in options["paper_size"]} == {
             "legal_booklet", "letter_booklet", "a4_booklet"}
+        assert {o["key"] for o in options["calendar_provider"]} == {
+            "sns", "manual"}
+
+    def test_invalid_calendar_provider_rejected(self, client):
+        _register(client)
+        resp = client.put("/api/church/profile",
+                          json={"calendar_provider": "rcl_local"})
+        assert resp.status_code == 422
+
+    def test_calendar_provider_selectable(self, client):
+        _register(client)
+        resp = client.put("/api/church/profile",
+                          json={"calendar_provider": "manual"})
+        assert resp.status_code == 200
+        profile = client.get("/api/church").json()["profile"]
+        assert profile["calendar_provider"] == "manual"
+
+    def test_profile_missing_calendar_provider_key_still_editable(self, client):
+        """Churches registered before calendar_provider existed have no such
+        key in their stored profile_json — editing their profile must not
+        start failing just because that key is absent."""
+        _register(client)
+        with db.connect() as conn:
+            conn.execute(
+                "UPDATE churches SET profile_json = profile_json - "
+                "'calendar_provider'")
+        resp = client.put("/api/church/profile",
+                          json={"service_time": "9:30 AM"})
+        assert resp.status_code == 200
+        profile = client.get("/api/church").json()["profile"]
+        assert profile["service_time"] == "9:30 AM"
+        assert profile["calendar_provider"] == "sns"
 
     def test_member_cannot_edit_profile(self, client, monkeypatch):
         _register(client)

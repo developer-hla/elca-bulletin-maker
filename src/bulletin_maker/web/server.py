@@ -32,12 +32,17 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from bulletin_maker.core import library as rite_library
+from bulletin_maker.core.calendar import (
+    CALENDAR_PROVIDER_KEYS,
+    get_calendar_provider,
+    liturgical_season_of,
+)
 from bulletin_maker.core.content_views import (
     build_liturgical_text_options,
     build_reading_preview,
 )
 from bulletin_maker.core.documents import DEFAULT_SELECTION, generate_documents
-from bulletin_maker.core.naming import build_date_suffix, extract_day_name
+from bulletin_maker.core.naming import build_date_suffix
 from bulletin_maker.core.profile import (
     PROFILE_FIELDS,
     load_profile,
@@ -53,7 +58,6 @@ from bulletin_maker.exceptions import (
 )
 from bulletin_maker.renderer.paper import PAPER_PRESETS
 from bulletin_maker.renderer.season import (
-    detect_season,
     fill_seasonal_defaults,
     get_preface_options,
     get_seasonal_config,
@@ -89,6 +93,11 @@ SPA_DIR = Path(__file__).resolve().parents[1] / "ui" / "templates"
 ALLOWED_COVER_SUFFIXES = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
 MAX_COVER_BYTES = 20 * 1024 * 1024
 MIN_PASSWORD_LENGTH = 8
+
+CALENDAR_PROVIDER_LABELS = {
+    "sns": "Sundays & Seasons",
+    "manual": "Manual (sermon series / no lectionary)",
+}
 
 AUTH_LIMIT = 10
 AUTH_WINDOW_SECONDS = 300
@@ -512,6 +521,10 @@ def create_app() -> FastAPI:
                     {"key": p.key, "label": p.label}
                     for p in PAPER_PRESETS.values()
                 ],
+                "calendar_provider": [
+                    {"key": key, "label": CALENDAR_PROVIDER_LABELS[key]}
+                    for key in sorted(CALENDAR_PROVIDER_KEYS)
+                ],
             },
             "is_admin": user["role"] == "admin",
         }
@@ -525,6 +538,10 @@ def create_app() -> FastAPI:
         require_admin(session)
         church = church_of(session)
         profile = json.loads(church["profile_json"])
+        # Churches registered before calendar_provider existed have no such
+        # key in their stored profile_json — default it in rather than
+        # rejecting every future edit of an old church's profile.
+        profile.setdefault("calendar_provider", "sns")
         for field in PROFILE_FIELDS:
             if field in payload:
                 profile[field] = payload[field]
@@ -532,6 +549,8 @@ def create_app() -> FastAPI:
             raise _validation("Choose a liturgical setting from the list.")
         if profile.get("paper_size") not in PAPER_PRESETS:
             raise _validation("Choose a paper size from the list.")
+        if profile.get("calendar_provider") not in CALENDAR_PROVIDER_KEYS:
+            raise _validation("Choose a calendar provider from the list.")
         if not (profile.get("church_name") or "").strip():
             raise _validation("The church name cannot be empty.")
         try:
@@ -708,12 +727,16 @@ def create_app() -> FastAPI:
             raise _fail(502, e)
 
         day = session.day
-        season = detect_season(day.title)
+        church = church_of(session)
+        profile = profile_from_dict(json.loads(church["profile_json"]))
+        provider = get_calendar_provider(profile.calendar_provider)
+        liturgical_day = provider.resolve(date, day=day)
+        season = liturgical_season_of(liturgical_day)
         seasonal = get_seasonal_config(season)
         return {
             "success": True,
             "title": day.title,
-            "day_name": extract_day_name(day.title),
+            "day_name": liturgical_day.day_name,
             "season": season.value,
             "readings": [
                 {"label": r.label, "citation": r.citation} for r in day.readings
@@ -882,7 +905,9 @@ def create_app() -> FastAPI:
         try:
             day = session.day
             config = build_service_config(form_data, session.hymn_cache)
-            season = detect_season(day.title)
+            provider = get_calendar_provider(profile.calendar_provider)
+            liturgical_day = provider.resolve(session.date_str, day=day)
+            season = liturgical_season_of(liturgical_day)
             fill_seasonal_defaults(config, season)
             selected = set(form_data.get("selected_docs") or DEFAULT_SELECTION)
 
