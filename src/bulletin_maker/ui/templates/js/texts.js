@@ -154,6 +154,81 @@ function confirmSourceChange(key, radioEls) {
     return true;
 }
 
+/** Builds one radio + label for a text-source option and appends it. */
+function addRadioOption(radios, radioEls, key, opt, activeKey, onChange) {
+    var label = document.createElement("label");
+    var radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "text_source_" + key;
+    radio.value = opt.key;
+    if (opt.key === activeKey) radio.checked = true;
+    if (opt.disabled) radio.disabled = true;
+    radio.addEventListener("change", function() { onChange(this); });
+    label.appendChild(radio);
+    label.appendChild(document.createTextNode(" " + opt.label));
+    radios.appendChild(label);
+    radioEls.push(radio);
+    radios.hidden = radioEls.length <= 1;
+    return radio;
+}
+
+/** Builds the inline "Save to library" control shown for a custom edit. */
+function buildSaveToLibraryControl(key, radios, radioEls, onChange, getBody) {
+    var wrapper = document.createElement("div");
+    wrapper.className = "save-to-library";
+    wrapper.hidden = true;
+
+    var nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.className = "save-to-library-name";
+    nameInput.placeholder = "Name this text (e.g. “Advent version”)";
+    wrapper.appendChild(nameInput);
+
+    var saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.className = "btn secondary save-to-library-btn";
+    saveBtn.textContent = "Save to library";
+    wrapper.appendChild(saveBtn);
+
+    var msg = document.createElement("span");
+    msg.className = "save-to-library-msg";
+    wrapper.appendChild(msg);
+
+    saveBtn.addEventListener("click", async function() {
+        var name = nameInput.value.trim();
+        msg.className = "save-to-library-msg";
+        msg.textContent = "";
+        if (!name) {
+            msg.classList.add("error");
+            msg.textContent = "Name it first.";
+            return;
+        }
+        saveBtn.disabled = true;
+        var result = await api.save_church_text(key, name, getBody());
+        saveBtn.disabled = false;
+        if (!result.success) {
+            msg.classList.add("error");
+            msg.textContent = result.error || "Could not save.";
+            return;
+        }
+        var saved = result.text;
+        var optKey = "custom:" + saved.id;
+        var choice = state.textChoices[key];
+        choice.options.push({ key: optKey, label: saved.name, data: saved.body });
+        var radio = addRadioOption(radios, radioEls, key, { key: optKey, label: saved.name },
+            optKey, onChange);
+        radio.checked = true;
+        choice.source = optKey;
+        choice.isCustom = false;
+        nameInput.value = "";
+        wrapper.hidden = true;
+        msg.classList.add("ok");
+        msg.textContent = "Saved — available next time you use this church.";
+    });
+
+    return wrapper;
+}
+
 /** Loads liturgical texts from the API and builds the review panels. */
 export async function loadLiturgicalTexts() {
     var spinner = $("#texts-spinner");
@@ -235,50 +310,62 @@ export async function loadLiturgicalTexts() {
             var body = document.createElement("div");
             body.className = "text-panel-body";
 
-            // Build radio buttons from options (only if >1 option)
+            // Radio buttons for named presets — always built (even with one
+            // option today) so a saved-to-library text can join the group
+            // later without a full panel rebuild; hidden while <= 1 option.
             var radioEls = [];
-            if (options.length > 1) {
-                var radios = document.createElement("div");
-                radios.className = "text-source-radios";
+            var radios = document.createElement("div");
+            radios.className = "text-source-radios";
+            body.appendChild(radios);
 
-                options.forEach(function(opt) {
-                    var label = document.createElement("label");
-                    var radio = document.createElement("input");
-                    radio.type = "radio";
-                    radio.name = "text_source_" + key;
-                    radio.value = opt.key;
-                    if (opt.key === activeKey) radio.checked = true;
-                    if (opt.disabled) radio.disabled = true;
-                    label.appendChild(radio);
-                    label.appendChild(document.createTextNode(" " + opt.label));
-                    radios.appendChild(label);
-                    radioEls.push(radio);
-                });
-
-                body.appendChild(radios);
-            }
+            var saveControl;
 
             if (isStructured) {
                 // Structured editor for call-and-response texts
                 var editor = buildStructuredEditor(key, initialData);
                 body.appendChild(editor);
 
-                // Wire radio changes — rebuild editor with selected option's data
-                radioEls.forEach(function(radio) {
-                    radio.addEventListener("change", function() {
-                        if (!confirmSourceChange(key, radioEls)) return;
-                        var choice = state.textChoices[key];
-                        choice.source = this.value;
-                        choice.isCustom = false;
-                        var newData = findOptionData(choice.options, this.value) || [];
-                        var rowsContainer = editor.querySelector(".entry-rows");
-                        rowsContainer.innerHTML = "";
-                        newData.forEach(function(entry) {
-                            rowsContainer.appendChild(buildEntryRow(entry));
-                        });
-                        hide($("#custom-edit-warning"));
+                var onSourceChange = function(radio) {
+                    if (!confirmSourceChange(key, radioEls)) return;
+                    var choice = state.textChoices[key];
+                    choice.source = radio.value;
+                    choice.isCustom = false;
+                    var newData = findOptionData(choice.options, radio.value) || [];
+                    var rowsContainer = editor.querySelector(".entry-rows");
+                    rowsContainer.innerHTML = "";
+                    newData.forEach(function(entry) {
+                        rowsContainer.appendChild(buildEntryRow(entry));
                     });
+                    if (saveControl) saveControl.hidden = true;
+                };
+
+                options.forEach(function(opt) {
+                    addRadioOption(radios, radioEls, key, opt, activeKey, onSourceChange);
                 });
+
+                if (state.isAdmin) {
+                    saveControl = buildSaveToLibraryControl(key, radios, radioEls,
+                        onSourceChange, function() {
+                            return collectStructuredEntries(editor);
+                        });
+                    body.appendChild(saveControl);
+                }
+
+                // Detect custom modifications to the entry rows — "input"
+                // catches text edits; "click" catches add/remove-row buttons
+                // (bubbles after the row is already added/removed).
+                var recheckStructuredCustom = function() {
+                    var choice = state.textChoices[key];
+                    var current = collectStructuredEntries(editor);
+                    var matchesAny = choice.options.some(function(opt) {
+                        var data = opt.data || [];
+                        return JSON.stringify(data) === JSON.stringify(current);
+                    });
+                    choice.isCustom = matchesAny ? false : current.length > 0;
+                    if (saveControl) saveControl.hidden = !choice.isCustom;
+                };
+                editor.addEventListener("input", recheckStructuredCustom);
+                editor.addEventListener("click", recheckStructuredCustom);
             } else {
                 // Plain textarea for simple texts
                 var textarea = document.createElement("textarea");
@@ -287,19 +374,28 @@ export async function loadLiturgicalTexts() {
                 textarea.dataset.key = key;
                 body.appendChild(textarea);
 
-                // Wire radio changes
-                radioEls.forEach(function(radio) {
-                    radio.addEventListener("change", function() {
-                        if (!confirmSourceChange(key, radioEls)) return;
-                        var choice = state.textChoices[key];
-                        choice.source = this.value;
-                        choice.isCustom = false;
-                        var newText = findOptionData(choice.options, this.value) || "";
-                        choice.value = newText;
-                        textarea.value = newText;
-                        hide($("#custom-edit-warning"));
-                    });
+                var onPlainSourceChange = function(radio) {
+                    if (!confirmSourceChange(key, radioEls)) return;
+                    var choice = state.textChoices[key];
+                    choice.source = radio.value;
+                    choice.isCustom = false;
+                    var newText = findOptionData(choice.options, radio.value) || "";
+                    choice.value = newText;
+                    textarea.value = newText;
+                    if (saveControl) saveControl.hidden = true;
+                };
+
+                options.forEach(function(opt) {
+                    addRadioOption(radios, radioEls, key, opt, activeKey, onPlainSourceChange);
                 });
+
+                if (state.isAdmin) {
+                    saveControl = buildSaveToLibraryControl(key, radios, radioEls,
+                        onPlainSourceChange, function() {
+                            return textarea.value;
+                        });
+                    body.appendChild(saveControl);
+                }
 
                 // Wire textarea edits — detect custom modifications
                 textarea.addEventListener("input", function() {
@@ -309,9 +405,7 @@ export async function loadLiturgicalTexts() {
                         return (opt.data || "") === choice.value;
                     });
                     choice.isCustom = !matchesAny;
-                    if (choice.isCustom) {
-                        show($("#custom-edit-warning"));
-                    }
+                    if (saveControl) saveControl.hidden = !choice.isCustom;
                 });
             }
 

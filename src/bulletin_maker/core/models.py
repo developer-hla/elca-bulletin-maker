@@ -23,6 +23,9 @@ class ServiceConfig:
     date: str                           # "2026-2-22" (for S&S API)
     date_display: str                   # "February 22, 2026" (for headers)
 
+    # ── Rite selection (None = the bundled ELW Sunday Communion rite) ──
+    rite_id: Optional[str] = None
+
     # ── Liturgical choices (None = use seasonal default) ──
     creed_type: Optional[str] = None            # "apostles" or "nicene"
     include_kyrie: Optional[bool] = None        # Show Kyrie?

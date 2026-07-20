@@ -14,6 +14,30 @@ import {
     setOffertoryType,
 } from "./texts.js";
 
+/** The bundled library rite every service uses until a church picks another. */
+export const DEFAULT_RITE_ID = "elw_sunday_communion";
+
+/** Populate the Service Rite dropdown from the API (church + library rites). */
+export async function loadRiteOptions() {
+    var select = $("#rite-select");
+    if (!select) return;
+    try {
+        var result = await api.get_rites();
+        if (!result.success || !result.rites.length) return;
+        select.innerHTML = "";
+        result.rites.forEach(function(rite) {
+            var opt = document.createElement("option");
+            opt.value = rite.id;
+            opt.textContent = rite.name;
+            if (rite.id === DEFAULT_RITE_ID) opt.selected = true;
+            select.appendChild(opt);
+        });
+    } catch (err) {
+        // Leave the select empty — collectFormData() then sends no rite_id,
+        // and the resolver falls back to the bundled default rite.
+    }
+}
+
 /** Maps a reading label to an override slot key. */
 function readingSlotKey(label) {
     var l = label.toLowerCase();
@@ -388,6 +412,10 @@ export function setupResetDefaults() {
 }
 
 export function applyRestoredSettings(fd) {
+    // Service rite
+    var riteSelect = $("#rite-select");
+    if (riteSelect && fd.rite_id) riteSelect.value = fd.rite_id;
+
     // Liturgical settings
     var creedRadio = document.querySelector('input[name="creed_type"][value="' + fd.creed_type + '"]');
     if (creedRadio) creedRadio.checked = true;

@@ -102,6 +102,19 @@ export var api = (function() {
         get_usage: function() { return req("GET", "/api/church/usage"); },
         get_preface_options: function() { return req("GET", "/api/prefaces"); },
 
+        get_church_texts: function(kind) {
+            var qs = kind ? "?kind=" + encodeURIComponent(kind) : "";
+            return req("GET", "/api/church/texts" + qs);
+        },
+        save_church_text: function(kind, name, body) {
+            return req("POST", "/api/church/texts",
+                       { kind: kind, name: name, body: body });
+        },
+        delete_church_text: function(textId) {
+            return req("DELETE", "/api/church/texts/" + encodeURIComponent(textId));
+        },
+        get_rites: function() { return req("GET", "/api/rites"); },
+
         // Operator console (service-owner only)
         operator_churches: function() { return req("GET", "/api/operator/churches"); },
         operator_set_disabled: function(churchId, disabled) {

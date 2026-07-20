@@ -956,6 +956,38 @@ main {
     box-shadow: 0 0 0 2px rgba(140, 35, 50, 0.15);
 }
 
+/* ── Save to Library ───────────────────────────────────── */
+
+.save-to-library {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.save-to-library-name {
+    flex: 1;
+    min-width: 180px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.save-to-library-name:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(140, 35, 50, 0.15);
+}
+
+.save-to-library-msg {
+    font-size: 12px;
+}
+
+.save-to-library-msg.ok { color: #2E7D32; }
+.save-to-library-msg.error { color: var(--error, #b3261e); }
+
 /* ── Structured Editor (Call & Response) ──────────────── */
 
 .structured-editor {

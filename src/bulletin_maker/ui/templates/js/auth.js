@@ -6,6 +6,7 @@ import { api } from "./api.js";
 import { showSettingsPanel } from "./settings.js";
 import { resetAll } from "./wizard.js";
 import { loadPastRuns } from "./past-runs.js";
+import { loadRiteOptions } from "./readings.js";
 
 /** Shows login overlay when session expires. Returns true if auth error was handled. */
 export function handleAuthError(result) {
@@ -58,6 +59,7 @@ function enterApp(auth) {
     state.snsLinked = !!auth.sns_linked;
     $("#operator-link").hidden = !auth.operator;
     loadChurchLabels();
+    loadRiteOptions();
     if (!state.snsLinked) {
         showWarning($("#date-warning"),
             state.isAdmin

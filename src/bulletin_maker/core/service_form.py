@@ -117,6 +117,7 @@ def build_service_config(form_data: dict, hymn_cache: dict) -> ServiceConfig:
     return ServiceConfig(
         date=form_data.get("date", ""),
         date_display=form_data.get("date_display", ""),
+        rite_id=form_data.get("rite_id") or None,
         creed_type=form_data.get("creed_type"),
         include_kyrie=form_data.get("include_kyrie"),
         canticle=form_data.get("canticle"),

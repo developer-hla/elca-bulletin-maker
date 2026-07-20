@@ -85,9 +85,16 @@ _BULLETIN_FLOW_GROUP_OF: Dict[str, int] = _flow_group_index(_BULLETIN_FLOW_GROUP
 _LARGE_PRINT_FLOW_GROUP_OF: Dict[str, int] = _flow_group_index(_LARGE_PRINT_FLOW_GROUPS)
 
 
-@lru_cache(maxsize=1)
-def _sunday_communion_rite() -> Rite:
-    return load_rite(SUNDAY_COMMUNION_RITE_ID)
+@lru_cache(maxsize=None)
+def _rite_by_id(rite_id: str) -> Rite:
+    return load_rite(rite_id)
+
+
+def _resolve_rite(config: ServiceConfig) -> Rite:
+    """The rite driving this service — the picked ``rite_id``, or the
+    bundled ELW Sunday Communion rite when the field is unset (every
+    pre-picker service, and any service left on the default)."""
+    return _rite_by_id(config.rite_id or SUNDAY_COMMUNION_RITE_ID)
 
 
 def build_condition_context(
@@ -115,8 +122,7 @@ def build_condition_context(
     return {"season": season.value, "feasts": [], "toggles": toggles}
 
 
-def _visible_block_ids(context: Dict[str, Any]) -> List[str]:
-    rite = _sunday_communion_rite()
+def _visible_block_ids(rite: Rite, context: Dict[str, Any]) -> List[str]:
     return [
         block.id
         for block in rite.blocks
@@ -157,7 +163,8 @@ def resolve_bulletin_sequence(
     wrapped in a ``.flow-group`` div by the template.
     """
     context = build_condition_context(config, season)
-    return _group(_visible_block_ids(context), _BULLETIN_FLOW_GROUP_OF)
+    rite = _resolve_rite(config)
+    return _group(_visible_block_ids(rite, context), _BULLETIN_FLOW_GROUP_OF)
 
 
 def resolve_large_print_sequence(
@@ -171,4 +178,5 @@ def resolve_large_print_sequence(
     images via ``*_image_uri`` context values, per-block in the template.
     """
     context = build_condition_context(config, season)
-    return _group(_visible_block_ids(context), _LARGE_PRINT_FLOW_GROUP_OF)
+    rite = _resolve_rite(config)
+    return _group(_visible_block_ids(rite, context), _LARGE_PRINT_FLOW_GROUP_OF)

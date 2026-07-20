@@ -529,10 +529,13 @@ export function resetAll() {
     hideWarning($("#content-warning"));
     $("#date-input").value = "";
     $("#preface-select").innerHTML = "";
+    // Same default as core.library.SUNDAY_COMMUNION_RITE_ID — options are
+    // loaded once at sign-in, so reset the selection, not the list.
+    var riteSelect = $("#rite-select");
+    if (riteSelect) riteSelect.value = "elw_sunday_communion";
 
     // Reset liturgical texts
     $("#texts-panels").innerHTML = "";
-    hide($("#custom-edit-warning"));
     hideError($("#texts-error"));
 
     resetFormUI();

@@ -34,12 +34,33 @@ def _entries_to_dicts(entries) -> list:
     return [{"role": r.value, "text": t} for r, t in entries]
 
 
-def build_liturgical_text_options(day: DayContent) -> dict:
-    """Named preset options for the 5 variable liturgical texts.
+def _saved_text_options(saved_texts: dict, kind: str) -> list:
+    """Options for a church's saved texts of one ``kind``.
+
+    ``saved_texts`` is ``{kind: [{"id", "name", "body", ...}]}`` — see
+    ``web.church_texts.texts_by_kind``. ``body`` is passed through as the
+    option's ``data`` unchanged: a plain string for the single-text kinds,
+    or a ``[{role, text}]`` list for the structured kinds, matching the
+    shape ``ServiceConfig`` already carries for that field.
+    """
+    rows = (saved_texts or {}).get(kind, [])
+    return [
+        {"key": f"custom:{row['id']}", "label": row["name"], "data": row["body"]}
+        for row in rows
+    ]
+
+
+def build_liturgical_text_options(day: DayContent, saved_texts: dict = None) -> dict:
+    """Named preset options for the 6 variable liturgical texts.
 
     Each text has an ``options`` list of named presets (house customs,
-    S&S weekly variants) and a ``default`` key. UIs render radio
-    buttons from the options list.
+    S&S weekly variants, and the church's own saved texts) and a
+    ``default`` key. UIs render radio buttons from the options list.
+
+    ``saved_texts`` is the church's saved-text library grouped by kind
+    (``web.church_texts.texts_by_kind``); omitted or empty for a church
+    with no saved texts yet, so this reduces to the original preset-only
+    behavior.
     """
     sns_confession = _entries_to_dicts(
         parse_dialog_html(day.confession_html)
@@ -49,7 +70,7 @@ def build_liturgical_text_options(day: DayContent) -> dict:
         parse_dialog_html(day.dismissal_html)
     ) if day.dismissal_html else []
 
-    return {
+    catalog = {
         "prayer_of_day": {
             "label": "Prayer of the Day",
             "type": "text",
@@ -118,6 +139,11 @@ def build_liturgical_text_options(day: DayContent) -> dict:
             ],
         },
     }
+
+    for kind, info in catalog.items():
+        info["options"] = info["options"] + _saved_text_options(saved_texts, kind)
+
+    return catalog
 
 
 def _build_psalm_preview(text_html: str) -> str:

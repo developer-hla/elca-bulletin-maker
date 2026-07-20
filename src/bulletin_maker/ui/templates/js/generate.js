@@ -83,6 +83,7 @@ function collectFormData() {
     const formData = {
         date: state.dateStr,
         date_display: state.dateDisplay,
+        rite_id: $("#rite-select").value || null,
         creed_type: creedEl ? creedEl.value : null,
         include_kyrie: $("#include-kyrie").checked,
         canticle: canticleEl ? canticleEl.value : null,

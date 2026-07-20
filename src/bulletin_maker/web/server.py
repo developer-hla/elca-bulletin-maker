@@ -31,6 +31,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response, UploadFi
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+from bulletin_maker.core import library as rite_library
 from bulletin_maker.core.content_views import (
     build_liturgical_text_options,
     build_reading_preview,
@@ -63,12 +64,14 @@ from bulletin_maker.sns.content_service import ContentService
 from bulletin_maker.web import (
     artifacts,
     auth_flows,
+    church_texts,
     db,
     jobstore,
     members,
     observability,
     operator,
     plans,
+    rites,
     security,
 )
 from bulletin_maker.web.sessions import (
@@ -622,6 +625,65 @@ def create_app() -> FastAPI:
             "member_count": members.member_count(session.church_id),
         }
 
+    # ── Church text library (LWS-1) ────────────────────────────────────
+
+    def _validate_text_payload(payload: dict) -> tuple:
+        kind = payload.get("kind") or ""
+        name = (payload.get("name") or "").strip()
+        body = payload.get("body")
+        if kind not in church_texts.ALLOWED_KINDS:
+            raise _validation("Choose a valid text field.")
+        if not name:
+            raise _validation("Give this saved text a name.")
+        if kind in church_texts.STRUCTURED_KINDS:
+            if not isinstance(body, list) or not body:
+                raise _validation("Add at least one line before saving.")
+            for entry in body:
+                if not isinstance(entry, dict) or not (entry.get("text") or "").strip():
+                    raise _validation("Every line needs text.")
+        elif not isinstance(body, str) or not body.strip():
+            raise _validation("Enter some text before saving.")
+        return kind, name, body
+
+    @app.get("/api/church/texts")
+    def list_church_texts(kind: str = None,
+                          session: Session = Depends(session_dep)):
+        require_user(session)
+        return {"success": True,
+                "texts": church_texts.list_texts(session.church_id, kind)}
+
+    @app.post("/api/church/texts")
+    def save_church_text(payload: dict, session: Session = Depends(session_dep)):
+        require_admin(session)
+        kind, name, body = _validate_text_payload(payload)
+        saved = church_texts.save_text(session.church_id, kind, name, body)
+        return {"success": True, "text": saved}
+
+    @app.delete("/api/church/texts/{text_id}")
+    def delete_church_text(text_id: int, session: Session = Depends(session_dep)):
+        require_admin(session)
+        if not church_texts.delete_text(session.church_id, text_id):
+            raise _validation("That saved text isn't in your church.", status=404)
+        return {"success": True}
+
+    # ── Rites (LWS-1 picker) ────────────────────────────────────────────
+
+    def _rite_summary(rite) -> dict:
+        return {
+            "id": rite.id, "name": rite.name,
+            "occasion": rite.occasion, "tradition": rite.tradition,
+            "church_id": rite.church_id,
+        }
+
+    @app.get("/api/rites")
+    def list_rites(session: Session = Depends(session_dep)):
+        require_user(session)
+        stored = rites.list_rites(session.church_id)
+        stored_ids = {r.id for r in stored}
+        bundled = [r for r in rite_library.load_rites() if r.id not in stored_ids]
+        return {"success": True,
+                "rites": [_rite_summary(r) for r in bundled + stored]}
+
     # ── Day content ───────────────────────────────────────────────────
 
     @app.get("/api/day")
@@ -682,7 +744,9 @@ def create_app() -> FastAPI:
     @app.get("/api/day/texts")
     def liturgical_texts(session: Session = Depends(session_dep)):
         day = _require_day(session)
-        return {"success": True, "texts": build_liturgical_text_options(day)}
+        saved = church_texts.texts_by_kind(session.church_id)
+        return {"success": True,
+                "texts": build_liturgical_text_options(day, saved)}
 
     @app.get("/api/day/readings/{slot}/preview")
     def reading_preview(slot: str, session: Session = Depends(session_dep)):
