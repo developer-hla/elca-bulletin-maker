@@ -1,0 +1,230 @@
+<title>The Flexible Liturgy Tool — Strategy</title>
+<style>
+:root {
+  --paper: #FAF7F2; --ink: #242119; --rubric: #A3271F; --stone: #6E675D;
+  --hairline: #E3DCCE; --panel: #F2EDE3; --panel-ink: #3A362E;
+  --table-head: #EFE9DC; --good: #3D6B35; --warn: #8A6D1F;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #1B1915; --ink: #E9E3D7; --rubric: #E08173; --stone: #A79E8F;
+          --hairline: #37332B; --panel: #24211B; --panel-ink: #D8D1C2;
+          --table-head: #282419; --good: #8FBC7F; --warn: #D4B45A; }
+}
+:root[data-theme="dark"] { --paper: #1B1915; --ink: #E9E3D7; --rubric: #E08173; --stone: #A79E8F;
+          --hairline: #37332B; --panel: #24211B; --panel-ink: #D8D1C2;
+          --table-head: #282419; --good: #8FBC7F; --warn: #D4B45A; }
+:root[data-theme="light"] { --paper: #FAF7F2; --ink: #242119; --rubric: #A3271F; --stone: #6E675D;
+          --hairline: #E3DCCE; --panel: #F2EDE3; --panel-ink: #3A362E;
+          --table-head: #EFE9DC; --good: #3D6B35; --warn: #8A6D1F; }
+
+body { background: var(--paper); color: var(--ink);
+  font-family: Charter, "Bitstream Charter", Georgia, Cambria, serif;
+  line-height: 1.62; margin: 0; font-size: 17px; }
+main { max-width: 74ch; margin: 0 auto; padding: 3.5rem 1.5rem 6rem; }
+h1, h2, h3 { font-family: inherit; line-height: 1.2; text-wrap: balance; }
+h1 { font-size: 2.1rem; font-weight: 700; margin: 0.4rem 0 0.6rem; }
+h2 { font-size: 1.45rem; margin: 3.2rem 0 0.8rem; padding-top: 1.6rem; border-top: 1px solid var(--hairline); }
+h3 { font-size: 1.12rem; margin: 1.9rem 0 0.5rem; }
+p { margin: 0.75rem 0; }
+a { color: var(--rubric); }
+.eyebrow { font-family: system-ui, -apple-system, sans-serif; font-size: 0.72rem;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--rubric); font-weight: 600; }
+.subtitle { color: var(--stone); font-size: 1.08rem; margin-top: 0; }
+.meta { font-family: system-ui, sans-serif; font-size: 0.8rem; color: var(--stone); margin-top: 1rem; }
+.rubric-note { color: var(--rubric); font-style: italic; }
+.verdict { background: var(--panel); color: var(--panel-ink); border-left: 3px solid var(--rubric);
+  padding: 0.9rem 1.15rem; margin: 1.3rem 0; border-radius: 0 4px 4px 0; }
+.verdict strong:first-child { color: var(--rubric); }
+table { border-collapse: collapse; width: 100%; font-family: system-ui, sans-serif;
+  font-size: 0.84rem; line-height: 1.45; font-variant-numeric: tabular-nums; }
+.table-wrap { overflow-x: auto; margin: 1.2rem 0; }
+th { background: var(--table-head); text-align: left; padding: 0.55rem 0.7rem;
+  font-size: 0.74rem; letter-spacing: 0.06em; text-transform: uppercase; }
+td { padding: 0.55rem 0.7rem; border-top: 1px solid var(--hairline); vertical-align: top; }
+.good { color: var(--good); font-weight: 600; }
+.warn { color: var(--warn); font-weight: 600; }
+.bad { color: var(--rubric); font-weight: 600; }
+ul, ol { padding-left: 1.4rem; }
+li { margin: 0.4rem 0; }
+.dialogue { margin: 1.2rem 0; padding: 1rem 1.25rem; background: var(--panel); border-radius: 4px; }
+.dialogue .role { color: var(--rubric); font-weight: 700; font-style: normal; margin-right: 0.5em; }
+.dialogue .cong { font-weight: 700; }
+.dialogue p { margin: 0.3rem 0; }
+.toc { font-family: system-ui, sans-serif; font-size: 0.88rem; columns: 2; gap: 2rem;
+  padding: 1rem 1.25rem; background: var(--panel); border-radius: 4px; margin: 1.5rem 0; }
+.toc a { text-decoration: none; }
+.toc li { margin: 0.25rem 0; break-inside: avoid; }
+@media (max-width: 620px) { .toc { columns: 1; } }
+.phase { display: flex; gap: 0.9rem; margin: 1.1rem 0; }
+.phase-num { font-family: system-ui, sans-serif; font-weight: 700; color: var(--rubric);
+  font-size: 0.85rem; min-width: 4.4rem; padding-top: 0.15rem; }
+code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.86em;
+  background: var(--panel); padding: 0.08em 0.35em; border-radius: 3px; }
+</style>
+
+<main>
+<p class="eyebrow">Product strategy · Ideation phase</p>
+<h1>The Flexible Liturgy Tool</h1>
+<p class="subtitle">How the bulletin maker becomes the tool liturgical churches reach for when they switch settings, follow a different calendar, or write their own liturgy — without becoming a design program.</p>
+<p class="meta">July 20, 2026 · Synthesized from 8 research inputs: codebase audit, liturgical-tradition domain research, 11-bulletin field corpus, competitive landscape, provider ToS/API posture, open-data audit, CCLI/OneLicense precedent, DIY-workflow evidence.</p>
+
+<div class="dialogue">
+<p><span class="role">P:</span>What do churches actually differ in?</p>
+<p><span class="role">C:</span><span class="cong">The order of the service, the texts that fill it, where content comes from, and what calendar names the day. Almost never the typography.</span></p>
+</div>
+
+<ol class="toc">
+<li><a href="#thesis">The thesis</a></li>
+<li><a href="#evidence">What the research established</a></li>
+<li><a href="#model">The four-axis model</a></li>
+<li><a href="#concept">Design concept: rites as data</a></li>
+<li><a href="#directions">Three directions &amp; a recommendation</a></li>
+<li><a href="#clearinghouse">The clearinghouse pillar</a></li>
+<li><a href="#features">Feature bets, ranked</a></li>
+<li><a href="#announcements">The announcements fork</a></li>
+<li><a href="#phases">Phased build plan</a></li>
+<li><a href="#risks">Risks &amp; open questions</a></li>
+</ol>
+
+<h2 id="thesis">1 · The thesis</h2>
+<p>Every incumbent in this market stops one step before the finish line. Sundays &amp; Seasons and Lutheran Service Builder — the two strongest denominational tools — both end, <em>by their own documentation</em>, at "export to Word and format your bulletin yourself." Planning Center prints an unstyled report dump. Proclaim and ProPresenter are screens-only by design. Two paid scheduling tools produce no document at all. <strong>Nobody ships a finished, professionally typeset, print-ready worship folder as the product's terminal output.</strong> We already do — for exactly one church's liturgy.</p>
+<p>The generalization opportunity is therefore not "add customization." It is: <strong>keep the finish line we already own, and make the path to it configurable along the four axes churches actually vary on</strong> — order of service, texts, content source, calendar — while refusing, as a matter of product identity, to vary the axis they don't (presentation). The pastor designs the rite once; the volunteer's Wednesday afternoon stays exactly as simple as it is today.</p>
+<div class="verdict"><strong>Positioning sentence.</strong> The tool that turns your liturgy — whatever it is, from whatever tradition, on whatever calendar — into a beautiful printed worship folder your congregation can follow, in minutes a week, by a volunteer.</div>
+
+<h2 id="evidence">2 · What the research established</h2>
+
+<h3>From 11 real bulletins across six traditions</h3>
+<ul>
+<li><strong>Within-tradition structural variance is startlingly low.</strong> Two ELCA churches with opposite personalities ran the same ~15-element skeleton; LCMS bulletins are literally software-generated from one shared skeleton; both UMC samples follow the denomination's published pattern element-for-element. The big between-tradition seam is simply <em>whether communion happens weekly</em>.</li>
+<li><strong>~10 starter templates + pluggable occasion modules</strong> (baptism, confirmation, bishop's visit, Advent candles) credibly cover the large majority of American liturgical practice.</li>
+<li><strong>The block vocabulary is small and closed.</strong> Heading, rubric, dialogue, hymn (ref / lyrics / notation), reading (ref / full), responsive psalm, prayer, freeform — plus a handful of non-liturgical types (prayer list, calendar, serving roster).</li>
+<li><strong>Import is tractable.</strong> None of the 11 PDFs were scans; liturgy sections are single-column with a closed heading vocabulary and regex-able P:/C: dialogue. "Upload last week's bulletin, we draft your rite" is a real onboarding feature, not a moonshot.</li>
+<li><strong>Non-liturgical content is 30–75% of real bulletins</strong> — the one scope question this research forces (§8).</li>
+</ul>
+
+<h3>From the domain research</h3>
+<ul>
+<li>Every tradition surveyed (ELCA, LCMS, Episcopal, Catholic, UMC, PC(USA), free-church) maps onto the same four configurable axes. Traditions differ enormously in content and vocabulary, far less in shape.</li>
+<li><strong>Settings are a stable menu, not a weekly rotation</strong> — churches keep a default plus a seasonal or occasional alternate. Design accordingly: saved rites + per-service picker + optional seasonal rules, never calendar-locked.</li>
+<li><strong>Role labels are a trap:</strong> Lutheran "P:" = Pastor; some Reformed bulletins use "P:" = People. Speaker roles must be semantic (leader / congregation / rubric / sung) with per-church display labels. Our existing <code>DialogRole</code> primitive already models this.</li>
+<li><strong>The licensing floor is friendlier than feared:</strong> the ELLC/ICET common texts — creeds, Lord's Prayer, Gloria, Sanctus, the exact "ordinary" blocks a rite library needs — are public domain. NRSV print use in bulletins is free to 500 verses. Real per-item friction concentrates in hymns (CCLI vs OneLicense, per-song).</li>
+<li><strong>Alternative calendars are structurally diverse:</strong> Catholic numbering differs from RCL for the same readings; LCMS splits between 1-year and 3-year systems; Narrative Lectionary runs Sept–May with one text per week; Season of Creation overlays any base; no-lectionary churches need the engine fully bypassable.</li>
+</ul>
+
+<h3>From the competitive landscape</h3>
+<div class="table-wrap"><table>
+<tr><th>Tool</th><th>Liturgy flexibility</th><th>Print output</th><th>Multi-tradition</th><th>Price signal</th></tr>
+<tr><td>Sundays &amp; Seasons</td><td>ELCA liturgies only</td><td class="bad">None — "format in Word yourself"</td><td class="bad">No</td><td>~$250–800/yr (unverified)</td></tr>
+<tr><td>Lutheran Service Builder</td><td>LSB + format presets (best incumbent)</td><td class="warn">Presets, still exports to Word</td><td class="bad">No</td><td>$500–950 yr 1, $250–700 renewal + hymn license</td></tr>
+<tr><td>RitePlanning (Episcopal)</td><td>BCP step-wizard</td><td class="warn">Unknown; licensing bundle is the moat</td><td class="bad">No</td><td>Unverified</td></tr>
+<tr><td>Planning Center</td><td class="bad">Rundown model, liturgically blind</td><td class="bad">Report dump ("clunky")</td><td>Agnostic</td><td>Free–$239/mo modular</td></tr>
+<tr><td>Proclaim / ProPresenter</td><td class="bad">Slide sequences</td><td class="bad">Screens only</td><td>Agnostic</td><td>$29–59/mo</td></tr>
+<tr><td>WorshipPlanning / MSP</td><td class="bad">Scheduling only</td><td class="bad">None at all</td><td>Agnostic</td><td>$15–65/mo</td></tr>
+<tr><td>Word / Publisher / Canva</td><td>Total (manual)</td><td class="warn">Variable; typo-prone, hours weekly</td><td>Total, zero support</td><td>Free</td></tr>
+</table></div>
+<p>Pricing norms cluster at <strong>$20–65/month equivalent</strong> for a mid-size congregation — paid today for content licensing <em>alone</em>, before any production value-add. A tool solving content <em>and</em> finished print plausibly clears <strong>$30–75/month</strong>, attendance-scaled like every incumbent.</p>
+
+<h3>From the codebase audit</h3>
+<ul>
+<li><strong>The expensive part:</strong> the ordo lives as ~500 lines of interleaved HTML in two templates kept in sync by convention, guarded by pinned page-count regression tests. Making order-of-service data-driven is the one big rock.</li>
+<li><strong>Already general:</strong> the <code>(DialogRole, text)</code> call-response atom; the text-resolution chain (user override → publisher → static fallback); the bounded-registry pattern proven twice (settings, paper); clean core/UI separation; per-church profile as the sanctioned extension point.</li>
+<li><strong>Nearly free:</strong> ELW settings are ~10 notation images + 2 omissions — the texts don't vary. "Serve churches that switch settings" is cheap; alternative <em>ordos</em> and <em>calendars</em> are the real work.</li>
+<li><strong>A conflation to unwind:</strong> <code>season.py</code> mixes RCL calendar facts with one church's house customs (Lent drops the Kyrie…). These must become separate layers: calendar providers vs. per-church seasonal preferences.</li>
+</ul>
+
+<h3>From the open-data audit</h3>
+<ul>
+<li><strong>Venite's Liturgy Document Format (MIT)</strong> is direct prior art: a real-world-tested JSON schema whose block types (<code>heading, rubric, responsive, psalm, option, bible-reading</code>) independently match our corpus-derived vocabulary. Its <code>Condition</code> model (gate any block on season/feast/week/preference) solves "how a rite adapts to the day." Its <code>LiturgicalDay</code> carries multiple lectionary-cycle positions at once. The author disavows the <em>code</em> — adopt the schema design, write our own engine.</li>
+<li><strong>Calendar math is mostly borrowable:</strong> Easter via <code>python-dateutil</code>; RCL as consumable data (Vanderbilt ICS/CSV); the romcal rank+override precedence pattern is small to hand-port. LCMS 1-year and Narrative Lectionary are bounded one-time transcriptions no competitor has bothered to do.</li>
+<li><strong>Scripture licensing maps per tradition:</strong> NET Bible push-button safe; ESV free API (LCMS market); NRSV free in print but needs a licensing call for API automation; WEB/KJV public domain floor; NABRE (Catholic) requires paid per-parish USCCB licenses — reinforcing Catholic-out-of-scope.</li>
+<li><strong>Preservation done:</strong> the only structured public-domain hymn-tune corpus (Open Hymnal, ABC notation) survives only in the Wayback Machine; a mirror job is archiving it now.</li>
+</ul>
+
+<h2 id="model">3 · The four-axis model</h2>
+<p>Everything a liturgical church might want to customize decomposes into four independent axes. Presentation is deliberately not one of them.</p>
+<div class="table-wrap"><table>
+<tr><th>Axis</th><th>What it is</th><th>Who sets it</th><th>How often</th></tr>
+<tr><td><strong>Rite (ordo)</strong></td><td>Which blocks exist, in what order; occasion modules</td><td>Pastor / musician</td><td>Rarely — adopted, then stable</td></tr>
+<tr><td><strong>Setting / texts</strong></td><td>Which fixed texts &amp; music fill the ordinary slots</td><td>Pastor / musician</td><td>Seasonally or per-service, from a saved menu</td></tr>
+<tr><td><strong>Calendar / lectionary</strong></td><td>What resolves a date into day name, propers, readings</td><td>Church, once</td><td>Almost never (plus per-week manual override)</td></tr>
+<tr><td><strong>Content source</strong></td><td>Publisher subscription, public-domain library, own texts, paste</td><td>Church admin</td><td>Once per linked account</td></tr>
+</table></div>
+<p class="rubric-note">The weekly volunteer touches none of these. Their flow stays: pick date → fetch → choose hymns → generate.</p>
+
+<h2 id="concept">4 · Design concept: rites as data, presentation as house style</h2>
+<p>A <strong>rite</strong> is an ordered list of typed blocks, stored as data (Venite-LDF-informed schema), not template HTML:</p>
+<ul>
+<li><strong>Literal blocks</strong> carry the church's own text — a dialogue block is a list of <code>(role, text)</code> lines with semantic roles rendered per the church's label convention (P:/C:, Celebrant/People, bold-only).</li>
+<li><strong>Slot blocks</strong> reference a proper — <code>first_reading</code>, <code>psalm</code>, <code>preface_of_day</code>, <code>hymn:gathering</code> — resolved at generation time by the church's calendar provider + content sources.</li>
+<li><strong>Conditions</strong> gate blocks on season, feast, or a service-level toggle ("communion today?", "baptism?") — replacing today's hardcoded seasonal config with per-church rules layered over calendar facts.</li>
+<li><strong>Occasion modules</strong> (baptism, confirmation, Advent candles, funeral, wedding) are insertable block groups — matching how real bulletins graft special rites onto a base ordo.</li>
+</ul>
+<p>The renderer keeps sole ownership of typography, pagination, the auto-tighten system, and the five-document family (bulletin, large print, leader guide, pulpit sheets). Editing a rite means reordering and toggling typed blocks and editing text in structured fields — <strong>never fonts, margins, or layout</strong>. The no-WYSIWYG stance survives intact because customization is structural and textual, not visual.</p>
+<p><strong>Churches start from the library, not from blank.</strong> Starter rites per tradition (ELW settings, LSB Divine Services, BCP Rite I/II, UMC pattern, Reformed order), duplicated and tweaked — or drafted automatically by the <strong>import wizard</strong> from an uploaded Word/PDF bulletin (LLM segmentation over a closed heading vocabulary; human-confirmable draft, never silent).</p>
+
+<h2 id="directions">5 · Three directions &amp; a recommendation</h2>
+<h3>A — Deep Lutheran</h3>
+<p>Stay ELCA-shaped; add rite flexibility within ELW, then LSB for LCMS. Smallest step, safest content story (we know the S&amp;S integration), immediately serves "switches settings often." Ceiling: two denominations.</p>
+<h3>B — The Liturgy Engine</h3>
+<p>The full four-axis architecture, multi-tradition starter library, pluggable calendars and content sources. The durable product; the moat (nobody else has liturgical intelligence <em>and</em> finished print). Risk: building generality before revenue proves each segment.</p>
+<h3>C — The Print Companion</h3>
+<p>Position against Planning Center et al.: import their plan, we produce the beautiful print. Cheap wedge, but concedes the liturgical intelligence — and PC's liturgical-church penetration is weak precisely because the plan data we'd import is liturgically empty.</p>
+<div class="verdict"><strong>Recommendation: B, built through A, with C as a later import format rather than a strategy.</strong> Build the rite engine underneath the current ELCA product with output regression-locked to today's bulletins (Phase 0 changes nothing visible). Every subsequent phase ships a sellable expansion — settings flexibility, own-texts, alternative calendars, LCMS — so generality is financed segment by segment, never speculatively. The Narrative-Lectionary and 1-year-lectionary niches are cheap to serve and completely unserved: perfect early beachheads for exactly the churches the owner named.</div>
+
+<h2 id="clearinghouse">6 · The clearinghouse pillar</h2>
+<p>The owner's framing: <em>link whatever content subscriptions you already hold; we assemble and print from any of them.</em> This is our production S&amp;S model (church-owned credentials, encrypted vault, entitlement-gated cache) generalized to a provider registry. It repositions us from potential publisher-competitor to the neutral assembly layer that makes their subscriptions more valuable.</p>
+<div class="table-wrap"><table>
+<tr><th>Provider</th><th>API / export</th><th>ToS posture</th><th>Our stance</th></tr>
+<tr><td>Sundays &amp; Seasons (ELCA)</td><td>None; web UI</td><td>Detail pending (consolidator)</td><td class="good">In production today, church-credentialed; continue; partnership letter framed as "your subscribers love this," sent when useful</td></tr>
+<tr><td>Lutheran Service Builder (LCMS)</td><td>None found; web tool</td><td>Pending</td><td class="warn">Phase-target: LSB starter rites + credential-linked probe, same entitlement rule</td></tr>
+<tr><td>RitePlanning (Episcopal)</td><td>None found</td><td>Pending</td><td class="warn">Later segment; 1979 BCP being public domain shrinks what we even need from them</td></tr>
+<tr><td>OCP / GIA / LPi (Catholic)</td><td>None; OCP ToS bans scraping</td><td class="bad">Closed</td><td class="bad">Out of scope; LPi is a competitor we can feed PDFs into, not pull from</td></tr>
+<tr><td>CCLI SongSelect</td><td>Partner API <em>retired</em> to new entrants</td><td>Permissioned, grandfathered (Planning Center, WorshipTools…)</td><td class="warn">User-mediated file import now; "what Planning Center has" is a proven, previously-granted ask at scale</td></tr>
+<tr><td>OneLicense</td><td>Nothing — manual site only</td><td>—</td><td class="good">Can't pull content, but we can <em>generate their usage report</em> for the church — a loved feature, zero legal exposure</td></tr>
+</table></div>
+<p><strong>Operating rules for the permissionless posture</strong> (owner-endorsed): every provider fetch uses the church's own paid credentials; the entitlement rule is non-negotiable (content never flows to a church without its own subscription — the line between "integration" and "piracy vector"); fetch politely and cache aggressively so we load their servers <em>less</em> than a human clicking; treat every provider as breakable (cache + graceful degradation + manual paste fallback, all already built); respond cooperatively if contacted. The legally clean floor — public-domain library + manual paste + import — means the product works with <strong>zero</strong> linked accounts, and every link is additive.</p>
+
+<h2 id="features">7 · Feature bets, ranked by attractiveness ÷ cost</h2>
+<ol>
+<li><strong>Finished print (keep owning it).</strong> The confirmed market-wide gap; also: large print, leader guide, and pulpit sheets are accessibility features every competitor lacks entirely.</li>
+<li><strong>Rite menu &amp; switching.</strong> Saved rites, per-service picker, seasonal rules. Cheap (settings are mostly images today) and it's the owner's named segment.</li>
+<li><strong>Import-your-bulletin onboarding.</strong> Corpus-validated tractable. Converts the scariest moment (data entry) into the magic moment. Also the answer to "what about my weird local liturgy."</li>
+<li><strong>Own-texts library.</strong> Persistent per-church text bank (today's custom edits die weekly — an explicit UI apology). Low cost: the options-catalog shape already supports N presets.</li>
+<li><strong>Alternative calendars.</strong> RCL in-house, manual/sermon-series mode, Narrative Lectionary, LCMS 1-year, Season of Creation overlay. Bounded data work; zero competitors.</li>
+<li><strong>Public-domain library.</strong> ELLC ordinary texts + WEB/KJV + NET API + archived Open Hymnal tunes. The zero-subscription floor.</li>
+<li><strong>Licensing helper.</strong> Per-hymn license tags (CCLI / OneLicense / PD), auto copyright footers, exportable OneLicense/CCLI usage reports. Converts diffuse anxiety into a checkbox.</li>
+<li><strong>Provider expansion (LSB, riteplanning).</strong> High value, gated on ToS findings and segment order.</li>
+</ol>
+
+<h2 id="announcements">8 · The announcements fork</h2>
+<p>Non-liturgical content — prayer lists, calendars, serving rosters, birthdays, flyers — is <strong>30–75% of real bulletins by page count</strong> in every sampled tradition except Catholic worship aids. Two honest options:</p>
+<ul>
+<li><strong>Liturgy-only.</strong> "We generate your order of service." Real product type (it's exactly how Catholic parishes split documents). Tight scope; but visibly not "your bulletin" for most Protestant churches.</li>
+<li><strong>Structured announcement blocks.</strong> Prayer list, week calendar, serving roster, staff directory, freeform announcement — all typed, listy content observed universally in the corpus. House-styled like everything else; still no WYSIWYG, no image collages, no flyer design.</li>
+</ul>
+<div class="verdict"><strong>Lean: the middle path, as a late phase.</strong> Once blocks exist, announcement block types are cheap, and they change the sales sentence from "part of your bulletin" to "your whole bulletin." The line to hold: structured lists yes, freeform page design never. Decision needed from the owner before Phase 4 is briefed.</div>
+
+<h2 id="phases">9 · Phased build plan</h2>
+<p>Each phase is independently shippable, sequenced so revenue-relevant capability lands before speculative generality. Sized in familiar workstream terms; every one decomposes into agent-executable briefs with the existing regression suites as acceptance gates.</p>
+
+<div class="phase"><div class="phase-num">LWS-0<br>(L)</div><div><strong>Rite engine under the floorboards.</strong> Block schema (LDF-informed); extract the ordo from the two ~500-line templates into one data-driven rite definition the renderer iterates; reproduce current output <em>exactly</em> (pinned layout tests are the acceptance gate, re-baselined only for deliberate changes); split calendar facts from house seasonal customs. No visible change. The one big rock — everything else stands on it.</div></div>
+<div class="phase"><div class="phase-num">LWS-1<br>(S–M)</div><div><strong>Texts &amp; settings menu.</strong> Persistent per-church text library (fix "custom edits are not saved"); ELW settings 6–10 + rite variants as data; per-service rite picker + per-church seasonal rules UI. First visible win for setting-switchers.</div></div>
+<div class="phase"><div class="phase-num">LWS-2<br>(M)</div><div><strong>Rite editor + starter library + occasion modules.</strong> Structured block editor (reorder, toggle, edit lines — no layout controls); the ~10-template starter library; baptism/confirmation/Advent-candles/funeral modules; block-level preview.</div></div>
+<div class="phase"><div class="phase-num">LWS-3<br>(M)</div><div><strong>Calendar providers.</strong> In-house RCL (Vanderbilt data + owned tables); manual/sermon-series mode; Narrative Lectionary + LCMS 1-year transcriptions; Season of Creation overlay; per-week override. Removes the S&amp;S-server dependency for calendar math.</div></div>
+<div class="phase"><div class="phase-num">LWS-4<br>(M–L)</div><div><strong>Content-source registry + PD library + import wizard.</strong> Provider interface (S&amp;S becomes one of N); ELLC/scripture/PD-hymn library; NET/ESV scripture APIs; upload-and-draft rite import (LLM segmentation, human-confirmed).</div></div>
+<div class="phase"><div class="phase-num">LWS-5<br>(M)</div><div><strong>LCMS beachhead.</strong> LSB starter rites; ESV default; credential-linked LSB content probe (pending ToS read); hymn file-upload path; onboarding aimed at 1-year-lectionary churches.</div></div>
+<div class="phase"><div class="phase-num">LWS-6<br>(S–M)</div><div><strong>Announcements blocks</strong> (if the fork resolves that way) + licensing helper (license tags, footers, usage-report export).</div></div>
+<p class="rubric-note">Sequencing note: LWS-0 is the gate; 1–2 monetize the owner's named segment; 3 unlocks alternative-calendar churches; 4–5 open the second denomination. WS-9 (deployment) from the platform track can interleave anywhere.</p>
+
+<h2 id="risks">10 · Risks &amp; open questions</h2>
+<ul>
+<li><strong>The LWS-0 refactor is the project's riskiest engineering.</strong> Mitigation: regression-locked extraction (same output, byte-similar), the existing layout suite as the gate, phased per-document migration.</li>
+<li><strong>Scope creep toward WYSIWYG.</strong> Every editor decision must pass: "structural or textual, never visual." The moment we expose a font picker we inherit the support burden we designed this product to avoid.</li>
+<li><strong>Provider ToS exposure.</strong> Posture chosen (permissionless + entitlement + politeness); residual risks are provider breakage (engineered for) and church-account suspension (fetch discipline). Final S&amp;S/LSB/riteplanning ToS detail lands with the pending consolidated report.</li>
+<li><strong>NRSV automation licensing</strong> — the one content conversation worth having proactively, since ELCA is home turf and print use is already free.</li>
+<li><strong>Hobbyist-data fragility</strong> — vendor lectionary data in-house (owned tables seeded from Vanderbilt/transcriptions), never live-depend on one-person APIs.</li>
+<li><strong>Owner decisions needed:</strong> segment order after ELCA (LCMS vs Episcopal vs calendar-niche churches first); the announcements fork (§8); pricing posture within the $30–75/mo evidence band; when the Augsburg partnership letter ships.</li>
+</ul>
+
+<p class="meta">Prepared as the ideation-phase deliverable. Next step on approval: turn LWS-0 into implementation briefs using the established workstream machinery (contracts, acceptance criteria, guardrails, agent execution with orchestrated review).</p>
+</main>
