@@ -115,6 +115,7 @@ def generate_documents(
     entitled: bool = True,
     church_texts: dict | None = None,
     sns_fetch: Callable[[str], Optional[str]] | None = None,
+    sns_fetch_raw: Callable[[str], Optional[str]] | None = None,
 ) -> GenerationResult:
     """Generate the selected documents into output_dir.
 
@@ -142,6 +143,7 @@ def generate_documents(
         entitled=entitled,
         church_texts=church_texts or {},
         sns_fetch=sns_fetch,
+        sns_fetch_raw=sns_fetch_raw,
         variables=config.variables or {},
     )
 

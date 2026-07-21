@@ -174,3 +174,25 @@ class ContentService:
         text = _clean_library_html(html)
         cache_put(cache_key, {"text": text})
         return text
+
+    def get_library_item_raw(
+        self, atom_code: str, force_refresh: bool = False
+    ) -> Optional[str]:
+        """Fetch a Library item's RAW preview markup by atom-code (cached).
+
+        Unlike :meth:`get_library_item`, this returns the unmodified
+        ``/File/Preview`` HTML (div class markers, ``OPTION`` markers) that the
+        whole-service parser needs; the cleaned-text contract of that method is
+        left untouched. Cached under a distinct key. Returns None when S&S
+        reports the atom-code is unknown.
+        """
+        self._require_entitlement()
+        cache_key = f"{LIBRARY_KEY}:raw:{atom_code}"
+        cached = None if force_refresh else cache_get(cache_key)
+        if cached is not None:
+            return cached["html"]
+        html = self._client_provider().fetch_preview(atom_code)
+        if ATOM_NOT_FOUND_MARKER in html:
+            return None
+        cache_put(cache_key, {"html": html})
+        return html

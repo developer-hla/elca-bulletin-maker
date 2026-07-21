@@ -8,8 +8,9 @@ S&S's canonical text arranged in THEIR custom order (they reorder the slot
 blocks in the rite editor).
 
 No liturgical prose is ever stored in the app.  The whole-service document is
-pulled live from the church's S&S account through ``ContentContext.sns_fetch``
-and parsed by :func:`bulletin_maker.sns.service_parser.parse_service` into
+pulled live from the church's S&S account through ``ContentContext.sns_fetch_raw``
+(the RAW ``/File/Preview`` markup the parser needs) and parsed by
+:func:`bulletin_maker.sns.service_parser.parse_service` into
 ordered typed segments.  :data:`SECTION_MAP` — derived by the orchestrator from
 the real S&S documents — records, per section_key, the atom-code of the
 whole-service rite, the ORDINAL INDEX of the segment that holds the section,
@@ -63,7 +64,7 @@ SECTION_MAP: Dict[str, Tuple[str, int, str]] = {
 # S&S lowercase placeholder tokens: the deceased is ``name``; the couple is
 # ``name and name``.  See :func:`_interpolate_names` for the (best-effort,
 # documented) substitution heuristic.
-_COUPLE_PLACEHOLDER = "name and name"
+_COUPLE_PLACEHOLDER_RE = re.compile(r"\bname and name\b", re.IGNORECASE)
 _FUNERAL_NAME_TOKEN = re.compile(r"\bname\b(?!\s+of\b)")
 
 
@@ -80,9 +81,9 @@ def _parse_cached(atom_code: str, document_html: str) -> Tuple[ServiceSegment, .
 
 def _segment_at(section_key: str, context: ContentContext) -> Optional[ServiceSegment]:
     atom_code, index, expected_kind = SECTION_MAP[section_key]
-    if not context.entitled or context.sns_fetch is None:
+    if not context.entitled or context.sns_fetch_raw is None:
         return None
-    document_html = context.sns_fetch(atom_code)
+    document_html = context.sns_fetch_raw(atom_code)
     if not document_html:
         logger.warning(
             "service fill: no S&S document for rite %s (section %s)",
@@ -141,7 +142,7 @@ def _interpolate_names(
 def _interpolate_couple(
     text: str, section_key: str, variables: Dict[str, str],
 ) -> str:
-    if _COUPLE_PLACEHOLDER not in text:
+    if not _COUPLE_PLACEHOLDER_RE.search(text):
         return text
     partner_one = variables.get("partner_one")
     partner_two = variables.get("partner_two")
@@ -151,7 +152,7 @@ def _interpolate_couple(
             "missing; left unsubstituted", section_key,
         )
         return text
-    return text.replace(_COUPLE_PLACEHOLDER, "%s and %s" % (partner_one, partner_two))
+    return _COUPLE_PLACEHOLDER_RE.sub("%s and %s" % (partner_one, partner_two), text)
 
 
 def _interpolate_deceased(

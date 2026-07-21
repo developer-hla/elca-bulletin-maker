@@ -3,7 +3,7 @@
 Structural only.  Fills are proven against the SYNTHETIC S&S-shaped fixture
 (``tests/fixtures/sns_service_sample.html``) and against tiny synthetic
 placeholder documents built inline; NO copyrighted liturgical prose is used or
-asserted.  ``sns_fetch`` is monkeypatched to return that synthetic markup, and
+asserted.  ``sns_fetch_raw`` is monkeypatched to return that synthetic markup, and
 the section-index/kind map is overridden with synthetic entries (or exploits a
 known fixture-index alignment) so the fill / confidence / interpolation paths
 are exercised without touching any real S&S document.
@@ -61,7 +61,7 @@ def syn_map(monkeypatch):
 def _ctx(html, *, entitled=True, variables=None):
     return ContentContext(
         entitled=entitled,
-        sns_fetch=lambda atom_code: html,
+        sns_fetch_raw=lambda atom_code: html,
         variables=variables or {},
     )
 
@@ -94,13 +94,13 @@ def test_unmapped_key_returns_none(syn_map):
 
 def test_unentitled_returns_none_and_never_pulls(syn_map):
     fetch = MagicMock(return_value=FIXTURE_HTML)
-    context = ContentContext(entitled=False, sns_fetch=fetch)
+    context = ContentContext(entitled=False, sns_fetch_raw=fetch)
     assert fill_section("syn_options", context) is None
     fetch.assert_not_called()
 
 
 def test_no_fetch_hook_returns_none(syn_map):
-    assert fill_section("syn_options", ContentContext(sns_fetch=None)) is None
+    assert fill_section("syn_options", ContentContext(sns_fetch_raw=None)) is None
 
 
 def test_empty_pull_returns_none_and_warns(syn_map, caplog):
@@ -157,7 +157,7 @@ def test_resolve_canonical_slot_church_text_wins_without_pull():
     fetch = MagicMock(return_value=FIXTURE_HTML)
     saved = "A church-saved custom greeting."
     context = ContentContext(
-        entitled=True, sns_fetch=fetch,
+        entitled=True, sns_fetch_raw=fetch,
         church_texts={"marriage_greeting": saved},
     )
     block = _canonical_block("marriage_greeting")
@@ -167,7 +167,7 @@ def test_resolve_canonical_slot_church_text_wins_without_pull():
 
 def test_resolve_canonical_slot_unentitled_yields_placeholder():
     block = _canonical_block("marriage_greeting")
-    context = ContentContext(entitled=False, sns_fetch=lambda a: FIXTURE_HTML)
+    context = ContentContext(entitled=False, sns_fetch_raw=lambda a: FIXTURE_HTML)
     assert resolve_canonical_slot(block, context) == ENTITLEMENT_PLACEHOLDER
 
 

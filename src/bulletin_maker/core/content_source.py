@@ -94,6 +94,7 @@ class ContentContext:
     entitled: bool = True
     church_texts: Dict[str, Any] = field(default_factory=dict)
     sns_fetch: Optional[Callable[[str], Optional[str]]] = None
+    sns_fetch_raw: Optional[Callable[[str], Optional[str]]] = None
     variables: Dict[str, str] = field(default_factory=dict)
 
 
