@@ -117,6 +117,13 @@ MUSIC_KINDS: FrozenSet[str] = frozenset(
     {"prelude", "offertory", "postlude", "choral"}
 )
 
+# A ``canonical_slot`` names its content by a stable ``section_key`` — an
+# arbitrary identifier (not a closed enum), so a rite can key any canonical
+# section the church's licensed source fills at render time.  The format is the
+# same identifier shape used for variable keys: a letter/underscore followed by
+# word characters.
+SECTION_KEY_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+
 
 # ── Per-service variables (RB-3b) ─────────────────────────────────────
 #
@@ -223,6 +230,11 @@ _SPECS: Dict[str, BlockTypeSpec] = {
             ("kind", "fallback"),
             frozenset({"kind"}),
             enums={"kind": PROPER_KINDS},
+        ),
+        BlockTypeSpec(
+            "canonical_slot",
+            ("section_key", "fallback"),
+            frozenset({"section_key"}),
         ),
         BlockTypeSpec(
             "notation",
@@ -498,6 +510,14 @@ def _validate_dialog_lines(lines: Any) -> None:
             raise RiteSchemaError("dialogue.lines[%d].text must be a string" % i)
 
 
+def _validate_section_key(section_key: Any) -> None:
+    if not isinstance(section_key, str) or not SECTION_KEY_RE.fullmatch(section_key):
+        raise RiteSchemaError(
+            "canonical_slot 'section_key' must be an identifier "
+            "(letter/underscore + word chars), got %r" % (section_key,)
+        )
+
+
 def _validate_block_payload(block_type: str, payload: Dict[str, Any]) -> None:
     """Fail fast if ``payload`` violates the type's :class:`BlockTypeSpec`."""
     spec = _SPECS[block_type]
@@ -539,6 +559,9 @@ def _validate_block_payload(block_type: str, payload: Dict[str, Any]) -> None:
 
     if block_type == "dialogue" and "lines" in payload:
         _validate_dialog_lines(payload["lines"])
+
+    if block_type == "canonical_slot":
+        _validate_section_key(payload["section_key"])
 
 
 @dataclass
@@ -812,6 +835,8 @@ def _text_refs_in_block(block: Block) -> List[str]:
     elif block.type == "dialogue" and "text_ref" in d:
         refs.append(d["text_ref"])
     elif block.type == "proper_slot" and "fallback" in d:
+        refs.append(d["fallback"])
+    elif block.type == "canonical_slot" and "fallback" in d:
         refs.append(d["fallback"])
     elif block.type == "notation" and "text_fallback" in d:
         refs.append(d["text_fallback"])

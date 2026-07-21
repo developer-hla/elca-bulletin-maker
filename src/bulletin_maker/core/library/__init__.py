@@ -28,6 +28,8 @@ RITE_FILES: Tuple[str, ...] = (
     "elw_morning_prayer.json",
     "elw_evening_prayer.json",
     "elw_night_prayer.json",
+    "elw_funeral.json",
+    "elw_marriage.json",
 )
 MODULE_FILES: Tuple[str, ...] = ("elw_holy_baptism.json",)
 
@@ -36,6 +38,8 @@ SERVICE_OF_THE_WORD_RITE_ID = "elw_service_of_the_word"
 MORNING_PRAYER_RITE_ID = "elw_morning_prayer"
 EVENING_PRAYER_RITE_ID = "elw_evening_prayer"
 NIGHT_PRAYER_RITE_ID = "elw_night_prayer"
+FUNERAL_RITE_ID = "elw_funeral"
+MARRIAGE_RITE_ID = "elw_marriage"
 HOLY_BAPTISM_MODULE_ID = "elw_holy_baptism"
 
 

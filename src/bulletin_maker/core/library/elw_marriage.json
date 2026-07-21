@@ -1,0 +1,196 @@
+{
+  "id": "elw_marriage",
+  "church_id": null,
+  "name": "ELW Marriage (no communion)",
+  "tradition": "elca",
+  "occasion": "marriage",
+  "base_rite_id": null,
+  "version": 1,
+  "meta": {
+    "role_labels": {"leader": "P", "congregation": "C"},
+    "notes": "SKELETON layer of the ELW Marriage rite, without communion. This layer is the robust, always-works foundation: it fixes the ordo structure, chrome, public-domain scripture reading slots, the public-domain traditional Lord's Prayer, and per-service variables. It bundles NO copyrighted ELW / Sundays & Seasons liturgical prose. Each canonical (copyrighted) section is an EMPTY keyed canonical_slot resolved at render time through core/content_source.resolve_text(section_key): a later pull layer auto-fills the canonical text from the church's licensed Sundays & Seasons account; failing that it falls back to a church-saved custom text; failing that it renders the entitlement placeholder. Source ordo verified against the Sundays & Seasons marriage rite (see docs/research/2026-07-liturgy-strategy/snapshots/marriage_no_communion.sha256.txt for the source snapshot hash and this rite's section_key list). Reading slots and the psalm are per-service variables filled from the chosen appointments; the vows name each partner from the per-service partner_one / partner_two variables.",
+    "variables": [
+      {"key": "partner_one", "label": "Name of the first partner", "type": "text", "required": true},
+      {"key": "partner_two", "label": "Name of the second partner", "type": "text", "required": true},
+      {"key": "wedding_date", "label": "Date of the wedding", "type": "date", "required": false}
+    ]
+  },
+  "blocks": [
+    {
+      "id": "cover",
+      "type": "literal_text",
+      "note": "Composite cover page from CongregationProfile (church name/address, cover image, service date). Identity/chrome, not liturgical text.",
+      "profile_ref": "cover"
+    },
+    {
+      "id": "welcome_message",
+      "type": "literal_text",
+      "note": "profile.welcome_message paragraph.",
+      "profile_ref": "welcome_message",
+      "style": "plain"
+    },
+    {
+      "id": "standing_instructions",
+      "type": "literal_text",
+      "note": "profile.standing_instructions ('* = please stand').",
+      "profile_ref": "standing_instructions",
+      "style": "plain"
+    },
+    {
+      "id": "service_title",
+      "type": "heading",
+      "text": "THE MARRIAGE OF {{partner_one}} AND {{partner_two}}"
+    },
+    {
+      "id": "gathering_heading",
+      "type": "heading",
+      "text": "GATHERING"
+    },
+    {
+      "id": "greeting",
+      "type": "canonical_slot",
+      "note": "The minister greets the assembly.",
+      "section_key": "marriage_greeting"
+    },
+    {
+      "id": "introduction",
+      "type": "canonical_slot",
+      "note": "The minister addresses the assembly with the introduction to marriage.",
+      "section_key": "marriage_introduction"
+    },
+    {
+      "id": "declaration_of_intention",
+      "type": "canonical_slot",
+      "note": "The couple make their declaration of intention.",
+      "section_key": "marriage_declaration_of_intention"
+    },
+    {
+      "id": "prayer",
+      "type": "canonical_slot",
+      "note": "The minister prays the opening prayer.",
+      "section_key": "marriage_prayer"
+    },
+    {
+      "id": "word_heading",
+      "type": "heading",
+      "text": "WORD"
+    },
+    {
+      "id": "first_reading",
+      "type": "reading_slot",
+      "title": "First Reading",
+      "note": "Chosen first reading; citation and text from the selected appointment.",
+      "slot": "first",
+      "render": "full"
+    },
+    {
+      "id": "psalm",
+      "type": "psalm",
+      "title": "Psalm",
+      "note": "Chosen psalm, read responsively.",
+      "source": "slot",
+      "style": "responsive"
+    },
+    {
+      "id": "second_reading",
+      "type": "reading_slot",
+      "title": "Second Reading",
+      "note": "Chosen second reading; citation and text from the selected appointment.",
+      "slot": "second",
+      "render": "full"
+    },
+    {
+      "id": "gospel",
+      "type": "reading_slot",
+      "title": "*GOSPEL",
+      "note": "Chosen gospel; citation and text from the selected appointment.",
+      "slot": "gospel",
+      "render": "full"
+    },
+    {
+      "id": "sermon_rubric",
+      "type": "rubric",
+      "text": "The assembly is seated. The sermon follows."
+    },
+    {
+      "id": "hymn_of_the_day",
+      "type": "hymn_slot",
+      "title": "*HYMN OF THE DAY",
+      "note": "Hymn of the day; render mode is per-document renderer-side.",
+      "slot": "custom",
+      "render": "ref"
+    },
+    {
+      "id": "marriage_heading",
+      "type": "heading",
+      "text": "MARRIAGE"
+    },
+    {
+      "id": "vows",
+      "type": "canonical_slot",
+      "note": "The couple exchange vows; the vows name each partner (per-service variables partner_one / partner_two).",
+      "section_key": "marriage_vows"
+    },
+    {
+      "id": "giving_of_rings",
+      "type": "canonical_slot",
+      "note": "The couple give and receive rings.",
+      "section_key": "marriage_giving_of_rings"
+    },
+    {
+      "id": "acclamation",
+      "type": "canonical_slot",
+      "note": "The minister announces the marriage and the assembly acclaims it.",
+      "section_key": "marriage_acclamation"
+    },
+    {
+      "id": "blessing_of_couple",
+      "type": "canonical_slot",
+      "note": "The minister blesses the couple.",
+      "section_key": "marriage_blessing_of_couple"
+    },
+    {
+      "id": "prayers_heading",
+      "type": "heading",
+      "text": "PRAYERS"
+    },
+    {
+      "id": "prayers_of_intercession",
+      "type": "proper_slot",
+      "title": "*PRAYERS OF INTERCESSION",
+      "kind": "prayers_of_intercession"
+    },
+    {
+      "id": "lords_prayer",
+      "type": "literal_text",
+      "title": "*LORD'S PRAYER",
+      "note": "Public-domain traditional 'Our Father' wording (elw.lords_prayer constant); always renders regardless of entitlement.",
+      "text_ref": "elw.lords_prayer",
+      "style": "unison"
+    },
+    {
+      "id": "sending_heading",
+      "type": "heading",
+      "text": "SENDING"
+    },
+    {
+      "id": "blessing",
+      "type": "proper_slot",
+      "title": "*BLESSING",
+      "kind": "blessing"
+    },
+    {
+      "id": "dismissal",
+      "type": "proper_slot",
+      "title": "DISMISSAL",
+      "kind": "dismissal"
+    },
+    {
+      "id": "copyright",
+      "type": "literal_text",
+      "note": "profile.copyright_paragraphs (bulletin only). Profile-driven chrome.",
+      "profile_ref": "copyright_paragraphs",
+      "style": "plain"
+    }
+  ]
+}

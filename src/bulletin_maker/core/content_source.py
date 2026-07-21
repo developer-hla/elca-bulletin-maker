@@ -58,6 +58,25 @@ PULL_ATOM_CODES: Dict[str, str] = {
     # Demonstration mapping (CS-2): a Library creed key used only in tests, so
     # the pull path is exercised end-to-end without touching any Sunday render.
     "library.apostles_creed": "lbwApostlesCreed",
+    # Occasion canonical_slot section keys (skeleton layer): placeholder-only in
+    # the bundle by design — no copyrighted wording is stored for them.  They
+    # resolve to ENTITLEMENT_PLACEHOLDER until the pull layer injects an
+    # ``sns_fetch``; the atom-code values below are stable placeholders the pull
+    # layer replaces with the real S&S Library codes once discovered.  None are
+    # ``elw.*`` / ``house.*`` Sunday-ordinary keys, so no bundled render changes.
+    "funeral_greeting": "funeral_greeting",
+    "funeral_thanksgiving_for_baptism": "funeral_thanksgiving_for_baptism",
+    "funeral_prayer_of_the_day": "funeral_prayer_of_the_day",
+    "funeral_apostles_creed": "funeral_apostles_creed",
+    "funeral_commendation": "funeral_commendation",
+    "marriage_greeting": "marriage_greeting",
+    "marriage_introduction": "marriage_introduction",
+    "marriage_declaration_of_intention": "marriage_declaration_of_intention",
+    "marriage_prayer": "marriage_prayer",
+    "marriage_vows": "marriage_vows",
+    "marriage_giving_of_rings": "marriage_giving_of_rings",
+    "marriage_acclamation": "marriage_acclamation",
+    "marriage_blessing_of_couple": "marriage_blessing_of_couple",
 }
 
 # Scripture / reading resolution is intentionally NOT gated here (CS-1).

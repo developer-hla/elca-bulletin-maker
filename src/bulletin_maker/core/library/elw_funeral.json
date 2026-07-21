@@ -1,0 +1,176 @@
+{
+  "id": "elw_funeral",
+  "church_id": null,
+  "name": "ELW Funeral (in-church, no communion)",
+  "tradition": "elca",
+  "occasion": "funeral",
+  "base_rite_id": null,
+  "version": 1,
+  "meta": {
+    "role_labels": {"leader": "P", "congregation": "C"},
+    "notes": "SKELETON layer of the ELW Funeral (Burial of the Dead), in-church form without communion. This layer is the robust, always-works foundation: it fixes the ordo structure, chrome, public-domain scripture reading slots, the public-domain traditional Lord's Prayer, and per-service variables. It bundles NO copyrighted ELW / Sundays & Seasons liturgical prose. Each canonical (copyrighted) section is an EMPTY keyed canonical_slot resolved at render time through core/content_source.resolve_text(section_key): a later pull layer auto-fills the canonical text from the church's licensed Sundays & Seasons account; failing that it falls back to a church-saved custom text; failing that it renders the entitlement placeholder. Source ordo verified against the Sundays & Seasons rite elw_funeralNoCommunion (see docs/research/2026-07-liturgy-strategy/snapshots/funeral_no_communion.sha256.txt for the source snapshot hash and this rite's section_key list). Reading slots and the psalm are per-service variables filled from the day's appointments; the Apostles' Creed slot notes that a public-domain traditional form may substitute for the copyrighted ecumenical wording.",
+    "variables": [
+      {"key": "deceased_name", "label": "Name of the person who has died", "type": "text", "required": true}
+    ]
+  },
+  "blocks": [
+    {
+      "id": "cover",
+      "type": "literal_text",
+      "note": "Composite cover page from CongregationProfile (church name/address, cover image, service date). Identity/chrome, not liturgical text.",
+      "profile_ref": "cover"
+    },
+    {
+      "id": "welcome_message",
+      "type": "literal_text",
+      "note": "profile.welcome_message paragraph.",
+      "profile_ref": "welcome_message",
+      "style": "plain"
+    },
+    {
+      "id": "standing_instructions",
+      "type": "literal_text",
+      "note": "profile.standing_instructions ('* = please stand').",
+      "profile_ref": "standing_instructions",
+      "style": "plain"
+    },
+    {
+      "id": "service_title",
+      "type": "heading",
+      "text": "FUNERAL SERVICE FOR {{deceased_name}}"
+    },
+    {
+      "id": "gathering_heading",
+      "type": "heading",
+      "text": "GATHERING"
+    },
+    {
+      "id": "greeting",
+      "type": "canonical_slot",
+      "note": "The minister greets the assembly.",
+      "section_key": "funeral_greeting"
+    },
+    {
+      "id": "thanksgiving_for_baptism",
+      "type": "canonical_slot",
+      "note": "Thanksgiving for baptism and remembrance of the baptized.",
+      "section_key": "funeral_thanksgiving_for_baptism"
+    },
+    {
+      "id": "prayer_of_the_day",
+      "type": "canonical_slot",
+      "note": "The minister prays the prayer of the day.",
+      "section_key": "funeral_prayer_of_the_day"
+    },
+    {
+      "id": "word_heading",
+      "type": "heading",
+      "text": "WORD"
+    },
+    {
+      "id": "first_reading",
+      "type": "reading_slot",
+      "title": "First Reading",
+      "note": "Appointed first reading; citation and text from the day's appointment.",
+      "slot": "first",
+      "render": "full"
+    },
+    {
+      "id": "psalm",
+      "type": "psalm",
+      "title": "Psalm",
+      "note": "Appointed psalm, read responsively.",
+      "source": "slot",
+      "style": "responsive"
+    },
+    {
+      "id": "second_reading",
+      "type": "reading_slot",
+      "title": "Second Reading",
+      "note": "Appointed second reading; citation and text from the day's appointment.",
+      "slot": "second",
+      "render": "full"
+    },
+    {
+      "id": "gospel_acclamation_rubric",
+      "type": "rubric",
+      "text": "The assembly stands. A gospel acclamation is sung."
+    },
+    {
+      "id": "gospel",
+      "type": "reading_slot",
+      "title": "*GOSPEL",
+      "note": "Appointed gospel; citation and text from the day's appointment.",
+      "slot": "gospel",
+      "render": "full"
+    },
+    {
+      "id": "sermon_rubric",
+      "type": "rubric",
+      "text": "The assembly is seated. The sermon follows."
+    },
+    {
+      "id": "hymn_of_the_day",
+      "type": "hymn_slot",
+      "title": "*HYMN OF THE DAY",
+      "note": "Hymn of the day; render mode is per-document renderer-side.",
+      "slot": "custom",
+      "render": "ref"
+    },
+    {
+      "id": "apostles_creed",
+      "type": "canonical_slot",
+      "note": "The assembly confesses the ecumenical Apostles' Creed; a public-domain traditional form also exists and may substitute.",
+      "section_key": "funeral_apostles_creed"
+    },
+    {
+      "id": "prayers_of_intercession",
+      "type": "proper_slot",
+      "title": "*PRAYERS OF INTERCESSION",
+      "kind": "prayers_of_intercession"
+    },
+    {
+      "id": "commendation_heading",
+      "type": "heading",
+      "text": "COMMENDATION"
+    },
+    {
+      "id": "commendation",
+      "type": "canonical_slot",
+      "note": "The minister leads the commendation of the one who has died.",
+      "section_key": "funeral_commendation"
+    },
+    {
+      "id": "lords_prayer",
+      "type": "literal_text",
+      "title": "*LORD'S PRAYER",
+      "note": "Public-domain traditional 'Our Father' wording (elw.lords_prayer constant); always renders regardless of entitlement.",
+      "text_ref": "elw.lords_prayer",
+      "style": "unison"
+    },
+    {
+      "id": "sending_heading",
+      "type": "heading",
+      "text": "SENDING"
+    },
+    {
+      "id": "blessing",
+      "type": "proper_slot",
+      "title": "*BLESSING",
+      "kind": "blessing"
+    },
+    {
+      "id": "dismissal",
+      "type": "proper_slot",
+      "title": "DISMISSAL",
+      "kind": "dismissal"
+    },
+    {
+      "id": "copyright",
+      "type": "literal_text",
+      "note": "profile.copyright_paragraphs (bulletin only). Profile-driven chrome.",
+      "profile_ref": "copyright_paragraphs",
+      "style": "plain"
+    }
+  ]
+}
