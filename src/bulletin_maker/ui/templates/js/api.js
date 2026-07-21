@@ -130,6 +130,19 @@ export var api = (function() {
             return req("POST", "/api/rites/" + encodeURIComponent(riteId) +
                        "/preview", context);
         },
+        get_rite_sections: function(riteId) {
+            return req("GET", "/api/rites/" + encodeURIComponent(riteId) +
+                       "/sections");
+        },
+        save_rite_section: function(riteId, sectionKey, text) {
+            return req("POST", "/api/rites/" + encodeURIComponent(riteId) +
+                       "/sections/" + encodeURIComponent(sectionKey),
+                       { text: text });
+        },
+        delete_rite_section: function(riteId, sectionKey) {
+            return req("DELETE", "/api/rites/" + encodeURIComponent(riteId) +
+                       "/sections/" + encodeURIComponent(sectionKey));
+        },
         export_rite_url: function(riteId) {
             return "/api/rites/" + encodeURIComponent(riteId) + "/export";
         },

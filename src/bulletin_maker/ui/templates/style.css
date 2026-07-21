@@ -1784,3 +1784,57 @@ button.text-panel-header:focus-visible {
 .rite-preview-item.hidden-block {
     color: var(--text-light);
 }
+
+.rite-section-fill {
+    margin-top: 8px;
+    padding: 10px;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+}
+
+.rite-section-fill .section-hint {
+    margin: 6px 0;
+    font-size: 12px;
+}
+
+.rite-section-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--border);
+    color: var(--text-light);
+}
+
+.rite-section-badge.status-sns {
+    background: #e3f0e6;
+    color: #256029;
+}
+
+.rite-section-badge.status-custom {
+    background: #e2ecf7;
+    color: #1a4a7a;
+}
+
+.rite-section-badge.status-unmapped {
+    background: var(--border);
+    color: var(--text-light);
+}
+
+.rite-section-badge.status-needs {
+    background: #fbe6c8;
+    color: #8a4b00;
+    box-shadow: 0 0 0 2px #f0a94b;
+}
+
+.rite-section-text {
+    margin-top: 4px;
+}
+
+.rite-section-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 6px;
+}
