@@ -21,15 +21,60 @@ This module owns two renderer-side concerns:
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from bulletin_maker.core.library import SUNDAY_COMMUNION_RITE_ID, load_rite
+from bulletin_maker.core.library import (
+    HOLY_BAPTISM_MODULE_ID,
+    SUNDAY_COMMUNION_RITE_ID,
+    load_modules,
+    load_rite,
+)
 from bulletin_maker.core.models import ServiceConfig
-from bulletin_maker.core.rite import Rite, condition_applies
+from bulletin_maker.core.rite import (
+    Block,
+    Rite,
+    RiteModule,
+    RoleLabels,
+    condition_applies,
+)
+from bulletin_maker.core.text_catalog import get_text
+from bulletin_maker.renderer.static_text import DialogRole
 from bulletin_maker.sns.models import (
     CANTICLE_GLORY_TO_GOD,
     CANTICLE_THIS_IS_THE_FEAST,
 )
+
+# A resolved render unit is either a bare block id (str) — dispatched by id in
+# the document template, exactly as before — or an *embedded* block dict tagged
+# ``{"embedded": True, ...}``, dispatched generically by ``type`` via the
+# ``render_block`` template macro.  Embedded units only ever arise from
+# expanding a generic ``module_ref`` (see ``_collect``); a rite whose only
+# module_ref is baptism (a macro-rendered module) yields only bare ids, so its
+# output is byte-identical to before.
+Unit = Union[str, Dict[str, Any]]
+
+
+class RiteEmbedError(RuntimeError):
+    """A ``module_ref`` could not be embedded (cycle, too deep, or unknown)."""
+
+
+# Modules with a bespoke, byte-frozen macro renderer in the templates stay
+# id-dispatched: their ``module_ref`` emits the block id (e.g. "baptism" ->
+# ``m.baptism_rite(...)``) untouched.  Every *other* module_ref is expanded
+# generically into its blocks, rendered by type.  This is what keeps existing
+# rites byte-identical — the only library module_ref is baptism.
+MACRO_RENDERED_MODULES = frozenset({HOLY_BAPTISM_MODULE_ID})
+
+# Recursion guard for nested module_refs (cycle detection also applies).
+_MAX_EMBED_DEPTH = 8
+
+# Map a text-catalog dialogue role (DialogRole.value) to a rite schema role.
+_SCHEMA_ROLE_OF: Dict[str, str] = {
+    DialogRole.PASTOR.value: "leader",
+    DialogRole.CONGREGATION.value: "congregation",
+    DialogRole.INSTRUCTION.value: "instruction",
+    DialogRole.NONE.value: "none",
+}
 
 # Renderer-side pagination: consecutive blocks a document wraps in a single
 # ``.flow-group`` so they stay together across a page break.  Each tuple mirrors
@@ -122,32 +167,165 @@ def build_condition_context(
     return {"season": season_id, "feasts": [], "toggles": toggles}
 
 
-def _visible_block_ids(rite: Rite, context: Dict[str, Any]) -> List[str]:
+@lru_cache(maxsize=None)
+def _library_modules() -> Dict[str, RiteModule]:
+    return load_modules()
+
+
+def _dialogue_lines(data: Dict[str, Any]) -> List[Dict[str, str]]:
+    """Normalize a dialogue block's lines to ``[{role, text}]`` schema roles.
+
+    Inline ``lines`` are already schema-shaped; a ``text_ref`` resolves to
+    catalog ``(DialogRole, text)`` tuples, mapped back to the schema roles.
+    """
+    if "lines" in data:
+        return [
+            {"role": line.get("role", "none"), "text": line["text"]}
+            for line in data["lines"]
+        ]
+    resolved = get_text(data["text_ref"])
     return [
-        block.id
-        for block in rite.blocks
-        if block.enabled and condition_applies(block.condition, context)
+        {"role": _SCHEMA_ROLE_OF[role.value], "text": text}
+        for role, text in resolved
     ]
 
 
+def _literal_text(data: Dict[str, Any]) -> str:
+    if "text" in data:
+        return data["text"]
+    if "text_ref" in data:
+        return get_text(data["text_ref"])
+    return ""
+
+
+def _slot_heading(block: Block) -> str:
+    if block.title:
+        return block.title
+    d = block.data
+    label = d.get("slot") or d.get("kind") or d.get("piece") or block.type
+    return str(label).replace("_", " ").upper()
+
+
+def _embed_unit(block: Block, labels: RoleLabels) -> Dict[str, Any]:
+    """Build a type-dispatched embedded render unit from a module block."""
+    unit: Dict[str, Any] = {
+        "embedded": True,
+        "id": block.id,
+        "type": block.type,
+        "title": block.title,
+    }
+    if block.type in ("heading", "rubric"):
+        unit["text"] = block.data.get("text", "")
+    elif block.type == "literal_text":
+        unit["text"] = _literal_text(block.data)
+        unit["style"] = block.data.get("style", "plain")
+    elif block.type == "dialogue":
+        unit["lines"] = _dialogue_lines(block.data)
+        unit["leader_label"] = labels.leader
+        unit["congregation_label"] = labels.congregation
+    else:
+        # hymn_slot / reading_slot / psalm / proper_slot / notation /
+        # music_item resolve their content from renderer-side context, which is
+        # not available for an arbitrary embedded module; represent the block by
+        # its structural heading (per-slot content resolution is a follow-on).
+        unit["heading"] = _slot_heading(block)
+    return unit
+
+
+def _lookup_module(
+    block: Block,
+    module_id: Optional[str],
+    modules: Dict[str, RiteModule],
+    stack: Tuple[str, ...],
+) -> RiteModule:
+    if module_id in stack:
+        chain = " -> ".join(stack + (module_id,))
+        raise RiteEmbedError("module_ref cycle detected: %s" % chain)
+    if len(stack) >= _MAX_EMBED_DEPTH:
+        raise RiteEmbedError(
+            "module_ref nesting exceeds max depth %d (at block %r)"
+            % (_MAX_EMBED_DEPTH, block.id)
+        )
+    module = modules.get(module_id)
+    if module is None:
+        raise RiteEmbedError(
+            "module_ref block %r references unknown module %r"
+            % (block.id, module_id)
+        )
+    return module
+
+
+def _collect(
+    blocks: List[Block],
+    context: Dict[str, Any],
+    modules: Dict[str, RiteModule],
+    labels: RoleLabels,
+    stack: Tuple[str, ...],
+    embed: bool,
+) -> List[Unit]:
+    """Flatten ``blocks`` (condition-filtered) into render units.
+
+    Top-level rite blocks emit bare ids (id-dispatched, unchanged).  A
+    macro-rendered ``module_ref`` (baptism) also emits its bare id.  Any other
+    ``module_ref`` expands into the module's blocks, which — being embedded —
+    emit type-dispatched unit dicts (recursively, with a recursion guard).
+    """
+    units: List[Unit] = []
+    for block in blocks:
+        if not block.enabled or not condition_applies(block.condition, context):
+            continue
+        if block.type == "module_ref":
+            module_id = block.data.get("module_id")
+            if module_id in MACRO_RENDERED_MODULES:
+                units.append(block.id)
+                continue
+            module = _lookup_module(block, module_id, modules, stack)
+            units.extend(
+                _collect(
+                    module.blocks, context, modules, labels,
+                    stack + (module_id,), embed=True,
+                )
+            )
+            continue
+        units.append(_embed_unit(block, labels) if embed else block.id)
+    return units
+
+
+def _resolve_units(
+    rite: Rite, context: Dict[str, Any], modules: Dict[str, RiteModule],
+) -> List[Unit]:
+    return _collect(
+        rite.blocks, context, modules, rite.role_labels, (), embed=False,
+    )
+
+
 def _group(
-    block_ids: List[str], flow_group_of: Dict[str, int],
+    units: List[Unit], flow_group_of: Dict[str, int],
 ) -> List[Dict[str, Any]]:
-    """Wrap consecutive same-flow-group block ids; others render standalone."""
+    """Wrap consecutive same-flow-group block ids; others render standalone.
+
+    Embedded units (dicts) are always standalone and break any flow run — they
+    carry no flow-group membership (that grouping is keyed by the fixed
+    document block ids).
+    """
     items: List[Dict[str, Any]] = []
     index = 0
-    count = len(block_ids)
+    count = len(units)
     while index < count:
-        block_id = block_ids[index]
-        group_key = flow_group_of.get(block_id)
+        unit = units[index]
+        group_key = None if isinstance(unit, dict) else flow_group_of.get(unit)
         if group_key is None:
-            items.append({"flow": False, "ids": [block_id]})
+            items.append({"flow": False, "ids": [unit]})
             index += 1
             continue
-        run = [block_id]
+        run = [unit]
         cursor = index + 1
-        while cursor < count and flow_group_of.get(block_ids[cursor]) == group_key:
-            run.append(block_ids[cursor])
+        while (
+            cursor < count
+            and not isinstance(units[cursor], dict)
+            and flow_group_of.get(units[cursor]) == group_key
+        ):
+            run.append(units[cursor])
             cursor += 1
         items.append({"flow": True, "ids": run})
         index = cursor
@@ -155,20 +333,27 @@ def _group(
 
 
 def resolve_bulletin_sequence(
-    config: ServiceConfig, season_id: str,
+    config: ServiceConfig,
+    season_id: str,
+    modules: Optional[Dict[str, RiteModule]] = None,
 ) -> List[Dict[str, Any]]:
     """Return the bulletin's render sequence: ordered, condition-filtered blocks.
 
-    Each item is ``{"flow": bool, "ids": [block_id, ...]}``; ``flow`` items are
-    wrapped in a ``.flow-group`` div by the template.
+    Each item is ``{"flow": bool, "ids": [unit, ...]}``.  A unit is a bare block
+    id (str, id-dispatched) or an embedded block dict (type-dispatched via the
+    ``render_block`` macro); ``flow`` items are wrapped in a ``.flow-group`` div
+    by the template.  ``modules`` overrides the bundled library modules (tests).
     """
     context = build_condition_context(config, season_id)
     rite = _resolve_rite(config)
-    return _group(_visible_block_ids(rite, context), _BULLETIN_FLOW_GROUP_OF)
+    modules = _library_modules() if modules is None else modules
+    return _group(_resolve_units(rite, context, modules), _BULLETIN_FLOW_GROUP_OF)
 
 
 def resolve_large_print_sequence(
-    config: ServiceConfig, season_id: str,
+    config: ServiceConfig,
+    season_id: str,
+    modules: Optional[Dict[str, RiteModule]] = None,
 ) -> List[Dict[str, Any]]:
     """Return the large-print / leader-guide render sequence.
 
@@ -179,4 +364,7 @@ def resolve_large_print_sequence(
     """
     context = build_condition_context(config, season_id)
     rite = _resolve_rite(config)
-    return _group(_visible_block_ids(rite, context), _LARGE_PRINT_FLOW_GROUP_OF)
+    modules = _library_modules() if modules is None else modules
+    return _group(
+        _resolve_units(rite, context, modules), _LARGE_PRINT_FLOW_GROUP_OF,
+    )

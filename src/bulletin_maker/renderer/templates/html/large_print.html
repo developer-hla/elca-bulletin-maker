@@ -57,6 +57,10 @@
 {% if item.flow %}<div class="flow-group">{% endif %}
 {% for bid in item.ids %}
 
+{% if bid is mapping %}
+{{ m.render_block(bid, heading_class="liturgy-heading") }}
+{% else %}
+
 {% if bid == "cover" %}
 {{ m.cover(church_name, church_address, cover_image_uri, service_time,
            date_display, day_name,
@@ -480,6 +484,8 @@
 <div class="liturgy-heading"><span>*POSTLUDE</span></div>
 {% if postlude_title %}
 {{ m.music_line(postlude_title, postlude_composer, postlude_performer, em=false, css_class="music-citation") }}
+{% endif %}
+
 {% endif %}
 
 {% endif %}

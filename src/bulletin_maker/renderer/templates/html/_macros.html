@@ -107,6 +107,41 @@
 {% endmacro %}
 
 
+{# ── Generic by-type embedded block renderer ──
+   Renders a block embedded from a module_ref (see rite_resolver `_embed_unit`)
+   by its `type`, reusing the id-dispatched markup conventions. `heading_class`
+   is the document's heading taxonomy ("section-heading" bulletin /
+   "liturgy-heading" large print). This path is used ONLY for embedded units;
+   the fixed document blocks keep their bespoke id-dispatched markup. #}
+{% macro render_block(unit, heading_class="section-heading") %}
+{% if unit.type == "heading" %}
+<div class="{{ heading_class }}"><span>{{ unit.text }}</span></div>
+{% elif unit.type == "rubric" %}
+<p class="instruction">{{ unit.text }}</p>
+{% elif unit.type == "literal_text" %}
+{% if unit.style == "unison" %}
+<p><strong>{{ unit.text | terminal_amen(false) }}</strong></p>
+{% else %}
+<p>{{ unit.text | terminal_amen }}</p>
+{% endif %}
+{% elif unit.type == "dialogue" %}
+{% for line in unit.lines %}
+{% if line.role == "leader" %}
+<p><span class="role-label">{{ unit.leader_label }}: </span>{{ line.text | terminal_amen }}</p>
+{% elif line.role == "congregation" %}
+<p><strong>{{ unit.congregation_label }}: {{ line.text | terminal_amen(false) }}</strong></p>
+{% elif line.role == "instruction" %}
+<p class="instruction">{{ line.text }}</p>
+{% else %}
+<p>{{ line.text | terminal_amen }}</p>
+{% endif %}
+{% endfor %}
+{% else %}
+<div class="{{ heading_class }}"><span>{{ unit.heading }}</span></div>
+{% endif %}
+{% endmacro %}
+
+
 {# ── Music citation line (prelude/offertory/postlude/choral) ── #}
 {% macro music_line(title, composer="", performer="", em=true, css_class="") %}
 <p{% if css_class %} class="{{ css_class }}"{% endif %}>{% if em %}<em>{{ title }}</em>{% else %}{{ title }}{% endif %}{% if composer %} &mdash; {{ composer }}{% endif %}{% if performer %} / {{ performer }}{% endif %}</p>

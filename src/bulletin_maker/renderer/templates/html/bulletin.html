@@ -19,6 +19,10 @@
 {% if item.flow %}<div class="flow-group">{% endif %}
 {% for bid in item.ids %}
 
+{% if bid is mapping %}
+{{ m.render_block(bid, heading_class="section-heading") }}
+{% else %}
+
 {% if bid == "cover" %}
 {{ m.cover(church_name, church_address, cover_image_uri, service_time,
            date_display, day_name) }}
@@ -417,6 +421,8 @@
     <p>{{ para }}</p>
 {% endfor %}
 </div>
+
+{% endif %}
 
 {% endif %}
 
