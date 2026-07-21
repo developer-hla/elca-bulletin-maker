@@ -37,7 +37,7 @@ from pathlib import Path
 import pytest
 
 from bulletin_maker.core.calendar import (
-    CALENDAR_PROVIDER_KEYS,
+    calendar_provider_keys,
     DEFAULT_CALENDAR_PROVIDER,
     get_calendar_provider,
 )
@@ -141,7 +141,7 @@ def test_matches_sns_fixture_day():
 
 
 def test_registered_and_opt_in():
-    assert "rcl" in CALENDAR_PROVIDER_KEYS
+    assert "rcl" in calendar_provider_keys()
     assert isinstance(get_calendar_provider("rcl"), RclCalendarProvider)
     assert DEFAULT_CALENDAR_PROVIDER == "sns"  # rcl never becomes the default
 
@@ -156,3 +156,22 @@ def test_ignores_extra_context(provider):
     server passes one uniformly) is ignored, not an error."""
     day = provider.resolve("2026-07-19", day=object())
     assert day.day_name == "Lectionary 16"
+
+
+def test_rcl_calendar_importable_first_no_cycle():
+    """Regression: importing rcl_calendar as the FIRST bulletin_maker import
+    used to crash on a circular import. A fresh interpreter must load it, and
+    the provider must be registered + resolvable + present in the keys."""
+    import subprocess, sys, os
+    code = (
+        "import bulletin_maker.core.rcl_calendar\n"
+        "from bulletin_maker.core.calendar import get_calendar_provider, calendar_provider_keys\n"
+        "ld = get_calendar_provider('rcl').resolve('2026-7-19')\n"
+        "assert ld.day_name == 'Lectionary 16', ld.day_name\n"
+        "assert 'rcl' in calendar_provider_keys()\n"
+        "print('ok')\n"
+    )
+    env = dict(os.environ, PYTHONPATH="src")
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, env=env)
+    assert r.returncode == 0, r.stderr
+    assert "ok" in r.stdout

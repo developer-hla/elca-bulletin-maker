@@ -11,7 +11,7 @@ from __future__ import annotations
 import pytest
 
 from bulletin_maker.core.calendar import (
-    CALENDAR_PROVIDER_KEYS,
+    calendar_provider_keys,
     NEUTRAL_SEASON,
     ManualCalendarProvider,
     SeasonId,
@@ -162,7 +162,7 @@ class TestGetCalendarProvider:
             get_calendar_provider("rcl_local")
 
     def test_known_keys(self):
-        assert CALENDAR_PROVIDER_KEYS == {"sns", "rcl", "manual"}
+        assert calendar_provider_keys() == {"sns", "rcl", "manual"}
 
 
 class TestLiturgicalSeasonOf:

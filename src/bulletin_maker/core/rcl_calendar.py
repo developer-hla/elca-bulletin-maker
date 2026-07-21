@@ -313,3 +313,12 @@ class RclCalendarProvider(CalendarProvider):
         if anchor_season.id == season.id:
             return anchor_name, season
         return season.label or season.id, season
+
+
+# Self-register into the calendar provider registry. At module bottom so
+# RclCalendarProvider is fully defined; setdefault keeps it idempotent. By this
+# point `calendar` is fully imported in both orders (rcl-first: our top-level
+# import of calendar already completed it; calendar-first: it triggered our
+# import only after finishing). See calendar._ensure_providers_loaded.
+from bulletin_maker.core import calendar as _calendar  # noqa: E402
+_calendar._PROVIDERS.setdefault("rcl", RclCalendarProvider())

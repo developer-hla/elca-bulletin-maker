@@ -34,7 +34,7 @@ from fastapi.staticfiles import StaticFiles
 
 from bulletin_maker.core import library as rite_library
 from bulletin_maker.core.calendar import (
-    CALENDAR_PROVIDER_KEYS,
+    calendar_provider_keys,
     get_calendar_provider,
 )
 from bulletin_maker.core.content_views import (
@@ -530,7 +530,7 @@ def create_app() -> FastAPI:
                 ],
                 "calendar_provider": [
                     {"key": key, "label": CALENDAR_PROVIDER_LABELS[key]}
-                    for key in sorted(CALENDAR_PROVIDER_KEYS)
+                    for key in sorted(calendar_provider_keys())
                 ],
             },
             "is_admin": user["role"] == "admin",
@@ -556,7 +556,7 @@ def create_app() -> FastAPI:
             raise _validation("Choose a liturgical setting from the list.")
         if profile.get("paper_size") not in PAPER_PRESETS:
             raise _validation("Choose a paper size from the list.")
-        if profile.get("calendar_provider") not in CALENDAR_PROVIDER_KEYS:
+        if profile.get("calendar_provider") not in calendar_provider_keys():
             raise _validation("Choose a calendar provider from the list.")
         if not (profile.get("church_name") or "").strip():
             raise _validation("The church name cannot be empty.")

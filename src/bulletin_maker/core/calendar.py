@@ -263,22 +263,38 @@ class ManualCalendarProvider(CalendarProvider):
         )
 
 
-# Imported after the base types above are defined (rcl_calendar imports them
-# from this module) so registration doesn't create an import cycle. The rcl
-# provider computes the RCL temporal day from a date (LWS-3b); it is opt-in
-# via church.calendar_provider and never on the default ("sns") path.
-from bulletin_maker.core.rcl_calendar import RclCalendarProvider  # noqa: E402
-
 _PROVIDERS: Dict[str, CalendarProvider] = {
     provider.key: provider
     for provider in (
         SnsCalendarProvider(),
         ManualCalendarProvider(),
-        RclCalendarProvider(),
     )
 }
 
-CALENDAR_PROVIDER_KEYS: FrozenSet[str] = frozenset(_PROVIDERS)
+# Opt-in providers live in their own modules and self-register into _PROVIDERS.
+# They import the base types from THIS module, so this module must not import
+# them at load time (that would create a cycle that breaks whichever module is
+# imported first). Instead they are loaded lazily the first time the registry
+# is consulted, which is correct regardless of import order.
+_BUILTIN_PROVIDER_MODULES = ("bulletin_maker.core.rcl_calendar",)
+_providers_loaded = False
+
+
+def _ensure_providers_loaded() -> None:
+    global _providers_loaded
+    if _providers_loaded:
+        return
+    _providers_loaded = True
+    import importlib
+    for module_name in _BUILTIN_PROVIDER_MODULES:
+        importlib.import_module(module_name)
+
+
+def calendar_provider_keys() -> FrozenSet[str]:
+    """Registered calendar-provider keys (loads opt-in providers first)."""
+    _ensure_providers_loaded()
+    return frozenset(_PROVIDERS)
+
 
 DEFAULT_CALENDAR_PROVIDER = "sns"
 
@@ -289,10 +305,11 @@ def get_calendar_provider(key: str) -> CalendarProvider:
     Fails fast on an unknown key — a typo in a church profile must never
     silently fall back to a different calendar behavior.
     """
+    _ensure_providers_loaded()
     try:
         return _PROVIDERS[key]
     except KeyError:
         raise BulletinError(
             "Unknown calendar provider %r (known: %s)"
-            % (key, ", ".join(sorted(CALENDAR_PROVIDER_KEYS)))
+            % (key, ", ".join(sorted(calendar_provider_keys())))
         ) from None
