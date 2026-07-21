@@ -18,6 +18,22 @@ import { SEASON_LABELS } from "./state.js";
 // Which block types carry directly-editable text, and where it lives.
 var HEADING_TEXT_TYPES = ["heading", "rubric"];
 
+// Per-section fill status → its badge label and CSS modifier.
+var SECTION_STATUS_META = {
+    s_and_s: { label: "Pulls from Sundays & Seasons", cls: "status-sns" },
+    needs_fill: { label: "Needs your text", cls: "status-needs" },
+    custom: { label: "Custom text saved", cls: "status-custom" },
+    unmapped: { label: "Not auto-filled", cls: "status-unmapped" },
+};
+
+var SECTION_FILL_HELP = "Filled automatically from your Sundays & Seasons "
+    + "service, in the order you set here. Enter text below only to override "
+    + "that, or when a section can't be pulled — it's saved and reused every "
+    + "service.";
+
+// section_key → the latest status object from GET /api/rites/{id}/sections.
+var sectionStatuses = {};
+
 function panel() { return $("#rite-editor-panel"); }
 
 export function showRiteEditorPanel(visible) {
@@ -176,6 +192,7 @@ function openRiteObject(rite) {
     var roles = (rite.meta && rite.meta.role_labels) || {};
     $("#rite-role-leader").value = roles.leader || "P";
     $("#rite-role-congregation").value = roles.congregation || "C";
+    sectionStatuses = {};
     renderBlocks(rite);
     hide($("#rite-saved"));
     hideError($("#rite-save-error"));
@@ -183,6 +200,23 @@ function openRiteObject(rite) {
     buildPreviewControls(rite);
     show($("#rite-preview-card"));
     $("#rite-edit-card").scrollIntoView({ behavior: "smooth" });
+    loadRiteSections(rite);
+}
+
+function isCanonicalSlot(block) { return block.type === "canonical_slot"; }
+
+async function loadRiteSections(rite) {
+    if (!rite.blocks.some(isCanonicalSlot)) return;
+    var result = await api.get_rite_sections(rite.id);
+    // Status is auxiliary — a failed fetch leaves the editor fully usable.
+    if (!result.success) return;
+    indexSections(result.sections);
+    renderBlocks(rite);
+}
+
+function indexSections(sections) {
+    sectionStatuses = {};
+    sections.forEach(function(s) { sectionStatuses[s.section_key] = s; });
 }
 
 function renderBlocks(rite) {
@@ -204,10 +238,97 @@ function blockRow(rite, block, index) {
     main.appendChild(blockHeader(block));
     var textEditor = blockTextEditor(block);
     if (textEditor) main.appendChild(textEditor);
+    if (isCanonicalSlot(block)) main.appendChild(sectionEditor(rite, block));
     main.appendChild(conditionEditor(block));
     row.appendChild(main);
 
     return row;
+}
+
+// ── Canonical-slot fill / save / reuse ────────────────────────────────
+
+function sectionEditor(rite, block) {
+    var wrap = document.createElement("div");
+    wrap.className = "rite-section-fill";
+    renderSectionEditor(wrap, rite, block);
+    return wrap;
+}
+
+function renderSectionEditor(wrap, rite, block) {
+    var info = sectionStatuses[block.section_key];
+    wrap.innerHTML = "";
+    wrap.appendChild(sectionBadge(info));
+    wrap.appendChild(hint(SECTION_FILL_HELP));
+    // Members see status only; writes are admin-only (mirrors the editor gate).
+    if (!state.isAdmin) return;
+
+    var ta = document.createElement("textarea");
+    ta.className = "rite-block-text rite-section-text";
+    ta.rows = 3;
+    ta.placeholder = "Enter this church's wording for this section…";
+    ta.value = (info && info.override_text) || "";
+    wrap.appendChild(ta);
+
+    var err = document.createElement("div");
+    err.className = "error-msg";
+    err.hidden = true;
+
+    var actions = document.createElement("div");
+    actions.className = "rite-section-actions";
+    actions.appendChild(button("Save text", "btn secondary", function() {
+        saveSection(rite, block, ta, wrap, err);
+    }));
+    var clearBtn = button("Clear", "btn-link", function() {
+        clearSection(rite, block, wrap, err);
+    });
+    clearBtn.disabled = !(info && info.has_override);
+    actions.appendChild(clearBtn);
+    wrap.appendChild(actions);
+    wrap.appendChild(err);
+}
+
+function sectionBadge(info) {
+    var badge = document.createElement("span");
+    badge.className = "rite-section-badge";
+    if (!info) {
+        badge.textContent = "Checking…";
+        return badge;
+    }
+    var meta = SECTION_STATUS_META[info.status] || SECTION_STATUS_META.unmapped;
+    badge.classList.add(meta.cls);
+    badge.textContent = meta.label;
+    return badge;
+}
+
+async function saveSection(rite, block, ta, wrap, err) {
+    hideError(err);
+    var text = ta.value.trim();
+    if (!text) {
+        showError(err, "Enter some text before saving.");
+        return;
+    }
+    var result = await api.save_rite_section(rite.id, block.section_key, text);
+    if (!result.success) {
+        showError(err, result.error || "Could not save this section.");
+        return;
+    }
+    await refreshSection(rite, block, wrap);
+}
+
+async function clearSection(rite, block, wrap, err) {
+    hideError(err);
+    var result = await api.delete_rite_section(rite.id, block.section_key);
+    if (!result.success) {
+        showError(err, result.error || "Could not clear this section.");
+        return;
+    }
+    await refreshSection(rite, block, wrap);
+}
+
+async function refreshSection(rite, block, wrap) {
+    var result = await api.get_rite_sections(rite.id);
+    if (result.success) indexSections(result.sections);
+    renderSectionEditor(wrap, rite, block);
 }
 
 function blockOrderControls(rite, index) {
