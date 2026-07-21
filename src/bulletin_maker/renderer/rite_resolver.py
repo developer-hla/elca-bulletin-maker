@@ -45,7 +45,7 @@ from bulletin_maker.core.rite import (
     condition_applies,
     substitute_variables,
 )
-from bulletin_maker.renderer.static_text import DialogRole
+from bulletin_maker.core.static_text import DialogRole
 from bulletin_maker.sns.models import (
     CANTICLE_GLORY_TO_GOD,
     CANTICLE_THIS_IS_THE_FEAST,

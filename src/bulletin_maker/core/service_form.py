@@ -12,7 +12,7 @@ from typing import Optional
 
 from bulletin_maker.core.models import ServiceConfig
 from bulletin_maker.renderer.season import PrefaceType
-from bulletin_maker.renderer.text_utils import DialogRole
+from bulletin_maker.core.text_utils import DialogRole
 from bulletin_maker.sns.models import HymnLyrics
 
 logger = logging.getLogger(__name__)

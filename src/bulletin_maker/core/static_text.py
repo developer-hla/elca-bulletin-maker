@@ -13,7 +13,7 @@ Ascension overrides S&S for Invitation to Communion.
 
 from __future__ import annotations
 
-from bulletin_maker.renderer.text_utils import DialogRole
+from bulletin_maker.core.text_utils import DialogRole
 
 # ── Liturgical / typographic symbols ──────────────────────────────────
 CROSS = "\u2629"       # ✩  sign of the cross

@@ -345,7 +345,7 @@ def test_invert_flips_result():
 
 
 def test_get_text_returns_constant():
-    from bulletin_maker.renderer.static_text import NICENE_CREED
+    from bulletin_maker.core.static_text import NICENE_CREED
 
     assert get_text("elw.nicene_creed") is NICENE_CREED
 

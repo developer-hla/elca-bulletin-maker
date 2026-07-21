@@ -28,7 +28,7 @@ from psycopg.types.json import Jsonb
 import re
 
 from bulletin_maker.exceptions import BulletinError
-from bulletin_maker.renderer.text_utils import clean_sns_html
+from bulletin_maker.core.text_utils import clean_sns_html
 from bulletin_maker.sns.client import SundaysClient
 from bulletin_maker.sns.models import DayContent, HymnLyrics, HymnResult
 from bulletin_maker.web import db

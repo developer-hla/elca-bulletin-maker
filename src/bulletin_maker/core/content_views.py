@@ -9,12 +9,12 @@ from __future__ import annotations
 import re
 
 from bulletin_maker.exceptions import ContentNotFoundError
-from bulletin_maker.renderer.static_text import (
+from bulletin_maker.core.static_text import (
     AARONIC_BLESSING,
     CONFESSION_AND_FORGIVENESS,
     DISMISSAL_ENTRIES,
 )
-from bulletin_maker.renderer.text_utils import (
+from bulletin_maker.core.text_utils import (
     clean_sns_html,
     group_psalm_verses,
     parse_dialog_html,

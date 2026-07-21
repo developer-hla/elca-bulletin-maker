@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from bulletin_maker.renderer.text_utils import (
+from bulletin_maker.core.text_utils import (
     DialogRole,
     clean_sns_html,
     strip_tags,

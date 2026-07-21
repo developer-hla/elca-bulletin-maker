@@ -36,7 +36,7 @@ from bulletin_maker.renderer.html_renderer import (
     _load_offertory_image_uri,
 )
 from bulletin_maker.renderer.filters import setup_jinja_env
-from bulletin_maker.renderer.static_text import (
+from bulletin_maker.core.static_text import (
     GLORY_TO_GOD_TEXT,
     INVITATION_TO_COMMUNION,
     MEMORIAL_ACCLAMATION,
@@ -48,7 +48,7 @@ from bulletin_maker.sns.models import (
     CANTICLE_THIS_IS_THE_FEAST,
 )
 from bulletin_maker.renderer.season import LiturgicalSeason
-from bulletin_maker.renderer.text_utils import DialogRole
+from bulletin_maker.core.text_utils import DialogRole
 
 
 def _render_seq(*block_ids: str) -> list:

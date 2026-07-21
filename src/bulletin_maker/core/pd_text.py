@@ -24,7 +24,7 @@ See ``docs/research/2026-07-liturgy-strategy/10-pd-text-sourcing.md`` for the
 
 from __future__ import annotations
 
-from bulletin_maker.renderer.text_utils import DialogRole
+from bulletin_maker.core.text_utils import DialogRole
 
 # ── Gospel canticles (King James Version, 1611 — public domain) ────────
 # The KJV is public domain in the United States.  Transcribed verbatim from

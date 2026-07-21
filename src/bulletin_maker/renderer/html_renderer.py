@@ -48,7 +48,7 @@ from bulletin_maker.renderer.image_manager import (
     get_setting_image,
 )
 from bulletin_maker.sns.client import SundaysClient
-from bulletin_maker.renderer.text_utils import (
+from bulletin_maker.core.text_utils import (
     clean_sns_html,
     extract_book_name,
     group_psalm_verses,
@@ -79,7 +79,7 @@ from bulletin_maker.renderer.prayers_parser import (
 # content source (see ``resolve_text`` calls below); the ELW/Setting-Two
 # constants are no longer imported directly here.  ``PRAYERS_INTRO`` is a plain
 # house rubric (not an ELW-catalog text), so it stays a direct import.
-from bulletin_maker.renderer.static_text import PRAYERS_INTRO
+from bulletin_maker.core.static_text import PRAYERS_INTRO
 
 logger = logging.getLogger(__name__)
 

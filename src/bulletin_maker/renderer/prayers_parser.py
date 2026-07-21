@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import re
 
-from bulletin_maker.renderer.static_text import DEFAULT_PRAYERS_CALL, DEFAULT_PRAYERS_RESPONSE
-from bulletin_maker.renderer.text_utils import preprocess_html, strip_tags
+from bulletin_maker.core.static_text import DEFAULT_PRAYERS_CALL, DEFAULT_PRAYERS_RESPONSE
+from bulletin_maker.core.text_utils import preprocess_html, strip_tags
 
 
 def _parse_sections(html: str) -> list[tuple[str, str]]:

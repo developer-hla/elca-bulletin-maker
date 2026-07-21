@@ -32,7 +32,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, FrozenSet
 
-from bulletin_maker.renderer.pd_text import (
+from bulletin_maker.core.pd_text import (
     PD_BENEDICTUS_KJV,
     PD_COMPLINE_OPEN,
     PD_GENERAL_CONFESSION_BCP,
@@ -45,7 +45,7 @@ from bulletin_maker.renderer.pd_text import (
     PD_VERSICLE_MAKE_SPEED,
     PD_VERSICLE_OPEN_LIPS,
 )
-from bulletin_maker.renderer.static_text import (
+from bulletin_maker.core.static_text import (
     AARONIC_BLESSING,
     AGNUS_DEI,
     APOSTLES_CREED,

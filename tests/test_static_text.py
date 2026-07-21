@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import pytest
 
-from bulletin_maker.renderer.text_utils import DialogRole
-from bulletin_maker.renderer.static_text import (
+from bulletin_maker.core.text_utils import DialogRole
+from bulletin_maker.core.static_text import (
     AARONIC_BLESSING,
     AGNUS_DEI,
     APOSTLES_CREED,
