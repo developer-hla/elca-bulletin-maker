@@ -400,21 +400,27 @@ def _resolve_units(
     )
 
 
+def _unit_id(unit: Unit) -> str:
+    """The block id of a render unit — the bare string, or an embedded dict's id."""
+    return unit["id"] if isinstance(unit, dict) else unit
+
+
 def _group(
     units: List[Unit], flow_group_of: Dict[str, int],
 ) -> List[Dict[str, Any]]:
-    """Wrap consecutive same-flow-group block ids; others render standalone.
+    """Wrap consecutive same-flow-group blocks; others render standalone.
 
-    Embedded units (dicts) are always standalone and break any flow run — they
-    carry no flow-group membership (that grouping is keyed by the fixed
-    document block ids).
+    Flow-group membership is keyed by block id, read off both bare-id units and
+    embedded unit dicts (via ``unit["id"]``), so a block migrated from id- to
+    type-dispatch keeps its pagination group.  A block whose id is in no flow
+    group renders standalone regardless of dispatch.
     """
     items: List[Dict[str, Any]] = []
     index = 0
     count = len(units)
     while index < count:
         unit = units[index]
-        group_key = None if isinstance(unit, dict) else flow_group_of.get(unit)
+        group_key = flow_group_of.get(_unit_id(unit))
         if group_key is None:
             items.append({"flow": False, "ids": [unit]})
             index += 1
@@ -423,8 +429,7 @@ def _group(
         cursor = index + 1
         while (
             cursor < count
-            and not isinstance(units[cursor], dict)
-            and flow_group_of.get(units[cursor]) == group_key
+            and flow_group_of.get(_unit_id(units[cursor])) == group_key
         ):
             run.append(units[cursor])
             cursor += 1

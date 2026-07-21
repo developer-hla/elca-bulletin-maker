@@ -47,7 +47,7 @@
       "text": "GATHERING"
     },
     {
-      "id": "greeting",
+      "id": "greeting_slot",
       "type": "canonical_slot",
       "note": "The minister greets the assembly.",
       "section_key": "marriage_greeting"
