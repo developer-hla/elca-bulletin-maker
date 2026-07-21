@@ -91,6 +91,35 @@ _OCCASION_TOP_EMBED_TYPES = frozenset(
     {"heading", "rubric", "canonical_slot", "hymn_slot"}
 )
 
+# ``heading`` is TYPE-dispatched (embedded, via the ``render_block`` macro) for
+# EVERY rite — Sunday included — so no rite needs a per-id heading arm in its
+# template.  Occasion rites additionally embed rubric/canonical_slot/hymn_slot
+# (the set above); those stay Sunday-id-dispatched until AC-3 Phase 2.
+_UNIVERSAL_TOP_EMBED_TYPES = frozenset({"heading"})
+
+# The rendering document, used to pick a heading's per-document class (below).
+# ``large_print`` also drives the leader guide (it shares that template/sequence).
+DOCUMENT_BULLETIN = "bulletin"
+DOCUMENT_LARGE_PRINT = "large_print"
+
+# Bounded presentation data (AC-3): the Sunday headings whose per-block markup
+# a migrated ``heading`` unit must reproduce byte-for-byte.
+#
+# Trailing ``<div class="spacer"></div>`` — identical in both documents (the
+# eucharistic-prayer heading is the only Sunday heading without one).
+_HEADING_SPACER_IDS = frozenset(
+    {"gathering_chimes", "welcome_spoken", "sermon", "announcements"}
+)
+
+# Heading class per (block id, document).  The document's base heading class
+# (``section-heading`` bulletin / ``liturgy-heading`` large print, passed to
+# ``render_block``) covers every heading; only these two Sunday headings diverge
+# from that base and need an explicit override.
+_HEADING_CLASS_OVERRIDES: Dict[Tuple[str, str], str] = {
+    ("eucharistic_prayer_heading", DOCUMENT_BULLETIN): "section-heading red-heading",
+    ("sermon", DOCUMENT_LARGE_PRINT): "scripture-heading",
+}
+
 # Map a text-catalog dialogue role (DialogRole.value) to a rite schema role.
 _SCHEMA_ROLE_OF: Dict[str, str] = {
     DialogRole.PASTOR.value: "leader",
@@ -279,9 +308,19 @@ def resolve_canonical_slot(block: Block, content: ContentContext) -> Any:
     return filled if filled is not None else ENTITLEMENT_PLACEHOLDER
 
 
+def _heading_class(block_id: str, document: str) -> Optional[str]:
+    """The per-document heading class override for ``block_id``, if any.
+
+    ``None`` means the document's base heading class (passed to ``render_block``)
+    applies — the case for every heading except the two in
+    :data:`_HEADING_CLASS_OVERRIDES`.
+    """
+    return _HEADING_CLASS_OVERRIDES.get((block_id, document))
+
+
 def _embed_unit(
     block: Block, labels: RoleLabels, variables: Dict[str, str],
-    content: ContentContext,
+    content: ContentContext, document: str,
 ) -> Dict[str, Any]:
     """Build a type-dispatched embedded render unit from a module block.
 
@@ -295,6 +334,11 @@ def _embed_unit(
     }
     if block.type in ("heading", "rubric"):
         unit["text"] = substitute_variables(block.data.get("text", ""), variables)
+        if block.type == "heading":
+            unit["spacer"] = block.id in _HEADING_SPACER_IDS
+            override = _heading_class(block.id, document)
+            if override is not None:
+                unit["heading_class"] = override
     elif block.type == "literal_text":
         unit["text"] = _literal_text(block.data, variables, content)
         unit["style"] = block.data.get("style", "plain")
@@ -347,6 +391,7 @@ def _collect(
     stack: Tuple[str, ...],
     embed: bool,
     top_embed_types: frozenset,
+    document: str,
 ) -> List[Unit]:
     """Flatten ``blocks`` (condition-filtered) into render units.
 
@@ -371,12 +416,12 @@ def _collect(
                 _collect(
                     module.blocks, context, modules, labels, variables, content,
                     stack + (module_id,), embed=True,
-                    top_embed_types=top_embed_types,
+                    top_embed_types=top_embed_types, document=document,
                 )
             )
             continue
         if embed or block.type in top_embed_types:
-            units.append(_embed_unit(block, labels, variables, content))
+            units.append(_embed_unit(block, labels, variables, content, document))
         else:
             units.append(block.id)
     return units
@@ -388,15 +433,15 @@ def _resolve_units(
     modules: Dict[str, RiteModule],
     variables: Optional[Dict[str, str]] = None,
     content: Optional[ContentContext] = None,
+    document: str = DOCUMENT_BULLETIN,
 ) -> List[Unit]:
-    top_embed_types = (
-        _OCCASION_TOP_EMBED_TYPES if rite.id in _OCCASION_RITE_IDS
-        else frozenset()
-    )
+    top_embed_types = _UNIVERSAL_TOP_EMBED_TYPES
+    if rite.id in _OCCASION_RITE_IDS:
+        top_embed_types = top_embed_types | _OCCASION_TOP_EMBED_TYPES
     return _collect(
         rite.blocks, context, modules, rite.role_labels, variables or {},
         content or ContentContext(), (), embed=False,
-        top_embed_types=top_embed_types,
+        top_embed_types=top_embed_types, document=document,
     )
 
 
@@ -456,7 +501,10 @@ def resolve_bulletin_sequence(
     context = build_condition_context(config, season_id)
     rite = _resolve_rite(config)
     modules = _library_modules() if modules is None else modules
-    units = _resolve_units(rite, context, modules, config.variables, content)
+    units = _resolve_units(
+        rite, context, modules, config.variables, content,
+        document=DOCUMENT_BULLETIN,
+    )
     return _group(units, _BULLETIN_FLOW_GROUP_OF)
 
 
@@ -478,5 +526,8 @@ def resolve_large_print_sequence(
     context = build_condition_context(config, season_id)
     rite = _resolve_rite(config)
     modules = _library_modules() if modules is None else modules
-    units = _resolve_units(rite, context, modules, config.variables, content)
+    units = _resolve_units(
+        rite, context, modules, config.variables, content,
+        document=DOCUMENT_LARGE_PRINT,
+    )
     return _group(units, _LARGE_PRINT_FLOW_GROUP_OF)

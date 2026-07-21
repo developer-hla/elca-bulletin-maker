@@ -115,7 +115,8 @@
    the fixed document blocks keep their bespoke id-dispatched markup. #}
 {% macro render_block(unit, heading_class="section-heading") %}
 {% if unit.type == "heading" %}
-<div class="{{ heading_class }}"><span>{{ unit.text }}</span></div>
+<div class="{{ unit.heading_class or heading_class }}"><span>{{ unit.text }}</span></div>
+{% if unit.spacer %}<div class="spacer"></div>{% endif %}
 {% elif unit.type == "rubric" %}
 <p class="instruction">{{ unit.text }}</p>
 {% elif unit.type == "literal_text" %}

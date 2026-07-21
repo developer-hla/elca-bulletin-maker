@@ -91,16 +91,16 @@ def test_module_ref_expands_to_module_blocks_by_type():
     modules = {TEST_MODULE_ID: _test_module()}
     units = _resolve_units(_rite_embedding(TEST_MODULE_ID), _context(), modules)
 
-    # The rite's own blocks stay bare ids; the module_ref is replaced by the
-    # module's blocks as embedded, type-tagged units — in place, in order.
-    assert units[0] == "opening"
-    assert units[-1] == "closing"
-    assert "child" not in units  # the module_ref block id itself is gone
+    # The module_ref is replaced, in place and in order, by the module's blocks
+    # as embedded, type-tagged units.  The rite's own headings ("opening",
+    # "closing") are now embedded too (heading is universally type-dispatched).
+    ids = [u if isinstance(u, str) else u["id"] for u in units]
+    assert ids == ["opening", "tm_heading", "tm_literal", "tm_dialogue", "closing"]
+    assert "child" not in ids  # the module_ref block id itself is gone
 
-    embedded = [u for u in units if isinstance(u, dict)]
-    assert [u["type"] for u in embedded] == ["heading", "literal_text", "dialogue"]
-    assert all(u["embedded"] is True for u in embedded)
-    assert [u["id"] for u in embedded] == ["tm_heading", "tm_literal", "tm_dialogue"]
+    assert all(isinstance(u, dict) and u["embedded"] is True for u in units)
+    module_units = [u for u in units if u["id"].startswith("tm_")]
+    assert [u["type"] for u in module_units] == ["heading", "literal_text", "dialogue"]
 
 
 # ── By-type rendering ─────────────────────────────────────────────────
@@ -109,7 +109,9 @@ def test_module_ref_expands_to_module_blocks_by_type():
 def test_embedded_heading_renders_as_section_heading():
     modules = {TEST_MODULE_ID: _test_module()}
     units = _resolve_units(_rite_embedding(TEST_MODULE_ID), _context(), modules)
-    heading = next(u for u in units if isinstance(u, dict) and u["type"] == "heading")
+    heading = next(
+        u for u in units if isinstance(u, dict) and u["id"] == "tm_heading"
+    )
 
     html = _render(heading)
     assert '<div class="section-heading"><span>TEST RITE</span></div>' in html
@@ -208,25 +210,45 @@ def test_unknown_module_ref_raises_clear_error():
     assert "unknown module" in str(excinfo.value)
 
 
-# ── Parity-adjacent: existing rites are unaffected ────────────────────
+# ── Dispatch invariants ───────────────────────────────────────────────
 
 
-def test_rite_with_no_module_ref_is_all_bare_ids():
+def test_top_level_non_embedded_types_stay_bare_ids():
+    # Only `heading` (universal) and the occasion types embed at the top level;
+    # every other type keeps its bare id (Sunday-id-dispatched), so a rite of
+    # such blocks yields all bare ids.
     rite = Rite(
         id="plain",
         name="Plain",
         blocks=[
-            Block(id="a", type="heading", data={"text": "A"}),
-            Block(id="b", type="heading", data={"text": "B"}),
+            Block(id="a", type="literal_text", data={"text": "A"}),
+            Block(id="b", type="literal_text", data={"text": "B"}),
         ],
     )
     units = _resolve_units(rite, _context(), {})
     assert units == ["a", "b"]
 
 
+def test_top_level_headings_embed_as_type_dispatched_units():
+    # heading is universally type-dispatched: even a top-level Sunday-style
+    # heading now embeds (proven byte-identical by the parity/layout suites).
+    rite = Rite(
+        id="plain_headings",
+        name="Plain Headings",
+        blocks=[
+            Block(id="a", type="heading", data={"text": "A"}),
+            Block(id="b", type="heading", data={"text": "B"}),
+        ],
+    )
+    units = _resolve_units(rite, _context(), {})
+    assert all(isinstance(u, dict) and u["type"] == "heading" for u in units)
+    assert [u["id"] for u in units] == ["a", "b"]
+
+
 def test_baptism_module_ref_stays_a_bare_id_not_expanded():
     # Baptism keeps its bespoke macro: its module_ref emits the bare id
-    # "baptism" (id-dispatched), never generic embedded units.
+    # "baptism" (id-dispatched), never generic embedded units.  The rite's own
+    # heading is embedded (universal heading dispatch), but baptism stays bare.
     rite = Rite(
         id="with_baptism",
         name="With Baptism",
@@ -241,5 +263,6 @@ def test_baptism_module_ref_stays_a_bare_id_not_expanded():
         ],
     )
     units: List[Any] = _resolve_units(rite, _context(baptism=True), load_modules())
-    assert units == ["opening", "baptism"]
-    assert all(isinstance(u, str) for u in units)
+    ids = [u if isinstance(u, str) else u["id"] for u in units]
+    assert ids == ["opening", "baptism"]
+    assert units[-1] == "baptism"  # baptism module_ref stays a bare string

@@ -72,10 +72,6 @@
 {% elif bid == "standing_instructions" %}
 <p class="standing-instructions">{{ standing_instructions | nl2br }}</p>
 
-{% elif bid == "gathering_chimes" %}
-<div class="liturgy-heading"><span>GATHERING CHIMES: Worship Begins</span></div>
-<div class="spacer"></div>
-
 {% elif bid == "prelude" %}
 <div class="liturgy-heading"><span>PRELUDE</span></div>
 {% if prelude_title %}
@@ -89,10 +85,6 @@
 <div class="liturgy-heading"><span>CHORAL CALL TO WORSHIP</span></div>
 {{ m.music_line(choral_title, choral_composer, em=false, css_class="music-citation") }}
 {% endif %}
-
-{% elif bid == "welcome_spoken" %}
-<div class="liturgy-heading"><span>WELCOME</span></div>
-<div class="spacer"></div>
 
 {% elif bid == "confession" %}
 {% if show_confession %}
@@ -238,10 +230,6 @@
 {% elif bid == "sermon_seated_rubric" %}
 <p class="instruction mt-12">The congregation is seated.</p>
 
-{% elif bid == "sermon" %}
-<div class="scripture-heading"><span>SERMON</span></div>
-<div class="spacer"></div>
-
 {% elif bid == "sermon_hymn" %}
 {% if sermon_hymn %}
 {{ render_hymn(sermon_hymn, "*SERMON HYMN", image_uri=sermon_hymn_image_uri) }}
@@ -365,9 +353,6 @@
 {% endfor %}
 </div>
 
-{% elif bid == "eucharistic_prayer_heading" %}
-<div class="liturgy-heading"><span>*EUCHARISTIC PRAYER</span></div>
-
 {% elif bid == "eucharistic_prayer_extended_praise" %}
 <p class="ep-first-line"><span class="role-label">P: </span>{{ eucharistic_prayer_first_line }}</p>
 {% for line in eucharistic_prayer_lines %}
@@ -463,10 +448,6 @@
 {% for line in blessing_lines %}
 <p class="blessing-line">{{ line | terminal_amen }}</p>
 {% endfor %}
-
-{% elif bid == "announcements" %}
-<div class="liturgy-heading"><span>ANNOUNCEMENTS</span></div>
-<div class="spacer"></div>
 
 {% elif bid == "sending_hymn" %}
 {% if sending_hymn %}

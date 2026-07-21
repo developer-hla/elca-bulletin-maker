@@ -22,10 +22,10 @@
       {
         "flow": true,
         "ids": [
-          "gathering_chimes",
+          "<heading:gathering_chimes>",
           "prelude",
           "choral_call_to_worship",
-          "welcome_spoken"
+          "<heading:welcome_spoken>"
         ]
       },
       {
@@ -93,7 +93,7 @@
         "flow": true,
         "ids": [
           "sermon_seated_rubric",
-          "sermon",
+          "<heading:sermon>",
           "sermon_hymn"
         ]
       },
@@ -151,7 +151,7 @@
       {
         "flow": false,
         "ids": [
-          "eucharistic_prayer_heading"
+          "<heading:eucharistic_prayer_heading>"
         ]
       },
       {
@@ -208,7 +208,7 @@
       {
         "flow": true,
         "ids": [
-          "announcements",
+          "<heading:announcements>",
           "sending_hymn",
           "dismissal",
           "postlude",
@@ -238,10 +238,10 @@
       {
         "flow": true,
         "ids": [
-          "gathering_chimes",
+          "<heading:gathering_chimes>",
           "prelude",
           "choral_call_to_worship",
-          "welcome_spoken"
+          "<heading:welcome_spoken>"
         ]
       },
       {
@@ -314,7 +314,7 @@
         "flow": true,
         "ids": [
           "sermon_seated_rubric",
-          "sermon"
+          "<heading:sermon>"
         ]
       },
       {
@@ -387,7 +387,7 @@
       {
         "flow": false,
         "ids": [
-          "eucharistic_prayer_heading"
+          "<heading:eucharistic_prayer_heading>"
         ]
       },
       {
@@ -444,7 +444,7 @@
       {
         "flow": true,
         "ids": [
-          "announcements",
+          "<heading:announcements>",
           "sending_hymn",
           "dismissal",
           "postlude"
@@ -481,10 +481,10 @@
       {
         "flow": true,
         "ids": [
-          "gathering_chimes",
+          "<heading:gathering_chimes>",
           "prelude",
           "choral_call_to_worship",
-          "welcome_spoken"
+          "<heading:welcome_spoken>"
         ]
       },
       {
@@ -552,7 +552,7 @@
         "flow": true,
         "ids": [
           "sermon_seated_rubric",
-          "sermon",
+          "<heading:sermon>",
           "sermon_hymn"
         ]
       },
@@ -610,7 +610,7 @@
       {
         "flow": false,
         "ids": [
-          "eucharistic_prayer_heading"
+          "<heading:eucharistic_prayer_heading>"
         ]
       },
       {
@@ -667,7 +667,7 @@
       {
         "flow": true,
         "ids": [
-          "announcements",
+          "<heading:announcements>",
           "sending_hymn",
           "dismissal",
           "postlude",
@@ -697,10 +697,10 @@
       {
         "flow": true,
         "ids": [
-          "gathering_chimes",
+          "<heading:gathering_chimes>",
           "prelude",
           "choral_call_to_worship",
-          "welcome_spoken"
+          "<heading:welcome_spoken>"
         ]
       },
       {
@@ -773,7 +773,7 @@
         "flow": true,
         "ids": [
           "sermon_seated_rubric",
-          "sermon"
+          "<heading:sermon>"
         ]
       },
       {
@@ -846,7 +846,7 @@
       {
         "flow": false,
         "ids": [
-          "eucharistic_prayer_heading"
+          "<heading:eucharistic_prayer_heading>"
         ]
       },
       {
@@ -903,7 +903,7 @@
       {
         "flow": true,
         "ids": [
-          "announcements",
+          "<heading:announcements>",
           "sending_hymn",
           "dismissal",
           "postlude"
@@ -940,10 +940,10 @@
       {
         "flow": true,
         "ids": [
-          "gathering_chimes",
+          "<heading:gathering_chimes>",
           "prelude",
           "choral_call_to_worship",
-          "welcome_spoken"
+          "<heading:welcome_spoken>"
         ]
       },
       {
@@ -1010,7 +1010,7 @@
         "flow": true,
         "ids": [
           "sermon_seated_rubric",
-          "sermon",
+          "<heading:sermon>",
           "sermon_hymn"
         ]
       },
@@ -1068,7 +1068,7 @@
       {
         "flow": false,
         "ids": [
-          "eucharistic_prayer_heading"
+          "<heading:eucharistic_prayer_heading>"
         ]
       },
       {
@@ -1155,7 +1155,7 @@
       {
         "flow": true,
         "ids": [
-          "announcements",
+          "<heading:announcements>",
           "sending_hymn",
           "dismissal",
           "postlude",
@@ -1185,10 +1185,10 @@
       {
         "flow": true,
         "ids": [
-          "gathering_chimes",
+          "<heading:gathering_chimes>",
           "prelude",
           "choral_call_to_worship",
-          "welcome_spoken"
+          "<heading:welcome_spoken>"
         ]
       },
       {
@@ -1255,7 +1255,7 @@
         "flow": true,
         "ids": [
           "sermon_seated_rubric",
-          "sermon"
+          "<heading:sermon>"
         ]
       },
       {
@@ -1328,7 +1328,7 @@
       {
         "flow": false,
         "ids": [
-          "eucharistic_prayer_heading"
+          "<heading:eucharistic_prayer_heading>"
         ]
       },
       {
@@ -1415,7 +1415,7 @@
       {
         "flow": true,
         "ids": [
-          "announcements",
+          "<heading:announcements>",
           "sending_hymn",
           "dismissal",
           "postlude"
@@ -1452,10 +1452,10 @@
       {
         "flow": true,
         "ids": [
-          "gathering_chimes",
+          "<heading:gathering_chimes>",
           "prelude",
           "choral_call_to_worship",
-          "welcome_spoken"
+          "<heading:welcome_spoken>"
         ]
       },
       {
@@ -1523,7 +1523,7 @@
         "flow": true,
         "ids": [
           "sermon_seated_rubric",
-          "sermon",
+          "<heading:sermon>",
           "sermon_hymn"
         ]
       },
@@ -1581,7 +1581,7 @@
       {
         "flow": false,
         "ids": [
-          "eucharistic_prayer_heading"
+          "<heading:eucharistic_prayer_heading>"
         ]
       },
       {
@@ -1638,7 +1638,7 @@
       {
         "flow": true,
         "ids": [
-          "announcements",
+          "<heading:announcements>",
           "sending_hymn",
           "dismissal",
           "postlude",
@@ -1668,10 +1668,10 @@
       {
         "flow": true,
         "ids": [
-          "gathering_chimes",
+          "<heading:gathering_chimes>",
           "prelude",
           "choral_call_to_worship",
-          "welcome_spoken"
+          "<heading:welcome_spoken>"
         ]
       },
       {
@@ -1744,7 +1744,7 @@
         "flow": true,
         "ids": [
           "sermon_seated_rubric",
-          "sermon"
+          "<heading:sermon>"
         ]
       },
       {
@@ -1817,7 +1817,7 @@
       {
         "flow": false,
         "ids": [
-          "eucharistic_prayer_heading"
+          "<heading:eucharistic_prayer_heading>"
         ]
       },
       {
@@ -1874,7 +1874,7 @@
       {
         "flow": true,
         "ids": [
-          "announcements",
+          "<heading:announcements>",
           "sending_hymn",
           "dismissal",
           "postlude"
