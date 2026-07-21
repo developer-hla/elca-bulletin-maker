@@ -58,25 +58,10 @@ PULL_ATOM_CODES: Dict[str, str] = {
     # Demonstration mapping (CS-2): a Library creed key used only in tests, so
     # the pull path is exercised end-to-end without touching any Sunday render.
     "library.apostles_creed": "lbwApostlesCreed",
-    # Occasion canonical_slot section keys (skeleton layer): placeholder-only in
-    # the bundle by design — no copyrighted wording is stored for them.  They
-    # resolve to ENTITLEMENT_PLACEHOLDER until the pull layer injects an
-    # ``sns_fetch``; the atom-code values below are stable placeholders the pull
-    # layer replaces with the real S&S Library codes once discovered.  None are
-    # ``elw.*`` / ``house.*`` Sunday-ordinary keys, so no bundled render changes.
-    "funeral_greeting": "funeral_greeting",
-    "funeral_thanksgiving_for_baptism": "funeral_thanksgiving_for_baptism",
-    "funeral_prayer_of_the_day": "funeral_prayer_of_the_day",
-    "funeral_apostles_creed": "funeral_apostles_creed",
-    "funeral_commendation": "funeral_commendation",
-    "marriage_greeting": "marriage_greeting",
-    "marriage_introduction": "marriage_introduction",
-    "marriage_declaration_of_intention": "marriage_declaration_of_intention",
-    "marriage_prayer": "marriage_prayer",
-    "marriage_vows": "marriage_vows",
-    "marriage_giving_of_rings": "marriage_giving_of_rings",
-    "marriage_acclamation": "marriage_acclamation",
-    "marriage_blessing_of_couple": "marriage_blessing_of_couple",
+    # The occasion canonical_slot section keys are NOT pull-mapped here: they
+    # resolve through the layer-2 service-fill pipeline
+    # (``sns.service_fill.fill_section`` via ``rite_resolver`` — a whole-service
+    # pull + parse), not this single-atom gap-fill path.
 }
 
 # Scripture / reading resolution is intentionally NOT gated here (CS-1).
@@ -98,11 +83,18 @@ class ContentContext:
     by the web/generate layer as a closure over the church's content_service
     (keeping this module web-free).  It stays None on the offline / parity path,
     so nothing pulls there and output is byte-identical to CS-1.
+
+    ``variables`` carries the render's per-service rite variables (the
+    ServiceConfig values, e.g. ``deceased_name`` / ``partner_one`` /
+    ``partner_two``) so the layer-2 service-fill pipeline can interpolate names
+    into pulled canonical text.  Empty for every Sunday / office render, so no
+    existing key's resolution is affected.
     """
 
     entitled: bool = True
     church_texts: Dict[str, Any] = field(default_factory=dict)
     sns_fetch: Optional[Callable[[str], Optional[str]]] = None
+    variables: Dict[str, str] = field(default_factory=dict)
 
 
 def _is_public_domain_key(key: str) -> bool:
