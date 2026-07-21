@@ -229,3 +229,64 @@ the calendar math. Owner is the liturgical-domain reviewer for the ELCA starter 
 Engineering guardrail: agents must NOT fabricate liturgical text — new ELCA rites are derived
 from the existing reviewed ordo (e.g. Service of the Word = Holy Communion minus the meal) or
 built from public-domain/sourced text with owner taste review; net-new composed liturgy waits.
+
+## PHASE 2 — ARCHITECTURE CONSOLIDATION — July 21, 2026 (current authoritative plan; supersedes the forward-workstream sections above)
+
+The re-baselined feature roadmap (Cluster A + B) is **COMPLETE**; the highest-value work left is
+architectural health, not new features. This section is the current plan.
+
+### Roadmap status (verified against code, July 21 2026)
+Foundation LWS-0a–0d ✅ · LWS-1 ✅ (settings 6–10 still deferred) · LWS-2 ✅ (ELCA rites; offices +
+SotW now S&S-VERIFIED, doc 12) · LWS-3 seam + `sns`/`manual`/`rcl_local` (RB-2) ✅ · LWS-4 →
+CS-1/CS-2 ✅ · RB-1 season generalization ✅ · RB-2 ✅ · RB-3 child-rite/section + variable fields
+✅ · RB-4 funeral/marriage ✅. Parked (unchanged, by design): import wizard (LWS-5), licensing
+helper (LWS-6), announcements UI (LWS-7), settings 6–10, LCMS (LWS-8), Narrative/LCMS-1yr calendars.
+8 rites/modules · 3 calendar providers · content-source stack · 18 web modules · ~794 tests.
+
+### What actually shipped for RB-4 — SUPERSEDES the "PD scaffold + entitlement pull + VAR slots" sketch above
+Owner steer "use the canonical things — no Anglican/1662 PD substitutes" reshaped RB-4 into a
+live-pull content architecture (NOTHING copyrighted stored in the app):
+- `canonical_slot` block type (rite.py): a section keyed by a stable `section_key`, resolved at
+  render time; empty in the bundle.
+- `sns/service_parser.py`: parses a whole S&S occasion document (`elw_funeralNoCommunion` /
+  `elw_marriageNoCommunion`) into ordered typed segments (options in rubric divs, bodies in hymnal
+  divs, no headings).
+- `sns/service_fill.py`: `SECTION_MAP` (owner-CONFIRMED 13-section index+kind map) → pull raw →
+  parse → fill each section, with kind-confidence drift detection + best-effort name interpolation.
+- Raw-HTML pull: `content_service.get_library_item_raw` + `ContentContext.sns_fetch_raw` (the
+  cleaned `get_library_item` contract untouched).
+- Per-section save/reuse: `occasion_section` rows in `church_texts` (migration 011) →
+  `section_overrides` wired into the generate path (which previously wired NO church_texts at all);
+  `GET/POST/DELETE /api/rites/{id}/sections` + rite-editor status badges + fill UI.
+- Occasion renderer support: funeral/marriage embed heading/rubric/canonical_slot/hymn_slot as
+  type-dispatched units (Sunday stays id-dispatched → byte-identical).
+Two layers: licensed church → pull-and-fill in their chosen order; unlicensed / parse-fail →
+per-section manual fill, saved and reused. Owner confirmed the mapping renders correctly (doc: PDFs).
+Cosmetic polish deferred: duplicate COMMENDATION/SENDING headings, hymn-slot heading-only,
+per-partner vow name tokens, committal section, occasion-specific propers.
+
+### The architectural debt (never tracked by the feature roadmap) — Phase-2 workstreams, priority order
+- **AC-1 Content-provenance unification [TOP — biggest multi-church risk].** TWO text-resolution
+  mechanisms coexist inconsistently: `content_source.resolve_text` (entitlement-GATED — used in
+  html_renderer's `resolve_text_defaults` + baptism context) and `text_catalog.get_text` (UNGATED —
+  used in rite_resolver for embedded `literal_text`/`dialogue` text_refs, and directly by bundled
+  literal blocks). Offices additionally bundle PD-substitute text (now the inconsistent holdout vs
+  the owner's "canonical only" stance). GOAL: route ALL liturgical-text resolution through the
+  single gated path so entitlement is enforced uniformly and distribution to any church is
+  copyright-safe (finishes CS-1). PARITY-SAFE for the entitled Ascension deployment because
+  `resolve_text(entitled, key) == get_text(key)` byte-for-byte; only unentitled behavior changes
+  (which is the point). This is the priority-#1 "system health / flexibility" work.
+- **AC-2 Doc reconciliation [THIS SECTION + doc 10 note].** Docs 07/10 described superseded
+  approaches (RB-4 PD scaffold; offices PD substitutes). Done as of this section.
+- **AC-3 Rendering-path unification.** Migrate the legacy Sunday id-dispatch markup onto the
+  type-dispatched block engine so there is ONE rendering path and the id-collision class of bug
+  (which the occasion rites had to dodge) is gone. Parity is the hard gate.
+- **AC-4 Dependency structure.** Break the `text_catalog ↔ renderer` circular import (dependency
+  inversion) so the cold-import warm-up workaround goes away; tighten core/renderer/web/sns
+  boundaries.
+- **AC-5 Multi-tenant platform.** Per-church default/starter assignment + denomination onboarding
+  (pick ELCA → clone the default service set, provenance-stamped — owner chose clone-up-front) +
+  consolidating church-scoped config. The real "many churches" architecture.
+
+Governing priority unchanged (flexible system #1, ELCA/S&S parity #2, no other-tradition content #3);
+AC-1/AC-3/AC-4 are #1 (system health), AC-5 is #1 (platform flexibility).

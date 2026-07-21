@@ -97,3 +97,20 @@ Userbase is ~100% USA Protestant (see 07). Two flags above are now MOOT: the UK 
 restriction on the 1662 BCP (US-only userbase), and everything Roman Catholic — NABRE and the USCCB
 paid per-parish lectionary licensing are out of scope (no Catholic parishes). Relevant translations:
 NRSV/NRSVUE (mainline, via S&S entitlement), ESV (LCMS/evangelical), KJV/WEB (PD floor).
+
+---
+## SUPERSEDED IN PART — canonical-only for occasion rites (owner, July 21 2026)
+The owner steer "use the canonical things — no Anglican/1662 PD substitutes" overrides the
+"bundle the traditional PD text as the default/fallback" recommendation above **for the occasion
+rites (funeral / marriage)**. Those now use NO bundled PD substitutes: canonical ELW text is
+pulled live from the church's S&S entitlement at render time and never stored (see doc 07 Phase-2
+"RB-4 shipped" + `sns/service_fill.py`). Reasons: (1) 1662-BCP text is Anglican, not ELCA — a PD
+substitute would make an "ELCA funeral" quietly not-ELCA; (2) the content filter blocks
+transcribing the full copyrighted liturgy into code anyway; (3) live-pull is the cleaner copyright
+posture (nothing redistributed).
+**The daily offices (Matins/Vespers/Compline) are the remaining holdout** — they still bundle the
+KJV/1662 traditional-language substitutes this doc recommended. That inconsistency is tracked as
+part of **AC-1 (content-provenance unification, doc 07 Phase-2)**: decide whether to keep the
+offices as a deliberate traditional-language fallback or move them onto the same gated
+canonical-via-entitlement path. The PD manifest above remains valid as PD *sourcing* reference; it
+is no longer the prescribed default-text strategy for occasion rites.
