@@ -136,6 +136,11 @@
 <p>{{ line.text | terminal_amen }}</p>
 {% endif %}
 {% endfor %}
+{% elif unit.type == "canonical_slot" %}
+<div class="{{ heading_class }}"><span>{{ unit.heading }}</span></div>
+{% for para in unit.text.split("\n\n") %}
+{% if para.strip() %}<p>{{ para.strip() | terminal_amen }}</p>{% endif %}
+{% endfor %}
 {% else %}
 <div class="{{ heading_class }}"><span>{{ unit.heading }}</span></div>
 {% endif %}
