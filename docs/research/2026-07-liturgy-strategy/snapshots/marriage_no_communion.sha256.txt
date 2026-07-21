@@ -1,0 +1,9 @@
+ca7ef25394eaae9927346ea6fef20c2a50e6ca7a04d783c5956554520989788c
+marriage_greeting
+marriage_introduction
+marriage_declaration_of_intention
+marriage_prayer
+marriage_vows
+marriage_giving_of_rings
+marriage_acclamation
+marriage_blessing_of_couple
