@@ -8,7 +8,7 @@
   "version": 1,
   "meta": {
     "role_labels": {"leader": "P", "congregation": "C"},
-    "notes": "DRAFT of the ELW Morning Prayer (Matins) ordo, pending owner verification against a physical/PDF ELW pew edition. Structure follows the Daily Office ordo in docs/research/2026-07-liturgy-strategy/09-elca-occasion-services.md: Opening versicles -> Psalmody -> Reading + responsory -> Benedictus -> office hymn -> Prayers (Kyrie / Lord's Prayer / collect) -> Blessing. TEXT PROVENANCE per docs/research/2026-07-liturgy-strategy/10-pd-text-sourcing.md: this rite bundles the traditional PUBLIC-DOMAIN default text (1662 BCP versicles/Gloria Patri, KJV Benedictus, ancient threefold Kyrie, traditional 'Our Father' Lord's Prayer) as pd.* / elw.lords_prayer catalog keys. ELW's contemporary wording (ELLC canticle 'My soul proclaims', ELW's opening dialogue, ELW's responsory, the Collect of the Day) is COPYRIGHTED and is NOT bundled: it is left as [VAR]/[LIC] slots (proper_slot / rubric) that resolve via the church's Augsburg/S&S license. [PD]=bundled here; [VAR]=per-day (readings/psalm/collect); [LIC]=ELW wording resolved by entitlement. Element status: opening versicles=[PD], Gloria Patri=[PD], psalmody=[VAR], reading=[VAR], responsory=[LIC] (no PD default authored - shown as a rubric), Benedictus=[PD KJV], office hymn=[VAR], Kyrie=[PD ancient], Lord's Prayer=[PD traditional], collect=[VAR/LIC], blessing=[VAR/LIC]."
+    "notes": "DRAFT of the ELW Morning Prayer (Matins) ordo. Structure verified against the authoritative Sundays & Seasons ordo (docs/research/2026-07-liturgy-strategy/12-sns-verification.md): Opening versicles + doxology -> Alleluia (omit in Lent) -> Psalmody -> office hymn -> Reading + responsory -> Benedictus -> Prayers (intercessions / Lord's Prayer / collect) -> Blessing. The spurious threefold Kyrie the earlier draft carried over from the Communion rite has been removed (no Kyrie in the S&S Daily Office ordo); the office hymn moved to its S&S position between Psalmody and the Reading; intercessions modeled as a prayers_of_intercession proper_slot. OPEN owner/legal calls from doc 12 not yet applied: blessing has no PD fallback (renders blank without entitlement); collect modeled day-variable vs. S&S's fixed alternatives. TEXT PROVENANCE per docs/research/2026-07-liturgy-strategy/10-pd-text-sourcing.md: this rite bundles the traditional PUBLIC-DOMAIN default text (1662 BCP versicles/Gloria Patri, KJV Benedictus, ancient threefold Kyrie, traditional 'Our Father' Lord's Prayer) as pd.* / elw.lords_prayer catalog keys. ELW's contemporary wording (ELLC canticle 'My soul proclaims', ELW's opening dialogue, ELW's responsory, the Collect of the Day) is COPYRIGHTED and is NOT bundled: it is left as [VAR]/[LIC] slots (proper_slot / rubric) that resolve via the church's Augsburg/S&S license. [PD]=bundled here; [VAR]=per-day (readings/psalm/collect); [LIC]=ELW wording resolved by entitlement. Element status: opening versicles=[PD], Gloria Patri=[PD], psalmody=[VAR], reading=[VAR], responsory=[LIC] (no PD default authored - shown as a rubric), Benedictus=[PD KJV], office hymn=[VAR], Kyrie=[PD ancient], Lord's Prayer=[PD traditional], collect=[VAR/LIC], blessing=[VAR/LIC]."
   },
   "blocks": [
     {
@@ -58,6 +58,16 @@
       "style": "unison"
     },
     {
+      "id": "alleluia",
+      "type": "dialogue",
+      "title": "*ALLELUIA",
+      "note": "[PD] The Morning Prayer Alleluia follows the opening dialogue and doxology (S&S ordo); omitted during Lent via condition. One word, public domain.",
+      "condition": {"seasons": ["lent"], "invert": true},
+      "lines": [
+        {"role": "congregation", "text": "Alleluia."}
+      ]
+    },
+    {
       "id": "psalmody_heading",
       "type": "heading",
       "text": "PSALMODY"
@@ -69,6 +79,14 @@
       "note": "[VAR] Appointed psalm(s) for the day (traditionally the morning psalms, e.g. Ps 95 Venite / Ps 63). Number and text from the day's appointment (S&S / lectionary).",
       "source": "slot",
       "style": "responsive"
+    },
+    {
+      "id": "office_hymn",
+      "type": "hymn_slot",
+      "title": "*OFFICE HYMN",
+      "note": "[VAR] Optional office hymn ('Song'), sung between the Psalmody and the Reading per the S&S ordo. render mode is per-document renderer-side (bulletin=title, large print=lyrics).",
+      "slot": "custom",
+      "render": "ref"
     },
     {
       "id": "reading",
@@ -98,28 +116,16 @@
       "style": "unison"
     },
     {
-      "id": "office_hymn",
-      "type": "hymn_slot",
-      "title": "*OFFICE HYMN",
-      "note": "[VAR] Optional office hymn. render mode is per-document renderer-side (bulletin=title, large print=lyrics).",
-      "slot": "custom",
-      "render": "ref"
-    },
-    {
       "id": "prayers_heading",
       "type": "heading",
       "text": "PRAYERS"
     },
     {
-      "id": "kyrie",
-      "type": "dialogue",
-      "title": "KYRIE",
-      "note": "[PD] the ancient threefold Kyrie (public domain), said inline so no ELW/Setting-Two Kyrie wording is bundled into the office.",
-      "lines": [
-        {"role": "congregation", "text": "Lord, have mercy."},
-        {"role": "congregation", "text": "Christ, have mercy."},
-        {"role": "congregation", "text": "Lord, have mercy."}
-      ]
+      "id": "prayers_of_intercession",
+      "type": "proper_slot",
+      "title": "INTERCESSIONS",
+      "note": "[VAR/LIC] The Morning Prayer intercessions ('The Lord be with you / Let us pray' + the thanksgiving-and-intercession petitions per the S&S ordo), prayed before the Lord's Prayer. ELW's specific wording is copyrighted and resolves via the church's Augsburg/S&S license; no ELW litany text is bundled. Replaces the spurious threefold Kyrie the draft previously carried over from the Communion rite (not present in the S&S Daily Office ordo).",
+      "kind": "prayers_of_intercession"
     },
     {
       "id": "lords_prayer",

@@ -8,7 +8,7 @@
   "version": 1,
   "meta": {
     "role_labels": {"leader": "P", "congregation": "C"},
-    "notes": "DRAFT of the ELW Night Prayer (Compline) ordo, pending owner verification against a physical/PDF ELW pew edition. Structure follows the Daily Office ordo in docs/research/2026-07-liturgy-strategy/09-elca-occasion-services.md: Opening -> Confession -> Psalmody (Ps 91/134) -> short Reading -> responsory ('Into thy hands') -> Nunc Dimittis -> Prayers/collect -> Blessing. TEXT PROVENANCE per docs/research/2026-07-liturgy-strategy/10-pd-text-sourcing.md: bundles the traditional PUBLIC-DOMAIN default text (traditional Compline opening/blessing 'The Lord Almighty grant us a quiet night and a perfect end', 1662 BCP General Confession, traditional 'Into thy hands' responsory from Ps 31:5, KJV Nunc Dimittis, ancient threefold Kyrie, traditional 'Our Father'). IMPORTANT (doc 10 flag #3): the 1662 General Confession is a WORKING PD SUBSTITUTE for ELW's Compline confession, NOT verbatim ELW. ELW's contemporary wording (ELW's confession, ELW's responsory, the ELLC Nunc Dimittis 'Now, Lord, you let your servant go in peace', the collect, and ELW's exact blessing 'quiet night and peace at the last') is COPYRIGHTED and NOT bundled: left as [VAR]/[LIC] slots resolved via entitlement. Element status: opening=[PD], confession=[PD 1662, substitute], psalmody=[VAR], reading=[VAR], responsory=[PD], Nunc Dimittis=[PD KJV], Kyrie=[PD], Lord's Prayer=[PD], collect=[VAR/LIC], blessing=[PD]."
+    "notes": "DRAFT of the ELW Night Prayer (Compline) ordo. Structure verified against the authoritative Sundays & Seasons ordo (docs/research/2026-07-liturgy-strategy/12-sns-verification.md): Opening -> Confession -> Psalmody (Ps 91/134) -> office hymn -> short Reading -> responsory ('Into thy hands') -> Nunc Dimittis -> Prayers (intercessions / Lord's Prayer / collect) -> Blessing. The spurious threefold Kyrie has been removed (no Kyrie in the S&S Night Prayer ordo); an office hymn added between Psalmody and the Reading; intercessions modeled as a prayers_of_intercession proper_slot. OPEN owner/legal calls from doc 12 not yet applied: ELW's Compline confession Option B may sit closer to PD than the 1662 substitute now bundled (legal check); the blessing fallback reuses the opening 'quiet night' text rather than either distinct S&S option; collect modeled day-variable vs. S&S's fixed alternatives. TEXT PROVENANCE per docs/research/2026-07-liturgy-strategy/10-pd-text-sourcing.md: bundles the traditional PUBLIC-DOMAIN default text (traditional Compline opening/blessing 'The Lord Almighty grant us a quiet night and a perfect end', 1662 BCP General Confession, traditional 'Into thy hands' responsory from Ps 31:5, KJV Nunc Dimittis, ancient threefold Kyrie, traditional 'Our Father'). IMPORTANT (doc 10 flag #3): the 1662 General Confession is a WORKING PD SUBSTITUTE for ELW's Compline confession, NOT verbatim ELW. ELW's contemporary wording (ELW's confession, ELW's responsory, the ELLC Nunc Dimittis 'Now, Lord, you let your servant go in peace', the collect, and ELW's exact blessing 'quiet night and peace at the last') is COPYRIGHTED and NOT bundled: left as [VAR]/[LIC] slots resolved via entitlement. Element status: opening=[PD], confession=[PD 1662, substitute], psalmody=[VAR], reading=[VAR], responsory=[PD], Nunc Dimittis=[PD KJV], Kyrie=[PD], Lord's Prayer=[PD], collect=[VAR/LIC], blessing=[PD]."
   },
   "blocks": [
     {
@@ -70,6 +70,14 @@
       "style": "responsive"
     },
     {
+      "id": "office_hymn",
+      "type": "hymn_slot",
+      "title": "*OFFICE HYMN",
+      "note": "[VAR] Optional office hymn ('Song'), sung between the Psalmody and the Reading per the S&S ordo. (S&S also allows an optional 'Night Hymn' before the Confession; not modeled here.) render mode is per-document renderer-side.",
+      "slot": "custom",
+      "render": "ref"
+    },
+    {
       "id": "reading",
       "type": "reading_slot",
       "title": "READING",
@@ -102,15 +110,11 @@
       "text": "PRAYERS"
     },
     {
-      "id": "kyrie",
-      "type": "dialogue",
-      "title": "KYRIE",
-      "note": "[PD] the ancient threefold Kyrie (public domain), inline so no ELW Kyrie wording is bundled.",
-      "lines": [
-        {"role": "congregation", "text": "Lord, have mercy."},
-        {"role": "congregation", "text": "Christ, have mercy."},
-        {"role": "congregation", "text": "Lord, have mercy."}
-      ]
+      "id": "prayers_of_intercession",
+      "type": "proper_slot",
+      "title": "INTERCESSIONS",
+      "note": "[VAR/LIC] The Night Prayer intercessions (the opening verse 'Hear my prayer, O Lord' + the appointed prayer per the S&S ordo), prayed before the Lord's Prayer. ELW's specific wording is copyrighted and resolves via the church's Augsburg/S&S license; no ELW text is bundled. Replaces the spurious threefold Kyrie the draft previously carried over from the Communion rite (no Kyrie in the S&S Night Prayer ordo).",
+      "kind": "prayers_of_intercession"
     },
     {
       "id": "lords_prayer",

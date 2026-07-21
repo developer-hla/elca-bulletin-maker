@@ -8,7 +8,7 @@
   "version": 1,
   "meta": {
     "role_labels": {"leader": "P", "congregation": "C"},
-    "notes": "DRAFT of the ELW Evening Prayer (Vespers) ordo, pending owner verification against a physical/PDF ELW pew edition. Structure follows the Daily Office ordo in docs/research/2026-07-liturgy-strategy/09-elca-occasion-services.md: Service of Light + Phos Hilaron -> Psalmody (Ps 141) -> Reading + responsory -> Magnificat -> Prayers -> Blessing. TEXT PROVENANCE per docs/research/2026-07-liturgy-strategy/10-pd-text-sourcing.md: bundles the traditional PUBLIC-DOMAIN default text (Robert Bridges' 1899 Phos Hilaron 'O gladsome light', 1662 BCP versicle/Gloria Patri, KJV Magnificat, ancient threefold Kyrie, traditional 'Our Father'). ELW's contemporary wording (ELW's Service-of-Light dialogue 'The light shines...', the ELW/ICEL Phos Hilaron 'O gracious Light', the ELLC Magnificat 'My soul proclaims', ELW's responsory, the Collect) is COPYRIGHTED and NOT bundled: left as [VAR]/[LIC] slots resolved via the church's Augsburg/S&S license. Element status: Service of Light dialogue=[LIC] (rubric, no PD default), Phos Hilaron=[PD Bridges 1899], opening versicle=[PD], Gloria Patri=[PD], psalmody=[VAR], reading=[VAR], responsory=[LIC] (rubric), Magnificat=[PD KJV], Kyrie=[PD ancient], Lord's Prayer=[PD traditional], collect=[VAR/LIC], blessing=[VAR/LIC]."
+    "notes": "DRAFT of the ELW Evening Prayer (Vespers) ordo. Structure verified against the authoritative Sundays & Seasons ordo (docs/research/2026-07-liturgy-strategy/12-sns-verification.md): Service of Light -> Psalmody (Ps 141) -> office hymn -> Reading + responsory -> Magnificat -> Prayers (litany / Lord's Prayer / collect) -> Blessing. The spurious threefold Kyrie has been removed (the S&S litany's embedded responses are not a standalone Kyrie); an office hymn added between Psalmody and the Reading; intercessions modeled as a prayers_of_intercession proper_slot. OPEN owner/taste calls from doc 12 not yet applied: Phos Hilaron is bundled here as the PD house light-canticle, whereas S&S's default in that slot is the [LIC] prose 'Thanksgiving for Light' (Phos Hilaron is one of eight optional Hymn-of-Light settings); blessing has no PD fallback (blank without entitlement); collect modeled day-variable vs. S&S's fixed alternatives. TEXT PROVENANCE per docs/research/2026-07-liturgy-strategy/10-pd-text-sourcing.md: bundles the traditional PUBLIC-DOMAIN default text (Robert Bridges' 1899 Phos Hilaron 'O gladsome light', 1662 BCP versicle/Gloria Patri, KJV Magnificat, ancient threefold Kyrie, traditional 'Our Father'). ELW's contemporary wording (ELW's Service-of-Light dialogue 'The light shines...', the ELW/ICEL Phos Hilaron 'O gracious Light', the ELLC Magnificat 'My soul proclaims', ELW's responsory, the Collect) is COPYRIGHTED and NOT bundled: left as [VAR]/[LIC] slots resolved via the church's Augsburg/S&S license. Element status: Service of Light dialogue=[LIC] (rubric, no PD default), Phos Hilaron=[PD Bridges 1899], opening versicle=[PD], Gloria Patri=[PD], psalmody=[VAR], reading=[VAR], responsory=[LIC] (rubric), Magnificat=[PD KJV], Kyrie=[PD ancient], Lord's Prayer=[PD traditional], collect=[VAR/LIC], blessing=[VAR/LIC]."
   },
   "blocks": [
     {
@@ -88,6 +88,14 @@
       "style": "responsive"
     },
     {
+      "id": "office_hymn",
+      "type": "hymn_slot",
+      "title": "*OFFICE HYMN",
+      "note": "[VAR] Optional office hymn ('Song'), sung between the Psalmody and the Reading per the S&S ordo. render mode is per-document renderer-side.",
+      "slot": "custom",
+      "render": "ref"
+    },
+    {
       "id": "reading",
       "type": "reading_slot",
       "title": "READING",
@@ -120,15 +128,11 @@
       "text": "PRAYERS"
     },
     {
-      "id": "kyrie",
-      "type": "dialogue",
-      "title": "KYRIE",
-      "note": "[PD] the ancient threefold Kyrie (public domain), inline so no ELW Kyrie wording is bundled.",
-      "lines": [
-        {"role": "congregation", "text": "Lord, have mercy."},
-        {"role": "congregation", "text": "Christ, have mercy."},
-        {"role": "congregation", "text": "Lord, have mercy."}
-      ]
+      "id": "prayers_of_intercession",
+      "type": "proper_slot",
+      "title": "INTERCESSIONS",
+      "note": "[VAR/LIC] The Evening Prayer litany ('In peace, let us pray to the Lord... Lord, have mercy', the sevenfold petition set per the S&S ordo), prayed before the Lord's Prayer. ELW's specific wording is copyrighted and resolves via the church's Augsburg/S&S license; no ELW litany text is bundled. Replaces the spurious threefold Kyrie the draft previously carried over from the Communion rite (the litany's embedded 'Lord, have mercy' responses are not a standalone Kyrie).",
+      "kind": "prayers_of_intercession"
     },
     {
       "id": "lords_prayer",
