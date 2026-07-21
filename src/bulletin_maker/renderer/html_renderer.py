@@ -275,7 +275,8 @@ def _build_baptism_context(
     """Build template-ready dict for the Holy Baptism rite."""
     content = content or ContentContext()
     baptism_formula = resolve_text("elw.baptism_formula", content)
-    names = [n.strip() for n in config.baptism_candidate_names.split(",") if n.strip()]
+    candidate_names = config.variables.get("baptism_candidate_names", "")
+    names = [n.strip() for n in candidate_names.split(",") if n.strip()]
     formulas = [baptism_formula.format(name=name) for name in names] if names else [
         baptism_formula.format(name="___________")
     ]

@@ -410,8 +410,6 @@ function applyDefaults(defaults) {
 
     // Baptism (always unchecked by default)
     $("#include-baptism").checked = false;
-    hide($("#baptism-details"));
-    $("#baptism-names").value = "";
 }
 
 /** Populate preface dropdown from API, pre-selecting the seasonal default. */
@@ -506,15 +504,8 @@ export function applyRestoredSettings(fd) {
     if (fd.show_confession !== undefined) $("#show-confession").checked = fd.show_confession;
     if (fd.show_nunc_dimittis !== undefined) $("#show-nunc-dimittis").checked = fd.show_nunc_dimittis;
 
-    // Baptism
+    // Baptism (candidate names restored via the per-service variables above)
     $("#include-baptism").checked = !!fd.include_baptism;
-    var baptismDetails = $("#baptism-details");
-    if (fd.include_baptism) {
-        show(baptismDetails);
-        $("#baptism-names").value = fd.baptism_candidate_names || "";
-    } else {
-        hide(baptismDetails);
-    }
 
     // Service music
     $("#prelude-title").value = fd.prelude_title || "";

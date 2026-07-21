@@ -11,7 +11,7 @@ import { setupOperator } from "./operator.js";
 import { setupDateFetch, setupResetDefaults } from "./readings.js";
 import { setupHymnFetch, setupFetchAllHymns } from "./hymns.js";
 import { setupFilePickers, setupGenerate } from "./generate.js";
-import { setupBaptismToggle, setupMemorialAcclamationModeToggle } from "./texts.js";
+import { setupMemorialAcclamationModeToggle } from "./texts.js";
 import { setupPastRuns } from "./past-runs.js";
 
 // Back/refresh/close protection: a fetched-but-not-generated bulletin
@@ -41,7 +41,6 @@ document.addEventListener("DOMContentLoaded", function() {
     setupFetchAllHymns();
     setupFilePickers();
     setupGenerate();
-    setupBaptismToggle();
     setupMemorialAcclamationModeToggle();
     setupPastRuns();
     setupWizardNav();

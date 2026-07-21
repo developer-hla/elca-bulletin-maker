@@ -153,7 +153,7 @@ class TestBuildBaptismContext:
         config = ServiceConfig(
             date="2026-2-22", date_display="February 22, 2026",
             include_baptism=True,
-            baptism_candidate_names="John Smith",
+            variables={"baptism_candidate_names": "John Smith"},
         )
         ctx = _build_baptism_context(config)
         assert ctx["include_baptism"] is True
@@ -164,7 +164,7 @@ class TestBuildBaptismContext:
         config = ServiceConfig(
             date="2026-2-22", date_display="February 22, 2026",
             include_baptism=True,
-            baptism_candidate_names="John Smith, Jane Doe",
+            variables={"baptism_candidate_names": "John Smith, Jane Doe"},
         )
         ctx = _build_baptism_context(config)
         assert len(ctx["baptism_formulas"]) == 2
@@ -175,7 +175,7 @@ class TestBuildBaptismContext:
         config = ServiceConfig(
             date="2026-2-22", date_display="February 22, 2026",
             include_baptism=True,
-            baptism_candidate_names="",
+            variables={"baptism_candidate_names": ""},
         )
         ctx = _build_baptism_context(config)
         assert len(ctx["baptism_formulas"]) == 1
@@ -185,7 +185,7 @@ class TestBuildBaptismContext:
         config = ServiceConfig(
             date="2026-2-22", date_display="February 22, 2026",
             include_baptism=True,
-            baptism_candidate_names="Test",
+            variables={"baptism_candidate_names": "Test"},
         )
         ctx = _build_baptism_context(config)
         expected_keys = {

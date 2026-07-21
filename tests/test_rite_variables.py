@@ -204,13 +204,17 @@ def test_rite_without_variables_serializes_without_variables_key():
     assert "variables" not in meta
 
 
-def test_library_rites_declare_no_variables_and_have_no_placeholders():
+def test_library_rites_validate_and_sunday_declares_baptism_variable():
     rites, modules = load_library()
     for rite in rites:
-        assert rite.variables == []
-        assert "variables" not in rite.to_dict()["meta"]
-        # Unchanged referential validity (no undeclared-placeholder noise).
         validate_rite(rite, modules=modules)
+    sunday = next(r for r in rites if r.id == "elw_sunday_communion")
+    baptism_var = next(
+        v for v in sunday.variables if v.key == "baptism_candidate_names"
+    )
+    assert baptism_var.type == "names"
+    assert baptism_var.required is False
+    assert "variables" in sunday.to_dict()["meta"]
 
 
 # ── Declaration round-trips; declared-but-unused is allowed ───────────
@@ -273,19 +277,22 @@ def test_build_service_config_defaults_variables_to_empty():
     assert config.variables == {}
 
 
-def test_baptism_candidate_names_still_threads_independently():
+def test_baptism_candidate_names_flow_through_general_variables():
     form_data = {
         "date": "d",
         "date_display": "D",
         "include_baptism": True,
-        "baptism_candidate_names": "Baby A, Baby B",
-        "variables": {"deceased_name": "Jane Doe"},
+        "variables": {
+            "baptism_candidate_names": "Baby A, Baby B",
+            "deceased_name": "Jane Doe",
+        },
     }
     config = build_service_config(form_data, {})
-    # The baptism special-case is untouched by the general variables mechanism.
-    assert config.baptism_candidate_names == "Baby A, Baby B"
+    # Baptism names now ride the one general variables mechanism; the dedicated
+    # baptism_candidate_names field has been retired.
+    assert config.variables["baptism_candidate_names"] == "Baby A, Baby B"
     assert config.include_baptism is True
-    assert config.variables == {"deceased_name": "Jane Doe"}
+    assert not hasattr(config, "baptism_candidate_names")
 
 
 def test_default_service_config_has_empty_variables():

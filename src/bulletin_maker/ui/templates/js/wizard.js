@@ -300,7 +300,8 @@ function buildReviewOutline() {
     items.push({ label: "Prelude", value: preludeVal || "(not set)", empty: !preludeVal });
 
     var baptismOn = $("#include-baptism").checked;
-    var baptismNames = $("#baptism-names").value.trim();
+    var baptismNamesInput = document.querySelector('[data-var-key="baptism_candidate_names"]');
+    var baptismNames = baptismNamesInput ? baptismNamesInput.value.trim() : "";
 
     // Confession
     var showConf = $("#show-confession").checked;
@@ -553,8 +554,6 @@ export function resetAll() {
 
     // Reset baptism
     $("#include-baptism").checked = false;
-    hide($("#baptism-details"));
-    $("#baptism-names").value = "";
 
     // Reset review outline + season theme
     $("#review-outline").innerHTML = "";

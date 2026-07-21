@@ -447,17 +447,6 @@ export function restoreLiturgicalTextChoices(fd) {
     });
 }
 
-export function setupBaptismToggle() {
-    $("#include-baptism").addEventListener("change", function() {
-        if (this.checked) {
-            show($("#baptism-details"));
-        } else {
-            hide($("#baptism-details"));
-            $("#baptism-names").value = "";
-        }
-    });
-}
-
 export function setupMemorialAcclamationModeToggle() {
     $("#include-memorial").addEventListener("change", function() {
         updateMemorialAcclamationModeControls();

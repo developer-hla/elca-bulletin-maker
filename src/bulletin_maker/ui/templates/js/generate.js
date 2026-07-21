@@ -95,7 +95,6 @@ function collectFormData() {
         show_confession: $("#show-confession").checked,
         show_nunc_dimittis: $("#show-nunc-dimittis").checked,
         include_baptism: $("#include-baptism").checked,
-        baptism_candidate_names: $("#baptism-names").value.trim(),
         variables: collectRiteVariables(),
         prelude_title: $("#prelude-title").value.trim(),
         prelude_composer: $("#prelude-composer").value.trim(),

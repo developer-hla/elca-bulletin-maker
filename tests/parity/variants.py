@@ -87,7 +87,9 @@ def _baptism(day: DayContent, hymns: dict[str, HymnLyrics]) -> Variant:
     season = detect_season(day.title).value
     fill_seasonal_defaults(config, season)
     config.include_baptism = True
-    config.baptism_candidate_names = "Jordan Alexis Rivera, Micah Thomas Rivera"
+    config.variables = {
+        "baptism_candidate_names": "Jordan Alexis Rivera, Micah Thomas Rivera"
+    }
     return Variant("baptism", day, config, season)
 
 

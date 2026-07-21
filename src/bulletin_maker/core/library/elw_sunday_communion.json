@@ -8,7 +8,10 @@
   "version": 1,
   "meta": {
     "role_labels": {"leader": "P", "congregation": "C"},
-    "notes": "Faithful transcription of the current Sunday ordo. Block order EXACTLY follows renderer/templates/html/bulletin.html top to bottom; large_print.html and _macros.html were cross-checked for structure. Toggle names map to ServiceConfig fields (see docs/rite-engine.md). Anything that is renderer-style rather than rite structure (notation-vs-text, per-document hymn render mode, inline role prefixes/responses, per-season preface resolution) is captured in a 'note' rather than forced into the schema."
+    "notes": "Faithful transcription of the current Sunday ordo. Block order EXACTLY follows renderer/templates/html/bulletin.html top to bottom; large_print.html and _macros.html were cross-checked for structure. Toggle names map to ServiceConfig fields (see docs/rite-engine.md). Anything that is renderer-style rather than rite structure (notation-vs-text, per-document hymn render mode, inline role prefixes/responses, per-season preface resolution) is captured in a 'note' rather than forced into the schema.",
+    "variables": [
+      {"key": "baptism_candidate_names", "label": "Name(s) of those being baptized", "type": "names", "required": false}
+    ]
   },
   "blocks": [
     {

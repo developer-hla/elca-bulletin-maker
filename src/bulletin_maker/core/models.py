@@ -59,7 +59,6 @@ class ServiceConfig:
 
     # ── Baptism ──
     include_baptism: bool = False
-    baptism_candidate_names: str = ""           # Comma-separated names
 
     # ── Per-service rite variables (RB-3b) ──
     # Values for a rite's declared meta.variables, keyed by variable key.
