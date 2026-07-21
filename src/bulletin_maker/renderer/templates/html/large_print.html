@@ -227,9 +227,6 @@
 <p style="line-height: 20pt;">This is the gospel of our Lord. Praise to you, O Christ.</p>
 {% endif %}
 
-{% elif bid == "sermon_seated_rubric" %}
-<p class="instruction mt-12">The congregation is seated.</p>
-
 {% elif bid == "sermon_hymn" %}
 {% if sermon_hymn %}
 {{ render_hymn(sermon_hymn, "*SERMON HYMN", image_uri=sermon_hymn_image_uri) }}
@@ -343,9 +340,6 @@
 <div class="notation-image"><img src="{{ preface_image_uri }}" alt="Preface"></div>
 {% endif %}
 
-{% elif bid == "congregation_sings_sanctus" %}
-<p class="instruction-left mb-12">The Congregation SINGS:</p>
-
 {% elif bid == "sanctus" %}
 <div class="two-col sanctus-block">
 {% for stanza in sanctus_stanzas %}
@@ -391,9 +385,6 @@
 <div class="liturgy-heading"><span>*INVITATION TO COMMUNION</span></div>
 <p><span class="role-label">P: </span>{{ invitation_to_communion_text | terminal_amen }}</p>
 
-{% elif bid == "invitation_seated_rubric" %}
-<p class="instruction-left mt-12 mb-24">The Congregation is SEATED</p>
-
 {% elif bid == "agnus_dei" %}
 <div class="liturgy-heading">
     <span>AGNUS DEI (SUNG)</span>
@@ -409,9 +400,6 @@
 {% if communion_hymn %}
 {{ render_hymn(communion_hymn, "COMMUNION HYMN", extra_class="mt-24", image_uri=communion_hymn_image_uri) }}
 {% endif %}
-
-{% elif bid == "post_communion_stand_rubric" %}
-<p class="instruction-left" style="margin-bottom: 30pt;">*After all have communed, the Congregation STANDS.</p>
 
 {% elif bid == "post_communion_blessing" %}
 <p class="mt-12 mb-6" style="padding-left: 0.5in;">

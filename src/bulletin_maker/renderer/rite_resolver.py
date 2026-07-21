@@ -87,15 +87,16 @@ _MAX_EMBED_DEPTH = 8
 # shared Sunday markup and pull from the same context — so nothing is
 # duplicated.  Sunday / office rites pass an empty set and stay byte-identical.
 _OCCASION_RITE_IDS = frozenset({FUNERAL_RITE_ID, MARRIAGE_RITE_ID})
-_OCCASION_TOP_EMBED_TYPES = frozenset(
-    {"heading", "rubric", "canonical_slot", "hymn_slot"}
-)
+_OCCASION_TOP_EMBED_TYPES = frozenset({"hymn_slot"})
 
-# ``heading`` is TYPE-dispatched (embedded, via the ``render_block`` macro) for
-# EVERY rite — Sunday included — so no rite needs a per-id heading arm in its
-# template.  Occasion rites additionally embed rubric/canonical_slot/hymn_slot
-# (the set above); those stay Sunday-id-dispatched until AC-3 Phase 2.
-_UNIVERSAL_TOP_EMBED_TYPES = frozenset({"heading"})
+# ``heading``, ``rubric`` and ``canonical_slot`` are TYPE-dispatched (embedded,
+# via the ``render_block`` macro) for EVERY rite — Sunday included — so no rite
+# needs a per-id arm in its template for those types.  ``canonical_slot`` is
+# safe to make universal because the Sunday rite has none.  Occasion rites
+# additionally embed ``hymn_slot`` (the set above); that stays Sunday-id-
+# dispatched until AC-3 Phase 4 (Sunday hymns vary title/lyrics/notation per
+# document, deferred).
+_UNIVERSAL_TOP_EMBED_TYPES = frozenset({"heading", "rubric", "canonical_slot"})
 
 # The rendering document, used to pick a heading's per-document class (below).
 # ``large_print`` also drives the leader guide (it shares that template/sequence).
@@ -118,6 +119,29 @@ _HEADING_SPACER_IDS = frozenset(
 _HEADING_CLASS_OVERRIDES: Dict[Tuple[str, str], str] = {
     ("eucharistic_prayer_heading", DOCUMENT_BULLETIN): "section-heading red-heading",
     ("sermon", DOCUMENT_LARGE_PRINT): "scripture-heading",
+}
+
+# Rubric ``<p>`` class per (block id, document).  The ``render_block`` rubric
+# branch defaults to the bare ``instruction`` class (what occasion rubrics
+# render as); every Sunday rubric diverges from that in at least one document,
+# so all four are listed for both documents.
+_RUBRIC_CLASS_OVERRIDES: Dict[Tuple[str, str], str] = {
+    ("sermon_seated_rubric", DOCUMENT_BULLETIN): "instruction-center mt-4",
+    ("sermon_seated_rubric", DOCUMENT_LARGE_PRINT): "instruction mt-12",
+    ("congregation_sings_sanctus", DOCUMENT_BULLETIN): "instruction",
+    ("congregation_sings_sanctus", DOCUMENT_LARGE_PRINT): "instruction-left mb-12",
+    ("invitation_seated_rubric", DOCUMENT_BULLETIN): "instruction-center",
+    ("invitation_seated_rubric", DOCUMENT_LARGE_PRINT): "instruction-left mt-12 mb-24",
+    ("post_communion_stand_rubric", DOCUMENT_BULLETIN): "instruction-center mt-6",
+    ("post_communion_stand_rubric", DOCUMENT_LARGE_PRINT): "instruction-left",
+}
+
+# One Sunday rubric carries an inline ``style`` beyond its class — the large-
+# print post-communion "STANDS" rubric uses ``margin-bottom: 30pt`` (there is
+# no ``mb-30`` utility class in large_print.css, hence the inline style).
+# Reproduced verbatim so the migrated unit stays byte-identical.
+_RUBRIC_STYLE_OVERRIDES: Dict[Tuple[str, str], str] = {
+    ("post_communion_stand_rubric", DOCUMENT_LARGE_PRINT): "margin-bottom: 30pt;",
 }
 
 # Map a text-catalog dialogue role (DialogRole.value) to a rite schema role.
@@ -318,6 +342,16 @@ def _heading_class(block_id: str, document: str) -> Optional[str]:
     return _HEADING_CLASS_OVERRIDES.get((block_id, document))
 
 
+def _rubric_class(block_id: str, document: str) -> Optional[str]:
+    """The per-document rubric ``<p>`` class override for ``block_id``, if any.
+
+    ``None`` means the ``render_block`` default (``instruction``) applies — the
+    case for every occasion/other rubric; only the Sunday rubrics in
+    :data:`_RUBRIC_CLASS_OVERRIDES` override it.
+    """
+    return _RUBRIC_CLASS_OVERRIDES.get((block_id, document))
+
+
 def _embed_unit(
     block: Block, labels: RoleLabels, variables: Dict[str, str],
     content: ContentContext, document: str,
@@ -339,6 +373,13 @@ def _embed_unit(
             override = _heading_class(block.id, document)
             if override is not None:
                 unit["heading_class"] = override
+        else:
+            rubric_class = _rubric_class(block.id, document)
+            if rubric_class is not None:
+                unit["rubric_class"] = rubric_class
+            rubric_style = _RUBRIC_STYLE_OVERRIDES.get((block.id, document))
+            if rubric_style is not None:
+                unit["rubric_style"] = rubric_style
     elif block.type == "literal_text":
         unit["text"] = _literal_text(block.data, variables, content)
         unit["style"] = block.data.get("style", "plain")

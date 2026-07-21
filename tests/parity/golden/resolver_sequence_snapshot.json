@@ -92,7 +92,7 @@
       {
         "flow": true,
         "ids": [
-          "sermon_seated_rubric",
+          "<rubric:sermon_seated_rubric>",
           "<heading:sermon>",
           "sermon_hymn"
         ]
@@ -144,7 +144,7 @@
         "flow": true,
         "ids": [
           "preface",
-          "congregation_sings_sanctus",
+          "<rubric:congregation_sings_sanctus>",
           "sanctus"
         ]
       },
@@ -170,7 +170,7 @@
         "flow": true,
         "ids": [
           "invitation_to_communion",
-          "invitation_seated_rubric"
+          "<rubric:invitation_seated_rubric>"
         ]
       },
       {
@@ -188,7 +188,7 @@
       {
         "flow": true,
         "ids": [
-          "post_communion_stand_rubric",
+          "<rubric:post_communion_stand_rubric>",
           "post_communion_blessing"
         ]
       },
@@ -313,7 +313,7 @@
       {
         "flow": true,
         "ids": [
-          "sermon_seated_rubric",
+          "<rubric:sermon_seated_rubric>",
           "<heading:sermon>"
         ]
       },
@@ -375,7 +375,7 @@
       {
         "flow": false,
         "ids": [
-          "congregation_sings_sanctus"
+          "<rubric:congregation_sings_sanctus>"
         ]
       },
       {
@@ -406,7 +406,7 @@
         "flow": true,
         "ids": [
           "invitation_to_communion",
-          "invitation_seated_rubric"
+          "<rubric:invitation_seated_rubric>"
         ]
       },
       {
@@ -424,7 +424,7 @@
       {
         "flow": true,
         "ids": [
-          "post_communion_stand_rubric",
+          "<rubric:post_communion_stand_rubric>",
           "post_communion_blessing"
         ]
       },
@@ -551,7 +551,7 @@
       {
         "flow": true,
         "ids": [
-          "sermon_seated_rubric",
+          "<rubric:sermon_seated_rubric>",
           "<heading:sermon>",
           "sermon_hymn"
         ]
@@ -603,7 +603,7 @@
         "flow": true,
         "ids": [
           "preface",
-          "congregation_sings_sanctus",
+          "<rubric:congregation_sings_sanctus>",
           "sanctus"
         ]
       },
@@ -629,7 +629,7 @@
         "flow": true,
         "ids": [
           "invitation_to_communion",
-          "invitation_seated_rubric"
+          "<rubric:invitation_seated_rubric>"
         ]
       },
       {
@@ -647,7 +647,7 @@
       {
         "flow": true,
         "ids": [
-          "post_communion_stand_rubric",
+          "<rubric:post_communion_stand_rubric>",
           "post_communion_blessing"
         ]
       },
@@ -772,7 +772,7 @@
       {
         "flow": true,
         "ids": [
-          "sermon_seated_rubric",
+          "<rubric:sermon_seated_rubric>",
           "<heading:sermon>"
         ]
       },
@@ -834,7 +834,7 @@
       {
         "flow": false,
         "ids": [
-          "congregation_sings_sanctus"
+          "<rubric:congregation_sings_sanctus>"
         ]
       },
       {
@@ -865,7 +865,7 @@
         "flow": true,
         "ids": [
           "invitation_to_communion",
-          "invitation_seated_rubric"
+          "<rubric:invitation_seated_rubric>"
         ]
       },
       {
@@ -883,7 +883,7 @@
       {
         "flow": true,
         "ids": [
-          "post_communion_stand_rubric",
+          "<rubric:post_communion_stand_rubric>",
           "post_communion_blessing"
         ]
       },
@@ -1009,7 +1009,7 @@
       {
         "flow": true,
         "ids": [
-          "sermon_seated_rubric",
+          "<rubric:sermon_seated_rubric>",
           "<heading:sermon>",
           "sermon_hymn"
         ]
@@ -1061,7 +1061,7 @@
         "flow": true,
         "ids": [
           "preface",
-          "congregation_sings_sanctus",
+          "<rubric:congregation_sings_sanctus>",
           "sanctus"
         ]
       },
@@ -1117,7 +1117,7 @@
         "flow": true,
         "ids": [
           "invitation_to_communion",
-          "invitation_seated_rubric"
+          "<rubric:invitation_seated_rubric>"
         ]
       },
       {
@@ -1135,7 +1135,7 @@
       {
         "flow": true,
         "ids": [
-          "post_communion_stand_rubric",
+          "<rubric:post_communion_stand_rubric>",
           "post_communion_blessing"
         ]
       },
@@ -1254,7 +1254,7 @@
       {
         "flow": true,
         "ids": [
-          "sermon_seated_rubric",
+          "<rubric:sermon_seated_rubric>",
           "<heading:sermon>"
         ]
       },
@@ -1316,7 +1316,7 @@
       {
         "flow": false,
         "ids": [
-          "congregation_sings_sanctus"
+          "<rubric:congregation_sings_sanctus>"
         ]
       },
       {
@@ -1377,7 +1377,7 @@
         "flow": true,
         "ids": [
           "invitation_to_communion",
-          "invitation_seated_rubric"
+          "<rubric:invitation_seated_rubric>"
         ]
       },
       {
@@ -1395,7 +1395,7 @@
       {
         "flow": true,
         "ids": [
-          "post_communion_stand_rubric",
+          "<rubric:post_communion_stand_rubric>",
           "post_communion_blessing"
         ]
       },
@@ -1522,7 +1522,7 @@
       {
         "flow": true,
         "ids": [
-          "sermon_seated_rubric",
+          "<rubric:sermon_seated_rubric>",
           "<heading:sermon>",
           "sermon_hymn"
         ]
@@ -1574,7 +1574,7 @@
         "flow": true,
         "ids": [
           "preface",
-          "congregation_sings_sanctus",
+          "<rubric:congregation_sings_sanctus>",
           "sanctus"
         ]
       },
@@ -1600,7 +1600,7 @@
         "flow": true,
         "ids": [
           "invitation_to_communion",
-          "invitation_seated_rubric"
+          "<rubric:invitation_seated_rubric>"
         ]
       },
       {
@@ -1618,7 +1618,7 @@
       {
         "flow": true,
         "ids": [
-          "post_communion_stand_rubric",
+          "<rubric:post_communion_stand_rubric>",
           "post_communion_blessing"
         ]
       },
@@ -1743,7 +1743,7 @@
       {
         "flow": true,
         "ids": [
-          "sermon_seated_rubric",
+          "<rubric:sermon_seated_rubric>",
           "<heading:sermon>"
         ]
       },
@@ -1805,7 +1805,7 @@
       {
         "flow": false,
         "ids": [
-          "congregation_sings_sanctus"
+          "<rubric:congregation_sings_sanctus>"
         ]
       },
       {
@@ -1836,7 +1836,7 @@
         "flow": true,
         "ids": [
           "invitation_to_communion",
-          "invitation_seated_rubric"
+          "<rubric:invitation_seated_rubric>"
         ]
       },
       {
@@ -1854,7 +1854,7 @@
       {
         "flow": true,
         "ids": [
-          "post_communion_stand_rubric",
+          "<rubric:post_communion_stand_rubric>",
           "post_communion_blessing"
         ]
       },

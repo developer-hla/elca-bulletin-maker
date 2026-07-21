@@ -118,7 +118,7 @@
 <div class="{{ unit.heading_class or heading_class }}"><span>{{ unit.text }}</span></div>
 {% if unit.spacer %}<div class="spacer"></div>{% endif %}
 {% elif unit.type == "rubric" %}
-<p class="instruction">{{ unit.text }}</p>
+<p class="{{ unit.rubric_class or 'instruction' }}"{% if unit.rubric_style %} style="{{ unit.rubric_style }}"{% endif %}>{{ unit.text }}</p>
 {% elif unit.type == "literal_text" %}
 {% if unit.style == "unison" %}
 <p><strong>{{ unit.text | terminal_amen(false) }}</strong></p>
