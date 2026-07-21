@@ -21,8 +21,14 @@ from bulletin_maker.web import db
 ALLOWED_KINDS = (
     "confession", "offering_prayer", "prayer_after_communion",
     "blessing", "dismissal", "prayer_of_day",
+    # A per-church custom text for one canonical_slot occasion section
+    # (funeral / marriage). ``name`` is the section_key, ``body`` a plain
+    # string — NOT structured, so it is absent from STRUCTURED_KINDS.
+    "occasion_section",
 )
 STRUCTURED_KINDS = frozenset({"confession", "dismissal"})
+
+OCCASION_SECTION_KIND = "occasion_section"
 
 
 def _row_to_dict(row: dict) -> dict:
@@ -55,6 +61,18 @@ def texts_by_kind(church_id: int) -> Dict[str, List[dict]]:
     for row in list_texts(church_id):
         grouped.setdefault(row["kind"], []).append(row)
     return grouped
+
+
+def section_overrides(church_id: int) -> Dict[str, str]:
+    """This church's saved canonical_slot overrides as ``{section_key: text}``.
+
+    Each ``occasion_section`` row stores the section_key in ``name`` and the
+    plain override text in ``body``; this shape is exactly the ``church_texts``
+    dict the content source consults first at resolution.  The dict is keyed
+    only by occasion section_keys, so it can never shadow a Sunday / office key.
+    """
+    rows = list_texts(church_id, OCCASION_SECTION_KIND)
+    return {row["name"]: row["body"] for row in rows}
 
 
 def save_text(church_id: int, kind: str, name: str, body) -> dict:

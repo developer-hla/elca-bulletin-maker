@@ -37,6 +37,7 @@ from bulletin_maker.core.calendar import (
     calendar_provider_keys,
     get_calendar_provider,
 )
+from bulletin_maker.core.content_source import ContentContext
 from bulletin_maker.core.content_views import (
     build_liturgical_text_options,
     build_reading_preview,
@@ -71,6 +72,7 @@ from bulletin_maker.renderer.season import (
 from bulletin_maker.renderer.settings import SETTINGS
 from bulletin_maker.sns.client import SundaysClient
 from bulletin_maker.sns.content_service import ContentService
+from bulletin_maker.sns.service_fill import SECTION_MAP, fill_section
 from bulletin_maker.web import (
     artifacts,
     auth_flows,
@@ -887,6 +889,89 @@ def create_app() -> FastAPI:
         saved = rites.save_rite(rite)
         return {"success": True, "rite": saved.to_dict()}
 
+    # ── Rite canonical_slot sections (per-church fill / save / reuse) ────
+
+    def _canonical_slot_blocks(rite) -> list:
+        return [b for b in rite.blocks if b.type == "canonical_slot"]
+
+    def _section_label(block) -> str:
+        note = (block.note or "").strip()
+        if note:
+            return note
+        return block.data["section_key"].replace("_", " ").title()
+
+    def _section_status_context(session: Session) -> ContentContext:
+        """A status-only content context: a whole-service S&S pull hook for an
+        entitled church, else no hook (an unentitled church can't auto-fill)."""
+        church = church_of(session)
+        entitled = bool(church["sns_username"] and church["sns_password_enc"])
+        sns_fetch_raw = (
+            content_service(session).get_library_item_raw if entitled else None)
+        return ContentContext(
+            entitled=entitled, sns_fetch_raw=sns_fetch_raw, variables={})
+
+    def _section_status(section_key: str, override_text, context) -> str:
+        if override_text is not None:
+            return "custom"
+        if section_key not in SECTION_MAP:
+            return "unmapped"
+        return "s_and_s" if fill_section(section_key, context) is not None \
+            else "needs_fill"
+
+    def _require_canonical_section(rite, section_key: str) -> None:
+        keys = {b.data["section_key"] for b in _canonical_slot_blocks(rite)}
+        if section_key not in keys:
+            raise _validation("That section isn't part of this rite.",
+                              status=404)
+
+    @app.get("/api/rites/{rite_id}/sections")
+    def list_rite_sections(rite_id: str,
+                           session: Session = Depends(session_dep)):
+        require_user(session)
+        rite = _readable_rite(rite_id, session)
+        overrides = church_texts.section_overrides(session.church_id)
+        context = _section_status_context(session)
+        sections = []
+        for block in _canonical_slot_blocks(rite):
+            section_key = block.data["section_key"]
+            override_text = overrides.get(section_key)
+            sections.append({
+                "section_key": section_key,
+                "label": _section_label(block),
+                "has_override": override_text is not None,
+                "override_text": override_text,
+                "status": _section_status(section_key, override_text, context),
+            })
+        return {"success": True, "sections": sections}
+
+    @app.post("/api/rites/{rite_id}/sections/{section_key}")
+    def save_rite_section(rite_id: str, section_key: str, payload: dict,
+                          session: Session = Depends(session_dep)):
+        require_admin(session)
+        rite = _readable_rite(rite_id, session)
+        _require_canonical_section(rite, section_key)
+        text = payload.get("text")
+        if not isinstance(text, str) or not text.strip():
+            raise _validation("Enter some text before saving.")
+        saved = church_texts.save_text(
+            session.church_id, church_texts.OCCASION_SECTION_KIND,
+            section_key, text)
+        return {"success": True, "text": saved}
+
+    @app.delete("/api/rites/{rite_id}/sections/{section_key}")
+    def delete_rite_section(rite_id: str, section_key: str,
+                            session: Session = Depends(session_dep)):
+        require_admin(session)
+        rite = _readable_rite(rite_id, session)
+        _require_canonical_section(rite, section_key)
+        rows = church_texts.list_texts(
+            session.church_id, church_texts.OCCASION_SECTION_KIND)
+        row = next((r for r in rows if r["name"] == section_key), None)
+        if row is None:
+            raise _validation("That section has no saved text.", status=404)
+        church_texts.delete_text(session.church_id, row["id"])
+        return {"success": True}
+
     # ── Day content ───────────────────────────────────────────────────
 
     @app.get("/api/day")
@@ -1113,6 +1198,11 @@ def create_app() -> FastAPI:
             sns_fetch = svc.get_library_item if entitled else None
             sns_fetch_raw = svc.get_library_item_raw if entitled else None
 
+            # Per-church canonical_slot overrides (funeral / marriage sections):
+            # keyed only by occasion section_keys, so no Sunday / office key is
+            # shadowed and the parity path stays byte-identical.
+            section_texts = church_texts.section_overrides(church_id)
+
             outcome = generate_documents(
                 day, config, job_dir,
                 season=season_id,
@@ -1121,6 +1211,7 @@ def create_app() -> FastAPI:
                 on_progress=on_progress,
                 profile=profile,
                 entitled=entitled,
+                church_texts=section_texts,
                 sns_fetch=sns_fetch,
                 sns_fetch_raw=sns_fetch_raw,
             )
