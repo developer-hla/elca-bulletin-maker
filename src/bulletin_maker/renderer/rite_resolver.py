@@ -23,7 +23,11 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from bulletin_maker.core.content_source import ContentContext, resolve_text
+from bulletin_maker.core.content_source import (
+    ENTITLEMENT_PLACEHOLDER,
+    ContentContext,
+    resolve_text,
+)
 from bulletin_maker.core.library import (
     HOLY_BAPTISM_MODULE_ID,
     SUNDAY_COMMUNION_RITE_ID,
@@ -45,6 +49,7 @@ from bulletin_maker.sns.models import (
     CANTICLE_GLORY_TO_GOD,
     CANTICLE_THIS_IS_THE_FEAST,
 )
+from bulletin_maker.sns.service_fill import SECTION_MAP, fill_section
 
 # A resolved render unit is either a bare block id (str) — dispatched by id in
 # the document template, exactly as before — or an *embedded* block dict tagged
@@ -217,11 +222,12 @@ def _slot_heading(block: Block) -> str:
 def resolve_canonical_slot(block: Block, content: ContentContext) -> Any:
     """Resolve a ``canonical_slot`` block's text through the content source.
 
-    A canonical_slot stores no canonical wording in the app: its ``section_key``
-    is resolved via :func:`content_source.resolve_text`, whose priority chain is
-    a church-saved custom text -> (later) a licensed S&S pull -> the entitlement
-    placeholder.  With no church override and no pull wired in this layer, the
-    result is :data:`content_source.ENTITLEMENT_PLACEHOLDER`.
+    A canonical_slot stores no canonical wording in the app.  Priority for a
+    mapped occasion section (the funeral / marriage keys in
+    :data:`service_fill.SECTION_MAP`): a church-saved custom text (always wins)
+    -> the layer-2 licensed S&S service fill (:func:`service_fill.fill_section`,
+    when entitled) -> :data:`content_source.ENTITLEMENT_PLACEHOLDER`.  Any other
+    section_key falls through to :func:`content_source.resolve_text` unchanged.
     """
     if block.type != "canonical_slot":
         raise ValueError(
@@ -229,7 +235,13 @@ def resolve_canonical_slot(block: Block, content: ContentContext) -> Any:
             % block.type
         )
     section_key = block.data["section_key"]
-    return resolve_text(section_key, content)
+    if section_key not in SECTION_MAP:
+        return resolve_text(section_key, content)
+    override = content.church_texts.get(section_key)
+    if override:
+        return override
+    filled = fill_section(section_key, content)
+    return filled if filled is not None else ENTITLEMENT_PLACEHOLDER
 
 
 def _embed_unit(

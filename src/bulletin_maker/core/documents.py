@@ -142,6 +142,7 @@ def generate_documents(
         entitled=entitled,
         church_texts=church_texts or {},
         sns_fetch=sns_fetch,
+        variables=config.variables or {},
     )
 
     selected = set(selected) if selected is not None else set(DEFAULT_SELECTION)
