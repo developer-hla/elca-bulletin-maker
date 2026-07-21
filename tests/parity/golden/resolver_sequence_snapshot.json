@@ -1,0 +1,1891 @@
+{
+  "baptism": {
+    "bulletin": [
+      {
+        "flow": false,
+        "ids": [
+          "cover"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "welcome_message"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "standing_instructions"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "gathering_chimes",
+          "prelude",
+          "choral_call_to_worship",
+          "welcome_spoken"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "confession"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gathering_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "greeting",
+          "kyrie"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "canticle_glory_to_god"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayer_of_day"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "first_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "psalm"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "second_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel_acclamation"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "sermon_seated_rubric",
+          "sermon",
+          "sermon_hymn"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "baptism"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayers_of_intercession"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "peace"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering",
+          "offertory"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "offertory_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering_prayer"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "great_thanksgiving"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "preface",
+          "congregation_sings_sanctus",
+          "sanctus"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_heading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "words_of_institution"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "lords_prayer"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "invitation_to_communion",
+          "invitation_seated_rubric"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "agnus_dei"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "communion_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "post_communion_stand_rubric",
+          "post_communion_blessing"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "nunc_dimittis"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayer_after_communion",
+          "blessing"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "announcements",
+          "sending_hymn",
+          "dismissal",
+          "postlude",
+          "copyright"
+        ]
+      }
+    ],
+    "large_print": [
+      {
+        "flow": false,
+        "ids": [
+          "cover"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "welcome_message"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "standing_instructions"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "gathering_chimes",
+          "prelude",
+          "choral_call_to_worship",
+          "welcome_spoken"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "confession"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gathering_hymn"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "greeting"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "kyrie"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "canticle_glory_to_god"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "prayer_of_day"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "first_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "psalm"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "second_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel_acclamation"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "sermon_seated_rubric",
+          "sermon"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "sermon_hymn"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "baptism"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayers_of_intercession"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "peace"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering",
+          "offertory"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "offertory_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering_prayer"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "great_thanksgiving"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "preface"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "congregation_sings_sanctus"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "sanctus"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_heading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "words_of_institution"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "lords_prayer"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "invitation_to_communion",
+          "invitation_seated_rubric"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "agnus_dei"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "communion_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "post_communion_stand_rubric",
+          "post_communion_blessing"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "nunc_dimittis"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayer_after_communion",
+          "blessing"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "announcements",
+          "sending_hymn",
+          "dismissal",
+          "postlude"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "copyright"
+        ]
+      }
+    ]
+  },
+  "festival": {
+    "bulletin": [
+      {
+        "flow": false,
+        "ids": [
+          "cover"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "welcome_message"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "standing_instructions"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "gathering_chimes",
+          "prelude",
+          "choral_call_to_worship",
+          "welcome_spoken"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "confession"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gathering_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "greeting",
+          "kyrie"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "canticle_this_is_the_feast"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayer_of_day"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "first_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "psalm"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "second_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel_acclamation"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "sermon_seated_rubric",
+          "sermon",
+          "sermon_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "creed_nicene"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayers_of_intercession"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "peace"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering",
+          "offertory"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "offertory_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering_prayer"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "great_thanksgiving"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "preface",
+          "congregation_sings_sanctus",
+          "sanctus"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_heading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "words_of_institution"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "lords_prayer"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "invitation_to_communion",
+          "invitation_seated_rubric"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "agnus_dei"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "communion_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "post_communion_stand_rubric",
+          "post_communion_blessing"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "nunc_dimittis"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayer_after_communion",
+          "blessing"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "announcements",
+          "sending_hymn",
+          "dismissal",
+          "postlude",
+          "copyright"
+        ]
+      }
+    ],
+    "large_print": [
+      {
+        "flow": false,
+        "ids": [
+          "cover"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "welcome_message"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "standing_instructions"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "gathering_chimes",
+          "prelude",
+          "choral_call_to_worship",
+          "welcome_spoken"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "confession"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gathering_hymn"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "greeting"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "kyrie"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "canticle_this_is_the_feast"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "prayer_of_day"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "first_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "psalm"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "second_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel_acclamation"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "sermon_seated_rubric",
+          "sermon"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "sermon_hymn"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "creed_nicene"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayers_of_intercession"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "peace"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering",
+          "offertory"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "offertory_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering_prayer"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "great_thanksgiving"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "preface"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "congregation_sings_sanctus"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "sanctus"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_heading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "words_of_institution"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "lords_prayer"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "invitation_to_communion",
+          "invitation_seated_rubric"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "agnus_dei"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "communion_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "post_communion_stand_rubric",
+          "post_communion_blessing"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "nunc_dimittis"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayer_after_communion",
+          "blessing"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "announcements",
+          "sending_hymn",
+          "dismissal",
+          "postlude"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "copyright"
+        ]
+      }
+    ]
+  },
+  "lenten": {
+    "bulletin": [
+      {
+        "flow": false,
+        "ids": [
+          "cover"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "welcome_message"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "standing_instructions"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "gathering_chimes",
+          "prelude",
+          "choral_call_to_worship",
+          "welcome_spoken"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "confession"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gathering_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "greeting"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "invitation_to_lent"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayer_of_day"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "first_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "psalm"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "second_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel_acclamation"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "sermon_seated_rubric",
+          "sermon",
+          "sermon_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "creed_nicene"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayers_of_intercession"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "peace"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering",
+          "offertory"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "offertory_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering_prayer"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "great_thanksgiving"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "preface",
+          "congregation_sings_sanctus",
+          "sanctus"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_heading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_extended_praise"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "words_of_institution"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "memorial_acclamation_intro"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "memorial_acclamation"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_closing"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_amen"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "lords_prayer"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "invitation_to_communion",
+          "invitation_seated_rubric"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "agnus_dei"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "communion_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "post_communion_stand_rubric",
+          "post_communion_blessing"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "nunc_dimittis"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayer_after_communion",
+          "blessing"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "announcements",
+          "sending_hymn",
+          "dismissal",
+          "postlude",
+          "copyright"
+        ]
+      }
+    ],
+    "large_print": [
+      {
+        "flow": false,
+        "ids": [
+          "cover"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "welcome_message"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "standing_instructions"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "gathering_chimes",
+          "prelude",
+          "choral_call_to_worship",
+          "welcome_spoken"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "confession"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gathering_hymn"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "greeting"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "invitation_to_lent"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "prayer_of_day"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "first_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "psalm"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "second_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel_acclamation"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "sermon_seated_rubric",
+          "sermon"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "sermon_hymn"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "creed_nicene"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayers_of_intercession"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "peace"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering",
+          "offertory"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "offertory_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering_prayer"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "great_thanksgiving"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "preface"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "congregation_sings_sanctus"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "sanctus"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_heading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_extended_praise"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "words_of_institution"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "memorial_acclamation_intro"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "memorial_acclamation"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_closing"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_amen"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "lords_prayer"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "invitation_to_communion",
+          "invitation_seated_rubric"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "agnus_dei"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "communion_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "post_communion_stand_rubric",
+          "post_communion_blessing"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "nunc_dimittis"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayer_after_communion",
+          "blessing"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "announcements",
+          "sending_hymn",
+          "dismissal",
+          "postlude"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "copyright"
+        ]
+      }
+    ]
+  },
+  "regular": {
+    "bulletin": [
+      {
+        "flow": false,
+        "ids": [
+          "cover"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "welcome_message"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "standing_instructions"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "gathering_chimes",
+          "prelude",
+          "choral_call_to_worship",
+          "welcome_spoken"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "confession"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gathering_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "greeting",
+          "kyrie"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "canticle_glory_to_god"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayer_of_day"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "first_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "psalm"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "second_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel_acclamation"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "sermon_seated_rubric",
+          "sermon",
+          "sermon_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "creed_apostles"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayers_of_intercession"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "peace"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering",
+          "offertory"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "offertory_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering_prayer"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "great_thanksgiving"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "preface",
+          "congregation_sings_sanctus",
+          "sanctus"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_heading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "words_of_institution"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "lords_prayer"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "invitation_to_communion",
+          "invitation_seated_rubric"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "agnus_dei"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "communion_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "post_communion_stand_rubric",
+          "post_communion_blessing"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "nunc_dimittis"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayer_after_communion",
+          "blessing"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "announcements",
+          "sending_hymn",
+          "dismissal",
+          "postlude",
+          "copyright"
+        ]
+      }
+    ],
+    "large_print": [
+      {
+        "flow": false,
+        "ids": [
+          "cover"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "welcome_message"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "standing_instructions"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "gathering_chimes",
+          "prelude",
+          "choral_call_to_worship",
+          "welcome_spoken"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "confession"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gathering_hymn"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "greeting"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "kyrie"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "canticle_glory_to_god"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "prayer_of_day"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "first_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "psalm"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "second_reading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel_acclamation"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "gospel"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "sermon_seated_rubric",
+          "sermon"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "sermon_hymn"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "creed_apostles"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayers_of_intercession"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "peace"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering",
+          "offertory"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "offertory_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "offering_prayer"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "great_thanksgiving"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "preface"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "congregation_sings_sanctus"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "sanctus"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "eucharistic_prayer_heading"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "words_of_institution"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "lords_prayer"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "invitation_to_communion",
+          "invitation_seated_rubric"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "agnus_dei"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "communion_hymn"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "post_communion_stand_rubric",
+          "post_communion_blessing"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "nunc_dimittis"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "prayer_after_communion",
+          "blessing"
+        ]
+      },
+      {
+        "flow": true,
+        "ids": [
+          "announcements",
+          "sending_hymn",
+          "dismissal",
+          "postlude"
+        ]
+      },
+      {
+        "flow": false,
+        "ids": [
+          "copyright"
+        ]
+      }
+    ]
+  }
+}
