@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Dict, Optional
 
 from bulletin_maker.sns.models import HymnLyrics
 
@@ -60,6 +60,12 @@ class ServiceConfig:
     # ── Baptism ──
     include_baptism: bool = False
     baptism_candidate_names: str = ""           # Comma-separated names
+
+    # ── Per-service rite variables (RB-3b) ──
+    # Values for a rite's declared meta.variables, keyed by variable key.
+    # Substituted into block text ({{key}}) at render time.  Empty for every
+    # rite that declares no variables (the default), so output is unchanged.
+    variables: Dict[str, str] = field(default_factory=dict)
 
     # ── Other service details ──
     prelude_title: str = ""

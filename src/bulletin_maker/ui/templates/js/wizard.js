@@ -532,7 +532,12 @@ export function resetAll() {
     // Same default as core.library.SUNDAY_COMMUNION_RITE_ID — options are
     // loaded once at sign-in, so reset the selection, not the list.
     var riteSelect = $("#rite-select");
-    if (riteSelect) riteSelect.value = "elw_sunday_communion";
+    if (riteSelect) {
+        riteSelect.value = "elw_sunday_communion";
+        // Re-render per-service variable inputs for the reset rite (the change
+        // listener lives in readings.js; a programmatic .value set won't fire).
+        riteSelect.dispatchEvent(new Event("change"));
+    }
 
     // Reset liturgical texts
     $("#texts-panels").innerHTML = "";

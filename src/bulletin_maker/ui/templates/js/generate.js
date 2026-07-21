@@ -11,6 +11,7 @@ import {
     validateMemorialAcclamationMode,
 } from "./texts.js";
 import { savePastRun } from "./past-runs.js";
+import { collectRiteVariables } from "./readings.js";
 
 // ── Progress callback (called from Python via evaluate_js) ──────────
 
@@ -95,6 +96,7 @@ function collectFormData() {
         show_nunc_dimittis: $("#show-nunc-dimittis").checked,
         include_baptism: $("#include-baptism").checked,
         baptism_candidate_names: $("#baptism-names").value.trim(),
+        variables: collectRiteVariables(),
         prelude_title: $("#prelude-title").value.trim(),
         prelude_composer: $("#prelude-composer").value.trim(),
         offertory_type: getOffertoryType(),

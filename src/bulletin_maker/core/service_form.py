@@ -130,6 +130,7 @@ def build_service_config(form_data: dict, hymn_cache: dict) -> ServiceConfig:
         reading_overrides=form_data.get("reading_overrides") or None,
         include_baptism=form_data.get("include_baptism", False),
         baptism_candidate_names=form_data.get("baptism_candidate_names", ""),
+        variables=form_data.get("variables") or {},
         confession_entries=parse_dialog_entries(
             form_data.get("confession_entries")
         ),

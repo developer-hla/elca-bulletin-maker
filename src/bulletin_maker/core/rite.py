@@ -26,6 +26,7 @@ Python 3.9 compatible: ``from __future__ import annotations`` throughout,
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, FrozenSet, List, Optional, Tuple
 
@@ -115,6 +116,50 @@ NOTATION_PIECES: FrozenSet[str] = frozenset(
 MUSIC_KINDS: FrozenSet[str] = frozenset(
     {"prelude", "offertory", "postlude", "choral"}
 )
+
+
+# ── Per-service variables (RB-3b) ─────────────────────────────────────
+#
+# A rite may declare ``meta.variables`` — fields a volunteer fills per service
+# (a deceased's name, a couple's names, a date).  Block text references them
+# with a DOUBLE-brace placeholder ``{{key}}``; the value is substituted at
+# render time.  Double braces deliberately do NOT collide with baptism's
+# single-brace ``{name}`` per-candidate substitution (a different mechanism)
+# nor with any hymn/creed formatting.
+#
+# A key is an identifier: a letter/underscore followed by word characters.
+# Optional whitespace inside the braces is tolerated (``{{ key }}``).
+VARIABLE_PLACEHOLDER_RE = re.compile(r"\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")
+
+VARIABLE_TYPES: FrozenSet[str] = frozenset({"text", "date", "names"})
+
+
+def iter_variable_placeholders(text: str) -> List[str]:
+    """Return the variable keys referenced by ``{{key}}`` placeholders in ``text``."""
+    if not text:
+        return []
+    return VARIABLE_PLACEHOLDER_RE.findall(text)
+
+
+def substitute_variables(text: str, variables: Dict[str, str]) -> str:
+    """Replace every ``{{key}}`` in ``text`` with its per-service value.
+
+    An unfilled placeholder — a key with no value, or an empty value — renders
+    the bracketed hint ``[key]`` instead of vanishing, so a volunteer sees at
+    a glance what is still missing rather than getting silently-wrong output.
+    Text with no placeholders is returned unchanged (parity no-op).
+    """
+    if not text:
+        return text
+
+    def _replace(match: "re.Match[str]") -> str:
+        key = match.group(1)
+        value = variables.get(key)
+        if value:
+            return str(value)
+        return "[%s]" % key
+
+    return VARIABLE_PLACEHOLDER_RE.sub(_replace, text)
 
 
 # ── Block type registry ───────────────────────────────────────────────
@@ -347,6 +392,85 @@ class RoleLabels:
             leader=data.get("leader", "P"),
             congregation=data.get("congregation", "C"),
         )
+
+
+# ── RiteVariable ──────────────────────────────────────────────────────
+
+
+@dataclass
+class RiteVariable:
+    """A field a volunteer fills per service, substituted into block text.
+
+    ``key`` is the placeholder id used as ``{{key}}`` in block text; ``label``
+    is the human prompt shown in the wizard; ``type`` picks the wizard input
+    control (``text`` / ``date`` / ``names``); ``required`` flags whether the
+    volunteer must fill it.
+    """
+
+    key: str
+    label: str
+    type: str = "text"
+    required: bool = True
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "key": self.key,
+            "label": self.label,
+            "type": self.type,
+            "required": self.required,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RiteVariable":
+        if not isinstance(data, dict):
+            raise RiteSchemaError("rite variable must be an object")
+        allowed = {"key", "label", "type", "required"}
+        unknown = set(data) - allowed
+        if unknown:
+            raise RiteSchemaError(
+                "rite variable has unknown field(s): %s"
+                % ", ".join(sorted(unknown))
+            )
+        key = data.get("key")
+        if not isinstance(key, str) or not VARIABLE_PLACEHOLDER_RE.fullmatch(
+            "{{%s}}" % key
+        ):
+            raise RiteSchemaError(
+                "rite variable 'key' must be an identifier, got %r" % (key,)
+            )
+        label = data.get("label")
+        if not isinstance(label, str) or not label:
+            raise RiteSchemaError(
+                "rite variable %r missing non-empty string 'label'" % key
+            )
+        var_type = data.get("type", "text")
+        if var_type not in VARIABLE_TYPES:
+            raise RiteSchemaError(
+                "rite variable %r has invalid type %r (allowed: %s)"
+                % (key, var_type, ", ".join(sorted(VARIABLE_TYPES)))
+            )
+        required = data.get("required", True)
+        if not isinstance(required, bool):
+            raise RiteSchemaError(
+                "rite variable %r 'required' must be a boolean" % key
+            )
+        return cls(key=key, label=label, type=var_type, required=required)
+
+
+def _variables_from_meta(meta: Dict[str, Any]) -> List[RiteVariable]:
+    raw = meta.get("variables")
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise RiteSchemaError("rite meta 'variables' must be a list")
+    variables = [RiteVariable.from_dict(v) for v in raw]
+    keys = [v.key for v in variables]
+    dupes = sorted({k for k in keys if keys.count(k) > 1})
+    if dupes:
+        raise RiteSchemaError(
+            "rite meta 'variables' has duplicate key(s): %s" % ", ".join(dupes)
+        )
+    return variables
 
 
 # ── Block ─────────────────────────────────────────────────────────────
@@ -599,8 +723,17 @@ class Rite:
     version: int = 1
     role_labels: RoleLabels = field(default_factory=RoleLabels)
     notes: str = ""
+    variables: List[RiteVariable] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
+        meta: Dict[str, Any] = {
+            "role_labels": self.role_labels.to_dict(),
+            "notes": self.notes,
+        }
+        # Emitted only when non-empty so a rite that declares no variables
+        # (every existing/default rite) serializes byte-identically to before.
+        if self.variables:
+            meta["variables"] = [v.to_dict() for v in self.variables]
         return {
             "id": self.id,
             "church_id": self.church_id,
@@ -609,10 +742,7 @@ class Rite:
             "occasion": self.occasion,
             "base_rite_id": self.base_rite_id,
             "version": self.version,
-            "meta": {
-                "role_labels": self.role_labels.to_dict(),
-                "notes": self.notes,
-            },
+            "meta": meta,
             "blocks": _blocks_to_dicts(self.blocks),
         }
 
@@ -644,7 +774,7 @@ class Rite:
         meta = data.get("meta") or {}
         if not isinstance(meta, dict):
             raise RiteSchemaError("rite 'meta' must be an object")
-        meta_unknown = set(meta) - {"role_labels", "notes"}
+        meta_unknown = set(meta) - {"role_labels", "notes", "variables"}
         if meta_unknown:
             raise RiteSchemaError(
                 "rite meta has unknown field(s): %s"
@@ -666,6 +796,7 @@ class Rite:
             version=data.get("version", 1),
             role_labels=role_labels,
             notes=meta.get("notes", ""),
+            variables=_variables_from_meta(meta),
         )
 
 
@@ -687,13 +818,41 @@ def _text_refs_in_block(block: Block) -> List[str]:
     return refs
 
 
+def _placeholder_keys_in_block(block: Block) -> List[str]:
+    """Return the variable keys a block's inline text references via ``{{key}}``.
+
+    Only inline text is scanned — ``heading.text``, ``rubric.text``,
+    ``literal_text.text``, and each ``dialogue.lines[].text`` — the exact fields
+    where per-service substitution is applied.  Catalog-resolved text
+    (``text_ref`` / ``fallback``) is static and never carries placeholders.
+    """
+    d = block.data
+    keys: List[str] = []
+    if block.type in ("heading", "rubric") and "text" in d:
+        keys.extend(iter_variable_placeholders(d["text"]))
+    elif block.type == "literal_text" and "text" in d:
+        keys.extend(iter_variable_placeholders(d["text"]))
+    elif block.type == "dialogue" and "lines" in d:
+        for line in d["lines"]:
+            keys.extend(iter_variable_placeholders(line.get("text", "")))
+    return keys
+
+
 def _collect_block_errors(
     block: Block,
     where: str,
     catalog: FrozenSet[str],
     module_ids: FrozenSet[str],
+    variable_keys: FrozenSet[str],
     errors: List[str],
 ) -> None:
+    for key in _placeholder_keys_in_block(block):
+        if key not in variable_keys:
+            errors.append(
+                "%s: block %r uses undeclared variable placeholder {{%s}} "
+                "(declared: %s)"
+                % (where, block.id, key, ", ".join(sorted(variable_keys)) or "none")
+            )
     if block.reserved:
         errors.append(
             "%s: block %r uses reserved type %r (not usable until its UI ships)"
@@ -740,13 +899,15 @@ def collect_rite_errors(
         catalog = text_keys()
     modules = modules or {}
     module_ids = frozenset(modules)
+    variable_keys = frozenset(v.key for v in rite.variables)
 
     errors: List[str] = []
     seen_ids: Dict[str, int] = {}
     for block in rite.blocks:
         seen_ids[block.id] = seen_ids.get(block.id, 0) + 1
         _collect_block_errors(
-            block, "rite %r" % rite.id, catalog, module_ids, errors
+            block, "rite %r" % rite.id, catalog, module_ids,
+            variable_keys, errors,
         )
     dupes = sorted(bid for bid, n in seen_ids.items() if n > 1)
     if dupes:
@@ -764,9 +925,12 @@ def collect_rite_errors(
     for mid in sorted(m for m in referenced if m in modules):
         module = modules[mid]
         for block in module.blocks:
-            # Modules may themselves ref modules; pass the same id set.
+            # Modules may themselves ref modules; pass the same id set.  A
+            # module's placeholders are validated against the embedding rite's
+            # declared variables (the rite owns the variable declarations).
             _collect_block_errors(
-                block, "module %r" % mid, catalog, module_ids, errors
+                block, "module %r" % mid, catalog, module_ids,
+                variable_keys, errors,
             )
     return errors
 

@@ -699,6 +699,9 @@ def create_app() -> FastAPI:
             "id": rite.id, "name": rite.name,
             "occasion": rite.occasion, "tradition": rite.tradition,
             "church_id": rite.church_id,
+            # Per-service variable declarations (RB-3b) so the wizard can
+            # prompt for a rite's fields; empty for rites that declare none.
+            "variables": [v.to_dict() for v in rite.variables],
         }
 
     @app.get("/api/rites")

@@ -36,6 +36,7 @@ from bulletin_maker.core.rite import (
     RiteModule,
     RoleLabels,
     condition_applies,
+    substitute_variables,
 )
 from bulletin_maker.core.text_catalog import get_text
 from bulletin_maker.renderer.static_text import DialogRole
@@ -172,15 +173,21 @@ def _library_modules() -> Dict[str, RiteModule]:
     return load_modules()
 
 
-def _dialogue_lines(data: Dict[str, Any]) -> List[Dict[str, str]]:
+def _dialogue_lines(
+    data: Dict[str, Any], variables: Dict[str, str],
+) -> List[Dict[str, str]]:
     """Normalize a dialogue block's lines to ``[{role, text}]`` schema roles.
 
-    Inline ``lines`` are already schema-shaped; a ``text_ref`` resolves to
-    catalog ``(DialogRole, text)`` tuples, mapped back to the schema roles.
+    Inline ``lines`` are already schema-shaped (and get ``{{key}}`` variable
+    substitution); a ``text_ref`` resolves to catalog ``(DialogRole, text)``
+    tuples — static text, no substitution — mapped back to the schema roles.
     """
     if "lines" in data:
         return [
-            {"role": line.get("role", "none"), "text": line["text"]}
+            {
+                "role": line.get("role", "none"),
+                "text": substitute_variables(line["text"], variables),
+            }
             for line in data["lines"]
         ]
     resolved = get_text(data["text_ref"])
@@ -190,9 +197,9 @@ def _dialogue_lines(data: Dict[str, Any]) -> List[Dict[str, str]]:
     ]
 
 
-def _literal_text(data: Dict[str, Any]) -> str:
+def _literal_text(data: Dict[str, Any], variables: Dict[str, str]) -> str:
     if "text" in data:
-        return data["text"]
+        return substitute_variables(data["text"], variables)
     if "text_ref" in data:
         return get_text(data["text_ref"])
     return ""
@@ -206,8 +213,13 @@ def _slot_heading(block: Block) -> str:
     return str(label).replace("_", " ").upper()
 
 
-def _embed_unit(block: Block, labels: RoleLabels) -> Dict[str, Any]:
-    """Build a type-dispatched embedded render unit from a module block."""
+def _embed_unit(
+    block: Block, labels: RoleLabels, variables: Dict[str, str],
+) -> Dict[str, Any]:
+    """Build a type-dispatched embedded render unit from a module block.
+
+    Inline text fields get ``{{key}}`` per-service variable substitution.
+    """
     unit: Dict[str, Any] = {
         "embedded": True,
         "id": block.id,
@@ -215,12 +227,12 @@ def _embed_unit(block: Block, labels: RoleLabels) -> Dict[str, Any]:
         "title": block.title,
     }
     if block.type in ("heading", "rubric"):
-        unit["text"] = block.data.get("text", "")
+        unit["text"] = substitute_variables(block.data.get("text", ""), variables)
     elif block.type == "literal_text":
-        unit["text"] = _literal_text(block.data)
+        unit["text"] = _literal_text(block.data, variables)
         unit["style"] = block.data.get("style", "plain")
     elif block.type == "dialogue":
-        unit["lines"] = _dialogue_lines(block.data)
+        unit["lines"] = _dialogue_lines(block.data, variables)
         unit["leader_label"] = labels.leader
         unit["congregation_label"] = labels.congregation
     else:
@@ -260,6 +272,7 @@ def _collect(
     context: Dict[str, Any],
     modules: Dict[str, RiteModule],
     labels: RoleLabels,
+    variables: Dict[str, str],
     stack: Tuple[str, ...],
     embed: bool,
 ) -> List[Unit]:
@@ -282,20 +295,26 @@ def _collect(
             module = _lookup_module(block, module_id, modules, stack)
             units.extend(
                 _collect(
-                    module.blocks, context, modules, labels,
+                    module.blocks, context, modules, labels, variables,
                     stack + (module_id,), embed=True,
                 )
             )
             continue
-        units.append(_embed_unit(block, labels) if embed else block.id)
+        units.append(
+            _embed_unit(block, labels, variables) if embed else block.id
+        )
     return units
 
 
 def _resolve_units(
-    rite: Rite, context: Dict[str, Any], modules: Dict[str, RiteModule],
+    rite: Rite,
+    context: Dict[str, Any],
+    modules: Dict[str, RiteModule],
+    variables: Optional[Dict[str, str]] = None,
 ) -> List[Unit]:
     return _collect(
-        rite.blocks, context, modules, rite.role_labels, (), embed=False,
+        rite.blocks, context, modules, rite.role_labels, variables or {},
+        (), embed=False,
     )
 
 
@@ -347,7 +366,8 @@ def resolve_bulletin_sequence(
     context = build_condition_context(config, season_id)
     rite = _resolve_rite(config)
     modules = _library_modules() if modules is None else modules
-    return _group(_resolve_units(rite, context, modules), _BULLETIN_FLOW_GROUP_OF)
+    units = _resolve_units(rite, context, modules, config.variables)
+    return _group(units, _BULLETIN_FLOW_GROUP_OF)
 
 
 def resolve_large_print_sequence(
@@ -365,6 +385,5 @@ def resolve_large_print_sequence(
     context = build_condition_context(config, season_id)
     rite = _resolve_rite(config)
     modules = _library_modules() if modules is None else modules
-    return _group(
-        _resolve_units(rite, context, modules), _LARGE_PRINT_FLOW_GROUP_OF,
-    )
+    units = _resolve_units(rite, context, modules, config.variables)
+    return _group(units, _LARGE_PRINT_FLOW_GROUP_OF)

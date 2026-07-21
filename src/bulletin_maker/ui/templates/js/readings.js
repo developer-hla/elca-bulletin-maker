@@ -17,6 +17,9 @@ import {
 /** The bundled library rite every service uses until a church picks another. */
 export const DEFAULT_RITE_ID = "elw_sunday_communion";
 
+// Declared per-service variables (RB-3b), keyed by rite id, from /api/rites.
+var riteVariablesById = {};
+
 /** Populate the Service Rite dropdown from the API (church + library rites). */
 export async function loadRiteOptions() {
     var select = $("#rite-select");
@@ -25,17 +28,71 @@ export async function loadRiteOptions() {
         var result = await api.get_rites();
         if (!result.success || !result.rites.length) return;
         select.innerHTML = "";
+        riteVariablesById = {};
         result.rites.forEach(function(rite) {
             var opt = document.createElement("option");
             opt.value = rite.id;
             opt.textContent = rite.name;
             if (rite.id === DEFAULT_RITE_ID) opt.selected = true;
             select.appendChild(opt);
+            riteVariablesById[rite.id] = rite.variables || [];
         });
+        select.addEventListener("change", function() {
+            renderRiteVariables(select.value);
+        });
+        renderRiteVariables(select.value);
     } catch (err) {
         // Leave the select empty — collectFormData() then sends no rite_id,
         // and the resolver falls back to the bundled default rite.
     }
+}
+
+// Wizard input type per declared variable type; "names" is a free-text field.
+var VARIABLE_INPUT_TYPE = { text: "text", date: "date", names: "text" };
+
+/** Render an input per declared variable for the selected rite (or hide). */
+export function renderRiteVariables(riteId) {
+    var container = $("#rite-variables");
+    if (!container) return;
+    var variables = riteVariablesById[riteId] || [];
+    container.innerHTML = "";
+    if (!variables.length) {
+        hide(container);
+        return;
+    }
+    variables.forEach(function(variable) {
+        var field = document.createElement("div");
+        field.className = "field";
+        var inputId = "rite-var-" + variable.key;
+
+        var label = document.createElement("label");
+        label.setAttribute("for", inputId);
+        label.textContent = variable.required
+            ? variable.label
+            : variable.label + " (optional)";
+
+        var input = document.createElement("input");
+        input.type = VARIABLE_INPUT_TYPE[variable.type] || "text";
+        input.id = inputId;
+        input.setAttribute("data-var-key", variable.key);
+        if (variable.type === "names") {
+            input.placeholder = "Separate multiple names with commas";
+        }
+
+        field.appendChild(label);
+        field.appendChild(input);
+        container.appendChild(field);
+    });
+    show(container);
+}
+
+/** Collect filled per-service variable values into a {key: value} dict. */
+export function collectRiteVariables() {
+    var values = {};
+    $("#rite-variables").querySelectorAll("[data-var-key]").forEach(function(input) {
+        values[input.getAttribute("data-var-key")] = input.value.trim();
+    });
+    return values;
 }
 
 /** Maps a reading label to an override slot key. */
@@ -415,6 +472,15 @@ export function applyRestoredSettings(fd) {
     // Service rite
     var riteSelect = $("#rite-select");
     if (riteSelect && fd.rite_id) riteSelect.value = fd.rite_id;
+
+    // Per-service variables: re-render inputs for the rite, then refill values.
+    if (riteSelect) renderRiteVariables(riteSelect.value);
+    if (fd.variables) {
+        Object.keys(fd.variables).forEach(function(key) {
+            var input = document.querySelector('[data-var-key="' + key + '"]');
+            if (input) input.value = fd.variables[key];
+        });
+    }
 
     // Liturgical settings
     var creedRadio = document.querySelector('input[name="creed_type"][value="' + fd.creed_type + '"]');

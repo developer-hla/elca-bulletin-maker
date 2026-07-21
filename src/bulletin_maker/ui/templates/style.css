@@ -501,6 +501,19 @@ main {
 .field-xs { width: 80px; }
 .field-btn { align-self: flex-end; }
 
+/* Per-service rite variable inputs (RB-3b) — shown only for rites that
+   declare meta.variables (funeral/wedding); hidden otherwise. */
+.rite-variables {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+}
+.rite-variables .field input[type="text"],
+.rite-variables .field input[type="date"] {
+    max-width: 360px;
+}
+
 /* ── Details Grid ──────────────────────────────────────── */
 
 .details-grid {
