@@ -23,6 +23,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from bulletin_maker.core.content_source import ContentContext, resolve_text
 from bulletin_maker.core.library import (
     HOLY_BAPTISM_MODULE_ID,
     SUNDAY_COMMUNION_RITE_ID,
@@ -211,6 +212,24 @@ def _slot_heading(block: Block) -> str:
     d = block.data
     label = d.get("slot") or d.get("kind") or d.get("piece") or block.type
     return str(label).replace("_", " ").upper()
+
+
+def resolve_canonical_slot(block: Block, content: ContentContext) -> Any:
+    """Resolve a ``canonical_slot`` block's text through the content source.
+
+    A canonical_slot stores no canonical wording in the app: its ``section_key``
+    is resolved via :func:`content_source.resolve_text`, whose priority chain is
+    a church-saved custom text -> (later) a licensed S&S pull -> the entitlement
+    placeholder.  With no church override and no pull wired in this layer, the
+    result is :data:`content_source.ENTITLEMENT_PLACEHOLDER`.
+    """
+    if block.type != "canonical_slot":
+        raise ValueError(
+            "resolve_canonical_slot expects a canonical_slot block, got %r"
+            % block.type
+        )
+    section_key = block.data["section_key"]
+    return resolve_text(section_key, content)
 
 
 def _embed_unit(
