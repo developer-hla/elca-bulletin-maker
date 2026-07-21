@@ -404,12 +404,19 @@ class TestBulletinTemplate:
     def test_choral_call_follows_prelude(self, template_name, prelude_markup, heading_markup):
         env = setup_jinja_env()
         template = env.get_template(template_name)
+        # `welcome_spoken` is a `heading`: universally type-dispatched, so it
+        # arrives as an embedded unit (rendered via the render_block macro),
+        # not a bare id.
+        welcome_spoken = {
+            "embedded": True, "type": "heading", "id": "welcome_spoken",
+            "text": "WELCOME", "spacer": True,
+        }
         html = template.render(
             bulletin_sequence=_render_seq(
-                "prelude", "choral_call_to_worship", "welcome_spoken",
+                "prelude", "choral_call_to_worship", welcome_spoken,
             ),
             large_print_sequence=_render_seq(
-                "prelude", "choral_call_to_worship", "welcome_spoken",
+                "prelude", "choral_call_to_worship", welcome_spoken,
             ),
             css="",
             church_address="",
