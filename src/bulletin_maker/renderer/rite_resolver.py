@@ -29,7 +29,9 @@ from bulletin_maker.core.content_source import (
     resolve_text,
 )
 from bulletin_maker.core.library import (
+    FUNERAL_RITE_ID,
     HOLY_BAPTISM_MODULE_ID,
+    MARRIAGE_RITE_ID,
     SUNDAY_COMMUNION_RITE_ID,
     load_modules,
     load_rite,
@@ -74,6 +76,21 @@ MACRO_RENDERED_MODULES = frozenset({HOLY_BAPTISM_MODULE_ID})
 
 # Recursion guard for nested module_refs (cycle detection also applies).
 _MAX_EMBED_DEPTH = 8
+
+# Occasion rites (funeral / marriage) reuse block ids that also name Sunday
+# blocks (``greeting``, ``blessing`` …) but with different, occasion-specific
+# semantics.  Their liturgical structure is therefore rendered TYPE-dispatched
+# (via the ``render_block`` macro) rather than through the Sunday-specific
+# id-dispatch chain: for these rites, the block types below are embedded at the
+# top level so the template renders them by ``type``, never by a colliding id.
+# The remaining occasion block types (``literal_text`` chrome, ``reading_slot``,
+# ``psalm``, ``proper_slot``) keep their bare ids — those ids DO match the
+# shared Sunday markup and pull from the same context — so nothing is
+# duplicated.  Sunday / office rites pass an empty set and stay byte-identical.
+_OCCASION_RITE_IDS = frozenset({FUNERAL_RITE_ID, MARRIAGE_RITE_ID})
+_OCCASION_TOP_EMBED_TYPES = frozenset(
+    {"heading", "rubric", "canonical_slot", "hymn_slot"}
+)
 
 # Map a text-catalog dialogue role (DialogRole.value) to a rite schema role.
 _SCHEMA_ROLE_OF: Dict[str, str] = {
@@ -219,6 +236,20 @@ def _slot_heading(block: Block) -> str:
     return str(label).replace("_", " ").upper()
 
 
+def _canonical_slot_heading(block: Block) -> str:
+    """A section heading for a ``canonical_slot`` — its title, else its
+    ``section_key`` with the occasion prefix stripped and humanized
+    (``funeral_prayer_of_the_day`` -> ``PRAYER OF THE DAY``)."""
+    if block.title:
+        return block.title
+    key = block.data["section_key"]
+    for prefix in ("funeral_", "marriage_"):
+        if key.startswith(prefix):
+            key = key[len(prefix):]
+            break
+    return key.replace("_", " ").upper()
+
+
 def resolve_canonical_slot(block: Block, content: ContentContext) -> Any:
     """Resolve a ``canonical_slot`` block's text through the content source.
 
@@ -246,6 +277,7 @@ def resolve_canonical_slot(block: Block, content: ContentContext) -> Any:
 
 def _embed_unit(
     block: Block, labels: RoleLabels, variables: Dict[str, str],
+    content: ContentContext,
 ) -> Dict[str, Any]:
     """Build a type-dispatched embedded render unit from a module block.
 
@@ -266,6 +298,9 @@ def _embed_unit(
         unit["lines"] = _dialogue_lines(block.data, variables)
         unit["leader_label"] = labels.leader
         unit["congregation_label"] = labels.congregation
+    elif block.type == "canonical_slot":
+        unit["heading"] = _canonical_slot_heading(block)
+        unit["text"] = resolve_canonical_slot(block, content)
     else:
         # hymn_slot / reading_slot / psalm / proper_slot / notation /
         # music_item resolve their content from renderer-side context, which is
@@ -304,15 +339,19 @@ def _collect(
     modules: Dict[str, RiteModule],
     labels: RoleLabels,
     variables: Dict[str, str],
+    content: ContentContext,
     stack: Tuple[str, ...],
     embed: bool,
+    top_embed_types: frozenset,
 ) -> List[Unit]:
     """Flatten ``blocks`` (condition-filtered) into render units.
 
-    Top-level rite blocks emit bare ids (id-dispatched, unchanged).  A
-    macro-rendered ``module_ref`` (baptism) also emits its bare id.  Any other
-    ``module_ref`` expands into the module's blocks, which — being embedded —
-    emit type-dispatched unit dicts (recursively, with a recursion guard).
+    Top-level rite blocks emit bare ids (id-dispatched), except types listed in
+    ``top_embed_types`` — occasion rites embed those so they render by type, not
+    by a colliding Sunday id (empty for Sunday / office, so those stay
+    byte-identical).  A macro-rendered ``module_ref`` (baptism) emits its bare
+    id.  Any other ``module_ref`` expands into the module's blocks, which —
+    being embedded — emit type-dispatched unit dicts (recursively, guarded).
     """
     units: List[Unit] = []
     for block in blocks:
@@ -326,14 +365,16 @@ def _collect(
             module = _lookup_module(block, module_id, modules, stack)
             units.extend(
                 _collect(
-                    module.blocks, context, modules, labels, variables,
+                    module.blocks, context, modules, labels, variables, content,
                     stack + (module_id,), embed=True,
+                    top_embed_types=top_embed_types,
                 )
             )
             continue
-        units.append(
-            _embed_unit(block, labels, variables) if embed else block.id
-        )
+        if embed or block.type in top_embed_types:
+            units.append(_embed_unit(block, labels, variables, content))
+        else:
+            units.append(block.id)
     return units
 
 
@@ -342,10 +383,16 @@ def _resolve_units(
     context: Dict[str, Any],
     modules: Dict[str, RiteModule],
     variables: Optional[Dict[str, str]] = None,
+    content: Optional[ContentContext] = None,
 ) -> List[Unit]:
+    top_embed_types = (
+        _OCCASION_TOP_EMBED_TYPES if rite.id in _OCCASION_RITE_IDS
+        else frozenset()
+    )
     return _collect(
         rite.blocks, context, modules, rite.role_labels, variables or {},
-        (), embed=False,
+        content or ContentContext(), (), embed=False,
+        top_embed_types=top_embed_types,
     )
 
 
@@ -386,6 +433,7 @@ def resolve_bulletin_sequence(
     config: ServiceConfig,
     season_id: str,
     modules: Optional[Dict[str, RiteModule]] = None,
+    content: Optional[ContentContext] = None,
 ) -> List[Dict[str, Any]]:
     """Return the bulletin's render sequence: ordered, condition-filtered blocks.
 
@@ -393,11 +441,13 @@ def resolve_bulletin_sequence(
     id (str, id-dispatched) or an embedded block dict (type-dispatched via the
     ``render_block`` macro); ``flow`` items are wrapped in a ``.flow-group`` div
     by the template.  ``modules`` overrides the bundled library modules (tests).
+    ``content`` supplies the entitlement context for resolving occasion
+    ``canonical_slot`` text; it is unused by Sunday / office rites.
     """
     context = build_condition_context(config, season_id)
     rite = _resolve_rite(config)
     modules = _library_modules() if modules is None else modules
-    units = _resolve_units(rite, context, modules, config.variables)
+    units = _resolve_units(rite, context, modules, config.variables, content)
     return _group(units, _BULLETIN_FLOW_GROUP_OF)
 
 
@@ -405,6 +455,7 @@ def resolve_large_print_sequence(
     config: ServiceConfig,
     season_id: str,
     modules: Optional[Dict[str, RiteModule]] = None,
+    content: Optional[ContentContext] = None,
 ) -> List[Dict[str, Any]]:
     """Return the large-print / leader-guide render sequence.
 
@@ -412,9 +463,11 @@ def resolve_large_print_sequence(
     pagination differs (see ``_LARGE_PRINT_FLOW_GROUPS``).  The leader guide
     shares this sequence and switches individual blocks from text to notation
     images via ``*_image_uri`` context values, per-block in the template.
+    ``content`` supplies the entitlement context for resolving occasion
+    ``canonical_slot`` text; it is unused by Sunday / office rites.
     """
     context = build_condition_context(config, season_id)
     rite = _resolve_rite(config)
     modules = _library_modules() if modules is None else modules
-    units = _resolve_units(rite, context, modules, config.variables)
+    units = _resolve_units(rite, context, modules, config.variables, content)
     return _group(units, _LARGE_PRINT_FLOW_GROUP_OF)

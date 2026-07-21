@@ -873,7 +873,7 @@ def _build_large_print_context(
         # reuses this context) iterates these ordered, condition-filtered blocks
         # instead of a hardcoded template sequence. Same rite as the bulletin;
         # only the flow-group pagination differs.
-        "large_print_sequence": resolve_large_print_sequence(config, season),
+        "large_print_sequence": resolve_large_print_sequence(config, season, content=content),
 
         # Large print uses short preface (leader guide overrides with full)
         "great_thanksgiving_preface": resolve_text("elw.great_thanksgiving_preface_short", content),
@@ -1062,7 +1062,7 @@ def _build_bulletin_context(
 
         # Rite-driven render sequence: the bulletin iterates these ordered,
         # condition-filtered blocks instead of a hardcoded template sequence.
-        "bulletin_sequence": resolve_bulletin_sequence(config, season),
+        "bulletin_sequence": resolve_bulletin_sequence(config, season, content=content),
 
         # Bulletin uses short preface (truncated with ending cue)
         "great_thanksgiving_preface": resolve_text("elw.great_thanksgiving_preface_short", content),
