@@ -45,7 +45,6 @@ from bulletin_maker.core.rite import (
     condition_applies,
     substitute_variables,
 )
-from bulletin_maker.core.text_catalog import get_text
 from bulletin_maker.renderer.static_text import DialogRole
 from bulletin_maker.sns.models import (
     CANTICLE_GLORY_TO_GOD,
@@ -197,13 +196,14 @@ def _library_modules() -> Dict[str, RiteModule]:
 
 
 def _dialogue_lines(
-    data: Dict[str, Any], variables: Dict[str, str],
+    data: Dict[str, Any], variables: Dict[str, str], content: ContentContext,
 ) -> List[Dict[str, str]]:
     """Normalize a dialogue block's lines to ``[{role, text}]`` schema roles.
 
     Inline ``lines`` are already schema-shaped (and get ``{{key}}`` variable
-    substitution); a ``text_ref`` resolves to catalog ``(DialogRole, text)``
-    tuples — static text, no substitution — mapped back to the schema roles.
+    substitution); a ``text_ref`` resolves through the entitlement-gated
+    content source to catalog ``(DialogRole, text)`` tuples — or, for an
+    unentitled church, to a placeholder string, rendered as a single line.
     """
     if "lines" in data:
         return [
@@ -213,18 +213,22 @@ def _dialogue_lines(
             }
             for line in data["lines"]
         ]
-    resolved = get_text(data["text_ref"])
+    resolved = resolve_text(data["text_ref"], content)
+    if isinstance(resolved, str):
+        return [{"role": "none", "text": resolved}]
     return [
         {"role": _SCHEMA_ROLE_OF[role.value], "text": text}
         for role, text in resolved
     ]
 
 
-def _literal_text(data: Dict[str, Any], variables: Dict[str, str]) -> str:
+def _literal_text(
+    data: Dict[str, Any], variables: Dict[str, str], content: ContentContext,
+) -> str:
     if "text" in data:
         return substitute_variables(data["text"], variables)
     if "text_ref" in data:
-        return get_text(data["text_ref"])
+        return resolve_text(data["text_ref"], content)
     return ""
 
 
@@ -292,10 +296,10 @@ def _embed_unit(
     if block.type in ("heading", "rubric"):
         unit["text"] = substitute_variables(block.data.get("text", ""), variables)
     elif block.type == "literal_text":
-        unit["text"] = _literal_text(block.data, variables)
+        unit["text"] = _literal_text(block.data, variables, content)
         unit["style"] = block.data.get("style", "plain")
     elif block.type == "dialogue":
-        unit["lines"] = _dialogue_lines(block.data, variables)
+        unit["lines"] = _dialogue_lines(block.data, variables, content)
         unit["leader_label"] = labels.leader
         unit["congregation_label"] = labels.congregation
     elif block.type == "canonical_slot":

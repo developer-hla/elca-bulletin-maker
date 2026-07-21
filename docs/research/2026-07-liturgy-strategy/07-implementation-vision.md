@@ -266,16 +266,20 @@ Cosmetic polish deferred: duplicate COMMENDATION/SENDING headings, hymn-slot hea
 per-partner vow name tokens, committal section, occasion-specific propers.
 
 ### The architectural debt (never tracked by the feature roadmap) — Phase-2 workstreams, priority order
-- **AC-1 Content-provenance unification [TOP — biggest multi-church risk].** TWO text-resolution
-  mechanisms coexist inconsistently: `content_source.resolve_text` (entitlement-GATED — used in
-  html_renderer's `resolve_text_defaults` + baptism context) and `text_catalog.get_text` (UNGATED —
-  used in rite_resolver for embedded `literal_text`/`dialogue` text_refs, and directly by bundled
-  literal blocks). Offices additionally bundle PD-substitute text (now the inconsistent holdout vs
-  the owner's "canonical only" stance). GOAL: route ALL liturgical-text resolution through the
-  single gated path so entitlement is enforced uniformly and distribution to any church is
-  copyright-safe (finishes CS-1). PARITY-SAFE for the entitled Ascension deployment because
-  `resolve_text(entitled, key) == get_text(key)` byte-for-byte; only unentitled behavior changes
-  (which is the point). This is the priority-#1 "system health / flexibility" work.
+- **AC-1 Content-provenance unification [DONE — July 21 2026; smaller than first assessed].** An
+  audit corrected the stock-take's overstatement: the render path was ALREADY mostly gated —
+  `html_renderer` routes liturgical text through the gated `resolve_text` in 37 places, the bulletin
+  template pulls NO ELW text directly, and only TWO ungated `text_catalog.get_text` calls remained
+  (`rite_resolver._dialogue_lines`/`_literal_text`, for embedded text_refs) — both LATENT (no current
+  rite hit them; baptism is macro-rendered, occasion rites embed only headings/rubrics/slots). The
+  offices bundle only public-domain keys (`pd.*` + traditional Lord's Prayer), which resolve
+  identically gated or not, so NO live copyright exposure existed. FIX (defensive): both helpers now
+  thread `ContentContext` and resolve through gated `resolve_text` (dialogue handles a placeholder
+  string → single line); `get_text` import removed from the render path. Parity 4 + layout 18
+  byte-identical (entitled `resolve_text == get_text`); new `tests/test_embed_text_gating.py` proves
+  an unentitled embedded copyrighted text_ref now gates. Remaining sub-decision (deferred, taste not
+  leak): whether the daily offices keep their PD traditional-language text or move to
+  canonical-via-entitlement.
 - **AC-2 Doc reconciliation [THIS SECTION + doc 10 note].** Docs 07/10 described superseded
   approaches (RB-4 PD scaffold; offices PD substitutes). Done as of this section.
 - **AC-3 Rendering-path unification.** Migrate the legacy Sunday id-dispatch markup onto the
