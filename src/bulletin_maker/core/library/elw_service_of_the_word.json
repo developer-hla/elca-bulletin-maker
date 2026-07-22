@@ -7,7 +7,7 @@
   "base_rite_id": null,
   "version": 1,
   "meta": {
-    "role_labels": {"leader": "P", "congregation": "C"},
+    "role_labels": {"leader": "L", "congregation": "C"},
     "notes": "DRAFT derived from elw_sunday_communion.json (Holy Communion) minus the Meal, pending owner verification against a physical/PDF ELW pew edition. Every block below is REUSED verbatim (same id/text_ref/condition/note) from the Sunday Communion rite in the order given by docs/research/2026-07-liturgy-strategy/09-elca-occasion-services.md's Service of the Word ordo; no new liturgical text was authored here, only structure (which blocks, in what order). Two judgment points the owner must confirm: (1) 'offering' is RETAINED even though the Meal is omitted (the research ordo explicitly keeps the offering in a Service-of-the-Word service); (2) 'lords_prayer' is MOVED from its Communion-rite position (inside the Meal, after the eucharistic prayer) to immediately after 'offering', since there is no Great Thanksgiving to precede it. All Meal-only blocks (offertory, offertory_hymn, offering_prayer, great_thanksgiving, preface, congregation_sings_sanctus, sanctus, eucharistic_prayer_heading, eucharistic_prayer_extended_praise, words_of_institution, memorial_acclamation_intro, memorial_acclamation, eucharistic_prayer_closing, eucharistic_prayer_amen, invitation_to_communion, invitation_seated_rubric, agnus_dei, communion_hymn, post_communion_stand_rubric, post_communion_blessing, nunc_dimittis, prayer_after_communion) are omitted entirely."
   },
   "blocks": [
@@ -230,6 +230,13 @@
       "lines": [
         {"role": "leader", "text": "We know that all that we are and all that we have come from God. So, in response to God’s goodness, we give with cheerful hearts."}
       ]
+    },
+    {
+      "id": "offertory",
+      "type": "music_item",
+      "title": "OFFERTORY",
+      "note": "The offertory selection (choral/instrumental), from config.offertory_title/offertory_composer/offertory_type. Renders via the shared music_line markup (same id as the Sunday offertory). Distinct from the optional congregational canticle_of_thanksgiving below.",
+      "kind": "offertory"
     },
     {
       "id": "canticle_of_thanksgiving",

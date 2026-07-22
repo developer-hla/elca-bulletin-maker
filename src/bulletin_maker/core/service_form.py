@@ -127,6 +127,7 @@ def build_service_config(form_data: dict, hymn_cache: dict) -> ServiceConfig:
         preface=parse_preface(form_data.get("preface")),
         show_confession=form_data.get("show_confession"),
         show_nunc_dimittis=form_data.get("show_nunc_dimittis"),
+        include_canticle_of_thanksgiving=form_data.get("include_canticle_of_thanksgiving"),
         reading_overrides=form_data.get("reading_overrides") or None,
         include_baptism=form_data.get("include_baptism", False),
         variables=form_data.get("variables") or {},
