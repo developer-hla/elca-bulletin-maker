@@ -52,6 +52,7 @@ class ServiceConfig:
     show_confession: Optional[bool] = None      # Show Confession section?
     show_greeting: Optional[bool] = None        # Show Greeting (P/C dialog after Gathering Hymn)?
     show_nunc_dimittis: Optional[bool] = None   # Show Nunc Dimittis?
+    include_canticle_of_thanksgiving: Optional[bool] = None  # Service of the Word: sung offertory canticle? (default off)
 
     # ── Reading overrides — custom passages fetched via PassageSearch ──
     # Dict mapping slot ("first", "second", "psalm", "gospel") to Reading

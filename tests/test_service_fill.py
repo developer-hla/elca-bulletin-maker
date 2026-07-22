@@ -179,10 +179,15 @@ def test_resolve_canonical_slot_fill_failure_yields_placeholder():
     assert resolve_canonical_slot(block, context) == ENTITLEMENT_PLACEHOLDER
 
 
-def test_resolve_canonical_slot_unmapped_key_uses_resolve_text():
-    # A non-SECTION_MAP canonical_slot key keeps its old resolve_text behaviour:
-    # a church override still wins through resolve_text, untouched by the fill.
+def test_resolve_canonical_slot_unmapped_key_is_a_fillable_slot():
+    # A non-SECTION_MAP canonical_slot key (e.g. a Service-of-the-Word fill slot)
+    # is a plain fillable slot: the church's saved text wins, else the entitlement
+    # placeholder. It must NOT route through resolve_text, which would raise
+    # UnknownTextKey for an entitled church on a non-catalog key.
     saved = "Custom text for an unmapped section."
-    context = ContentContext(church_texts={"some_unmapped_section": saved})
     block = _canonical_block("some_unmapped_section")
-    assert resolve_canonical_slot(block, context) == saved
+    assert resolve_canonical_slot(
+        block, ContentContext(church_texts={"some_unmapped_section": saved})) == saved
+    # entitled + no override -> placeholder, not a crash (regression guard)
+    assert resolve_canonical_slot(
+        block, ContentContext(entitled=True)) == ENTITLEMENT_PLACEHOLDER

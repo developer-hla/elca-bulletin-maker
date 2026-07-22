@@ -239,6 +239,7 @@ def build_condition_context(
         "eucharistic_extended": config.eucharistic_form == "extended",
         "memorial_acclamation": bool(config.include_memorial_acclamation),
         "nunc_dimittis": bool(config.show_nunc_dimittis),
+        "canticle_of_thanksgiving": bool(config.include_canticle_of_thanksgiving),
     }
     return {"season": season_id, "feasts": [], "toggles": toggles}
 
@@ -310,12 +311,13 @@ def _canonical_slot_heading(block: Block) -> str:
 def resolve_canonical_slot(block: Block, content: ContentContext) -> Any:
     """Resolve a ``canonical_slot`` block's text through the content source.
 
-    A canonical_slot stores no canonical wording in the app.  Priority for a
-    mapped occasion section (the funeral / marriage keys in
-    :data:`service_fill.SECTION_MAP`): a church-saved custom text (always wins)
-    -> the layer-2 licensed S&S service fill (:func:`service_fill.fill_section`,
-    when entitled) -> :data:`content_source.ENTITLEMENT_PLACEHOLDER`.  Any other
-    section_key falls through to :func:`content_source.resolve_text` unchanged.
+    A canonical_slot stores no canonical wording in the app.  Priority: a
+    church-saved custom text (always wins) -> for a mapped occasion section (the
+    funeral / marriage keys in :data:`service_fill.SECTION_MAP`) the layer-2
+    licensed S&S service fill (:func:`service_fill.fill_section`, when entitled)
+    -> :data:`content_source.ENTITLEMENT_PLACEHOLDER`.  A section key that is not
+    in ``SECTION_MAP`` (e.g. a church-fillable Service-of-the-Word slot) is a
+    plain fillable slot: the church's saved text, else the placeholder.
     """
     if block.type != "canonical_slot":
         raise ValueError(
@@ -323,13 +325,14 @@ def resolve_canonical_slot(block: Block, content: ContentContext) -> Any:
             % block.type
         )
     section_key = block.data["section_key"]
-    if section_key not in SECTION_MAP:
-        return resolve_text(section_key, content)
     override = content.church_texts.get(section_key)
     if override:
         return override
-    filled = fill_section(section_key, content)
-    return filled if filled is not None else ENTITLEMENT_PLACEHOLDER
+    if section_key in SECTION_MAP:
+        filled = fill_section(section_key, content)
+        if filled is not None:
+            return filled
+    return ENTITLEMENT_PLACEHOLDER
 
 
 def _heading_class(block_id: str, document: str) -> Optional[str]:

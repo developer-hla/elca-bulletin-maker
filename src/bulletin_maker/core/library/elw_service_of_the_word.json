@@ -232,6 +232,21 @@
       ]
     },
     {
+      "id": "canticle_of_thanksgiving",
+      "type": "canonical_slot",
+      "title": "*CANTICLE OF THANKSGIVING",
+      "note": "Optional SUNG offertory canticle in the Thanksgiving response (e.g. 'Let the Vineyards Be Fruitful' ELW 181-184 / 'Create in Me a Clean Heart' ELW 185-188). Toggled per service via config.include_canticle_of_thanksgiving; DEFAULT OFF so no music is added unless the church actually sings it. When on, the church supplies the canticle title/reference via the section fill; renders as a reference, not notation.",
+      "condition": {"toggles": {"canticle_of_thanksgiving": true}},
+      "section_key": "sotw_canticle_of_thanksgiving"
+    },
+    {
+      "id": "thanksgiving_for_the_word",
+      "type": "canonical_slot",
+      "title": "THANKSGIVING FOR THE WORD",
+      "note": "The central spoken prayer of thanks for the Word, standing in place of the Great Thanksgiving in a Service of the Word (research: docs/research/2026-07-liturgy-strategy/13-service-of-the-word.md). Led from the ambo (lay-appropriate). Text is church-provided via the section fill (South-Central Synod / ELCA supplement / own wording); nothing copyrighted is bundled.",
+      "section_key": "sotw_thanksgiving_for_the_word"
+    },
+    {
       "id": "lords_prayer",
       "type": "literal_text",
       "title": "*LORD’S PRAYER",
